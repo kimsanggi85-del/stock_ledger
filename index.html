@@ -311,7 +311,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="fld"><label>비고</label><input id="xN"></div>
     <div id="xMesWarn" style="display:none;background:#FFF3DC;border:1px solid #E0C070;border-radius:3px;
       padding:8px 10px;font-size:11.5px;color:#7A5200;margin-bottom:8px">
-      ⚠ MES 자동전표입니다. 수정·삭제해도 다음 동기화(5분) 때 MES 값으로 복원됩니다.
+      ⚠ 자동전표(MES/출하의뢰서)입니다. 수정·삭제해도 다음 동기화(5분) 때 원본 값으로 복원됩니다.
       수량 정정은 <b>재고조정(+/−) 전표</b>를 별도로 등록하세요.</div>
     <button class="btn k" style="width:100%;padding:11px" onclick="saveIO()">저장</button>
     <button class="btn r" id="xDel" style="width:100%;padding:11px;margin-top:6px" onclick="delIO()">삭제</button>
@@ -766,7 +766,7 @@ function rIo(){
        <td class="${io==='O'?'neg':''}">${io==='O'?nf(r.q):'-'}</td>
        <td class="c">${it.bx?(r.q/it.bx).toFixed(1):'-'}</td>
        <td class="l" style="font-family:var(--sans)">${esc(r.n||'')}</td>
-       <td class="c" style="font-family:var(--sans)">${r.src?'<span style="background:#E3EDF7;color:#1F5FA8;font-weight:800;padding:1px 6px;border-radius:3px;font-size:10px">MES</span> ':''}${esc(r.by||'')}</td></tr>`;
+       <td class="c" style="font-family:var(--sans)">${r.src?('<span style="background:'+(r.src.indexOf('SHIP')===0?'#EFEBF7;color:#5B4B8A':'#E3EDF7;color:#1F5FA8')+';font-weight:800;padding:1px 6px;border-radius:3px;font-size:10px">'+(r.src.indexOf('SHIP')===0?'출하앱':'MES')+'</span> '):''}${esc(r.by||'')}</td></tr>`;
     }).join(''):`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">내역이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="7" class="c">합　계 (${R.length}건)</td>
      <td>${nf(ti)}</td><td>${nf(to)}</td><td colspan="3"></td></tr></tfoot>`;
@@ -1276,7 +1276,13 @@ async function syncMes(silent){
       {headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const rows=await r.json();
-    let add=0,upd=0; const unk=new Set();
+    let add=0,upd=0,del=0; const unk=new Set();
+    const seen=new Set(rows.map(x=>x.src_key));
+    /* 출하의뢰서에서 삭제된 이력은 수불부에서도 제거 (SHIP| 키, 조회범위 내) */
+    for(let i=S.led.length-1;i>=0;i--){
+      const l=S.led[i];
+      if(l.src&&l.src.indexOf('SHIP|')===0&&l.d>=sinceIso&&!seen.has(l.src)){S.led.splice(i,1);del++;}
+    }
     rows.forEach(x=>{
       if(!x.pn||!x.led_date||!x.kind)return;
       const o={d:x.led_date,pn:String(x.pn).trim(),k:x.kind,q:+x.qty||0,
@@ -1293,12 +1299,12 @@ async function syncMes(silent){
     unk.forEach(pn=>S.items.push({no:0,pn,nm:'',sp:'',un:'EA',bx:0,sf:0,bs:0,
       bd:'2025-12-31',cu:'',lc:'',wh:'현장',cnt:null}));
     if(unk.size)S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
-    if(add||upd||unk.size){save();render();}
+    if(add||upd||del||unk.size){save();render();}
     const t=new Date();
     mesStat('MES '+p2(t.getHours())+':'+p2(t.getMinutes())+' 동기화됨 · '+rows.length+'건','#7FD8A4');
-    if(!silent)toast('MES 동기화 완료 · 신규 '+add+' / 갱신 '+upd
+    if(!silent)toast('동기화 완료 · 신규 '+add+' / 갱신 '+upd+(del?' / 삭제 '+del:'')
       +(unk.size?' / 신규품번 '+unk.size+'종(박스단위 입력 필요)':''));
-    else if(add||upd)toast('MES 전표 '+(add+upd)+'건 반영');
+    else if(add||upd||del)toast('자동전표 '+(add+upd)+'건 반영'+(del?' · '+del+'건 정리':''));
   }catch(e){
     mesStat('MES 연결 안됨','#FF9E9E');
     if(!silent)toast('MES 동기화 실패: '+e.message);
