@@ -225,7 +225,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.1</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.3</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -376,6 +376,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="scroll"><table class="t" id="tCfg"></table></div>
     <div class="hint noprint">· 셀을 직접 클릭해 수정할 수 있습니다. CSV 일괄등록 형식: <b>품번,품명,규격,박스단위,안전재고(EA),현재고(EA),고객사</b></div>
   </div>
+  <div class="sheet noprint" id="inspBox" style="margin-top:10px;padding:12px"></div>
 </div>
 
 <!-- 입출고 등록 -->
@@ -987,7 +988,12 @@ function applyCount(){
   const t=S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0);
   if(!t.length){toast('차이가 있는 실사 입력이 없습니다');return;}
   if(!confirm(t.length+'개 품목의 차이분을 '+d+' 재고조정 전표로 발행합니다.'))return;
-  const pk=$('cntKind').value, mk=$('cntKindM').value;
+  let mk=$('cntKindM').value;
+  if(S.inspOn!==false&&mk==='검사폐기'){
+    if(!confirm('출하검사 연동이 켜져 있어 검사폐기는 자동 등록됩니다.\n실사 차이까지 검사폐기로 잡으면 이중 차감됩니다.\n\n[확인]을 누르면 재고조정(-)으로 발행합니다.'))return;
+    mk='재고조정(-)'; $('cntKindM').value=mk;
+  }
+  const pk=$('cntKind').value;
   t.forEach(it=>{
     const df=it.cnt*it.bx-calc(it).cur;
     const k=df>0?pk:mk;
@@ -1001,7 +1007,51 @@ function applyCount(){
 function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
 
 /* ═══════ 품목대장 ═══════ */
+function rInsp(){
+  const on=S.inspOn!==false;
+  const sel=(S.inspCust===undefined?DEF_INSP_CUST:S.inspCust).split(',').map(s=>s.trim()).filter(Boolean);
+  const list=[...new Set([...(S.inspSeen||[]),...sel,...DEF_INSP_CUST.split(',')])].sort();
+  const skip=S.inspSkip||{}, sk=Object.keys(skip);
+  $('inspBox').innerHTML=
+   `<h4 style="display:flex;align-items:center;margin:0 0 6px">출하검사 불량 자동연동
+      <label style="margin-left:auto;font-size:12px;font-weight:700;cursor:pointer">
+        <input type="checkbox" id="inspOn" ${on?'checked':''} style="vertical-align:-2px"> 사용</label></h4>
+    <div class="hint" style="margin:0 0 8px">불량관리 시스템의 출하검사 불량수를 <b>검사폐기</b> 전표로 자동 등록합니다.
+      체크한 고객사만 반영되고, 불량관리에서 수정·삭제하면 여기도 따라갑니다.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;${on?'':'opacity:.4;pointer-events:none'}">
+      ${list.map(c=>`<label class="chip ${sel.includes(c)?'on':''}" style="cursor:pointer">
+        <input type="checkbox" class="ic" value="${esc(c)}" ${sel.includes(c)?'checked':''}
+          style="margin-right:5px;vertical-align:-1px">${esc(c)}</label>`).join('')}
+    </div>
+    <div class="hint" style="margin-top:8px">${S.inspAt
+      ?'최근 연동 '+new Date(S.inspAt).toLocaleString('ko-KR')
+      :'아직 연동 전 — 상단 [MES 동기화]를 누르면 시작됩니다'}</div>
+    ${sk.length?`<div style="margin-top:9px;border-top:1px dashed var(--line);padding-top:9px">
+      <b style="font-size:12px;color:var(--wn)">품목대장에 없는 기종 ${sk.length}종 — 아직 반영되지 않았습니다</b>
+      <div class="scroll" style="max-height:160px;overflow-y:auto;margin-top:5px">
+      <table class="t"><tr><th>기종(변환됨)</th><th>불량수</th><th>연결할 품번</th></tr>
+      ${sk.map(k=>`<tr><td class="l">${esc(k)}</td><td>${nf(skip[k])}</td>
+        <td class="l" style="padding:0"><select class="ia" data-k="${esc(k)}" style="width:100%;border:none;font-size:11px;padding:5px">
+          <option value="">— 품번 선택 —</option>
+          ${S.items.map(i=>`<option value="${esc(i.pn)}">${esc(i.pn)}</option>`).join('')}
+        </select></td></tr>`).join('')}
+      </table></div>
+      <div class="hint">품번을 고르면 별칭으로 등록되어 다음 연동부터 자동 반영됩니다.</div></div>`:''}`;
+  $('inspOn').onchange=e=>{S.inspOn=e.target.checked;save();rInsp();if(e.target.checked)syncMes(false);};
+  $('inspBox').querySelectorAll('.ic').forEach(c=>c.onchange=()=>{
+    S.inspCust=[...$('inspBox').querySelectorAll('.ic')].filter(x=>x.checked).map(x=>x.value).join(',');
+    save();rInsp();syncMes(false);});
+  $('inspBox').querySelectorAll('.ia').forEach(s=>s.onchange=()=>{
+    if(!s.value)return;
+    const it=S.items.find(x=>x.pn===s.value);
+    const cur=(it.al||'').split(',').map(v=>v.trim()).filter(Boolean);
+    if(!cur.includes(s.dataset.k))cur.push(s.dataset.k);
+    it.al=cur.join(',');
+    if(S.inspSkip)delete S.inspSkip[s.dataset.k];
+    save();toast(s.dataset.k+' → '+s.value+' 연결됨');rInsp();syncMes(true);});
+}
 function rCfg(){
+  rInsp();
   const q=$('cfgQ').value.trim().toLowerCase();
   const R=S.items.map((it,i)=>({it,i})).filter(({it})=>inWh(it)&&(!q||(it.pn+' '+it.nm).toLowerCase().includes(q)));
   $('tCfg').innerHTML=`<thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>규격</th><th>단위</th>
@@ -1452,12 +1502,84 @@ function doImport(){
   toast('가져오기 완료 · 등록 '+add+'건'+(skip?' / 중복제외 '+skip+'건':''));
 }
 
+
+/* ═══════ 출하검사 불량 연동 (불량관리 시스템 → 검사폐기 전표) ═══════ */
+const DF_URL='https://omngtyewdaqpphnzeate.supabase.co';
+const DF_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tbmd0eWV3ZGFxcHBobnplYXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODk4ODksImV4cCI6MjA5MDQ2NTg4OX0.Zxur3t02JHtOcXforCMSwO3i2mMaf5sViE0tXXUC0-s';
+const DEF_INSP_CUST='SKF씰,일진글로벌,우창산업';
+/* 기종명 → 품번 정규화: 괄호·부가설명 제거 후 별칭 적용 */
+function modelToPn(m){
+  let s=String(m||'').trim();
+  s=s.split(/[（(]/)[0];                       /* 괄호 앞까지 */
+  s=s.split(/\s+/)[0];                         /* 첫 토큰 */
+  s=s.replace(/[^A-Za-z0-9\-\/]+$/,'');        /* 끝쪽 잡문자 제거 */
+  return canonPn(s);
+}
+async function syncInsp(){
+  if(S.inspOn===false) return {n:0,skip:[],off:true};
+  const cust=(S.inspCust===undefined?DEF_INSP_CUST:S.inspCust)
+    .split(',').map(s=>s.trim()).filter(Boolean);
+  if(!cust.length) return {n:0,skip:[]};
+  const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y,m-4,1);
+  const since=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-01';
+  const hd={apikey:DF_KEY,Authorization:'Bearer '+DF_KEY};
+  const r=await fetch(DF_URL+'/rest/v1/defect_history?select=*&limit=5000',{headers:hd});
+  if(!r.ok) throw new Error('불량DB HTTP '+r.status);
+  const all=await r.json();
+  const agg={}, skip={}, seen=new Set();
+  all.forEach(x=>{
+    const cu=String(x.customer||x.inspect_line||'').trim();
+    if(cu) seen.add(cu);
+    if(!cust.includes(cu)) return;
+    const dt=String(x.defect_date||x.recorded_at||'').slice(0,10);
+    if(!dt||dt<since) return;
+    const q=+x.qty||0; if(q<=0) return;
+    const pn=modelToPn(x.model_name);
+    if(!pn||isExcl(pn)) return;
+    if(!S.items.some(i=>i.pn===pn)){skip[pn]=(skip[pn]||0)+q;return;}
+    const k=dt.replace(/-/g,'')+'|'+pn;
+    const a=agg[k]=agg[k]||{d:dt,pn,q:0,cu:new Set(),ty:{}};
+    a.q+=q; a.cu.add(cu);
+    const t=String(x.defect_type||'기타').trim();
+    a.ty[t]=(a.ty[t]||0)+q;
+  });
+  const recs=Object.entries(agg).map(([k,a])=>({
+    src_key:'INSP|'+k, led_date:a.d, pn:a.pn, kind:'검사폐기', qty:a.q,
+    party:[...a.cu].join(','), lot:'',
+    note:('출하검사 불량 '+Object.entries(a.ty).map(([t,v])=>t+':'+v).join(' / ')).slice(0,200),
+    by_name:'검사실', updated_at:new Date().toISOString()}));
+  const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(recs.length){
+    const w=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?on_conflict=src_key',
+      {method:'POST',headers:Object.assign({},sh,{Prefer:'return=minimal,resolution=merge-duplicates'}),
+       body:JSON.stringify(recs)});
+    if(!w.ok) throw new Error('전표 등록 HTTP '+w.status);
+  }
+  /* 불량관리에서 삭제·수정된 건 정리 */
+  const g=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?select=src_key&led_date=gte.'+since
+    +'&src_key=like.'+encodeURIComponent('INSP|*'),{headers:sh});
+  if(g.ok){
+    const cur=new Set(recs.map(x=>x.src_key));
+    const stale=(await g.json()).map(x=>x.src_key).filter(k=>!cur.has(k));
+    for(let i=0;i<stale.length;i+=40){
+      const ch=stale.slice(i,i+40).map(k=>'"'+k+'"').join(',');
+      await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?src_key=in.('+encodeURIComponent(ch)+')',
+        {method:'DELETE',headers:Object.assign({},sh,{Prefer:'return=minimal'})});
+    }
+  }
+  S.inspSeen=[...seen].sort(); S.inspSkip=skip; S.inspAt=new Date().toISOString(); save();
+  return {n:recs.length,skip:Object.keys(skip)};
+}
+
 /* ═══════ MES 자동전표 동기화 ═══════ */
 let mesBusy=false;
 function mesStat(t,col){const e=$('mesSt');e.textContent=t;e.style.color=col||'#9FB3C8';}
 async function syncMes(silent){
   if(mesBusy)return; mesBusy=true;
   const btn=$('mesBtn'); btn.disabled=true;
+  let inspInfo=null;
+  try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{
     /* 기준월 앞뒤로 넉넉히: 3개월 전 1일부터 */
     const [y,m]=ym.split('-').map(Number);
@@ -1496,6 +1618,7 @@ async function syncMes(silent){
     const t=new Date();
     mesStat('MES '+p2(t.getHours())+':'+p2(t.getMinutes())+' 동기화됨 · '+rows.length+'건','#7FD8A4');
     if(!silent)toast('동기화 완료 · 신규 '+add+' / 갱신 '+upd+(del?' / 삭제 '+del:'')
+      +(inspInfo?' / 출하검사 '+inspInfo.n+'건'+(inspInfo.skip.length?' (미등록기종 '+inspInfo.skip.length+')':''):'')
       +(unk.size?' / 신규품번 '+unk.size+'종(박스단위 입력 필요)':''));
     else if(add||upd||del)toast('자동전표 '+(add+upd)+'건 반영'+(del?' · '+del+'건 정리':''));
   }catch(e){
