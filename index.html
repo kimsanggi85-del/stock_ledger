@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER</small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.0</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -1278,10 +1278,10 @@ async function syncMes(silent){
     const rows=await r.json();
     let add=0,upd=0,del=0; const unk=new Set();
     const seen=new Set(rows.map(x=>x.src_key));
-    /* 출하의뢰서에서 삭제된 이력은 수불부에서도 제거 (SHIP| 키, 조회범위 내) */
+    /* 원천(MES·출하의뢰서)에서 삭제·정정된 전표는 수불부에서도 제거 (조회범위 내) */
     for(let i=S.led.length-1;i>=0;i--){
       const l=S.led[i];
-      if(l.src&&l.src.indexOf('SHIP|')===0&&l.d>=sinceIso&&!seen.has(l.src)){S.led.splice(i,1);del++;}
+      if(l.src&&l.d>=sinceIso&&!seen.has(l.src)){S.led.splice(i,1);del++;}
     }
     rows.forEach(x=>{
       if(!x.pn||!x.led_date||!x.kind)return;
