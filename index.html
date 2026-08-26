@@ -444,7 +444,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.7</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.8</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -707,7 +707,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="fld"><label>비고</label><input id="xN"></div>
     <div id="xMesWarn" style="display:none;background:#FFF3DC;border:1px solid #E0C070;border-radius:3px;
       padding:8px 10px;font-size:11.5px;color:#7A5200;margin-bottom:8px">
-      ⚠ 자동전표(MES/출하의뢰서)입니다. 수정·삭제해도 다음 동기화(5분) 때 원본 값으로 복원됩니다.
+      ⚠ 자동전표입니다(MES·출하의뢰서·불량관리·거래명세). 수정·삭제해도 다음 동기화 때 원본 값으로 복원됩니다.
       수량 정정은 <b>재고조정(+/−) 전표</b>를 별도로 등록하세요.</div>
     <button class="btn k" style="width:100%;padding:11px" onclick="saveIO()">저장</button>
     <button class="btn r" id="xDel" style="width:100%;padding:11px;margin-top:6px" onclick="delIO()">삭제</button>
@@ -1243,7 +1243,7 @@ function rIo(){
        <td class="${io==='O'?'neg':''}">${io==='O'?nf(r.q):'-'}</td>
        <td class="c">${it.bx?(r.q/it.bx).toFixed(1):'-'}</td>
        <td class="l" style="font-family:var(--sans)">${esc(r.n||'')}</td>
-       <td class="c" style="font-family:var(--sans)">${r.src?('<span style="background:'+(r.src.indexOf('SHIP')===0?'#EFEBF7;color:#5B4B8A':'#E3EDF7;color:#1F5FA8')+';font-weight:800;padding:1px 6px;border-radius:3px;font-size:10px">'+(r.src.indexOf('SHIP')===0?'출하앱':'MES')+'</span> '):''}${esc(r.by||'')}</td></tr>`;
+       <td class="c" style="font-family:var(--sans)">${(t=>t?'<span style="background:'+t[1]+';color:'+t[2]+';font-weight:800;padding:1px 6px;border-radius:3px;font-size:10px">'+t[0]+'</span> ':'')(srcTag(r.src))}${esc(r.by||'')}</td></tr>`;
     }).join(''):`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">내역이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="7" class="c">합　계 (${R.length}건)</td>
      <td>${nf(ti)}</td><td>${nf(to)}</td><td colspan="3"></td></tr></tfoot>`;
@@ -2103,13 +2103,22 @@ function mcCnt(o,idx){
       ${v.cur>0?' · 정확도 '+(100-Math.abs(df)/v.cur*100).toFixed(1)+'%':''}</div>`}
   </div>`;
 }
+/* 자동전표 출처 라벨 */
+function srcTag(s){
+  if(!s)return null;
+  if(s.indexOf('SHIP|')===0)  return ['출하앱','#EFEBF7','#5B4B8A'];
+  if(s.indexOf('INSPQ|')===0) return ['검사실','#E4F1EA','#0B6B3A'];
+  if(s.indexOf('INSP|')===0)  return ['검사실','#FBE9E7','#B3261E'];
+  if(s.indexOf('HIST|')===0)  return ['거래명세','#FFF3DC','#8A6D1F'];
+  return ['MES','#E3EDF7','#1F5FA8'];
+}
 function mcIo(r){
   const it=S.items.find(x=>x.pn===r.pn)||{bx:0,nm:''};
   const io=kindIO(r.k);
   return `<div class="mc ${io==='I'?'ok':'neg'}" onclick="openIO(${r.id})">
     <div class="mc-h"><span class="mc-pn">${esc(r.pn)}</span>
       <span class="mc-tag" style="background:${io==='I'?'#E4F1EA;color:#0B6B3A':'#FBE9E7;color:#B3261E'}">${esc(r.k)}</span></div>
-    <div class="mc-sub">${r.d}${it.nm?' · '+esc(it.nm):''}${r.src?' · '+(r.src.indexOf('SHIP')===0?'출하앱':'MES'):''}</div>
+    <div class="mc-sub">${r.d}${it.nm?' · '+esc(it.nm):''}${(t=>t?' · '+t[0]:'')(srcTag(r.src))}</div>
     <div class="mc-big"><b style="color:${io==='I'?'#0B6B3A':'#B3261E'}">${io==='I'?'+':'−'}${nf(r.q)}</b>
       <span>EA${it.bx?' / '+(r.q/it.bx).toFixed(1)+'박스':''}</span></div>
     ${(r.p||r.lot||r.n)?`<div class="mc-sub" style="margin-top:5px">${[r.p,r.lot?'LOT '+r.lot:'',r.n].filter(Boolean).map(esc).join(' · ')}</div>`:''}
