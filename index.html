@@ -444,7 +444,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.9</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.0</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -594,6 +594,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
     <input id="cfgQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label style="margin-left:8px">관리제외</label>
+    <span id="itStat" style="font-size:11px;color:#888;margin-left:6px;cursor:pointer"
+      onclick="pushItems(false)" title="품목 마스터 공유 상태 (클릭=지금 공유 저장)">품목 공유 대기</span>
     <label style="margin-left:8px">기초일자 일괄</label>
     <input type="date" id="cfgBd" style="width:140px" title="전 품목의 기초일자를 한 번에 변경합니다">
     <button class="btn" onclick="bulkBd()" title="기초일자 이전 전표는 계산에서 제외됩니다">적용</button>
@@ -1323,6 +1325,75 @@ function applyCount(){
 function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
 
 /* ═══════ 품목대장 ═══════ */
+/* ═══════ 품목 마스터 공유 동기화 (stock_item) ═══════ */
+const IT_TABLE='stock_item';
+const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al'];
+let itDirty=false, itTimer=null, itBusy=false;
+function itHeaders(pf){const o={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(pf)o.Prefer=pf;return o;}
+/* 품목이 바뀔 때 호출: 변경시각 기록 + 지연 업로드 */
+function touchItem(it){ if(it)it.ua=new Date().toISOString(); itDirty=true; schedPush(); }
+function schedPush(){ clearTimeout(itTimer); itTimer=setTimeout(()=>pushItems(true),2500); }
+function itRow(it){
+  const o={ua:it.ua||new Date().toISOString(),updated_at:new Date().toISOString()};
+  IT_COLS.forEach(c=>{
+    let v=it[c];
+    if(c==='bd') v=(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:null;
+    else if(['bx','sf','bs'].includes(c)) v=+v||0;
+    else if(c==='pn') v=String(v||'').trim();
+    else v=v==null?'':String(v);
+    o[c]=v;
+  });
+  return o;
+}
+async function pushItems(silent){
+  if(itBusy||!S.items.length)return; itBusy=true;
+  try{
+    const rows=S.items.filter(i=>i.pn).map(itRow);
+    for(let i=0;i<rows.length;i+=200){
+      const r=await fetch(SB_URL+'/rest/v1/'+IT_TABLE+'?on_conflict=pn',
+        {method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+         body:JSON.stringify(rows.slice(i,i+200))});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+    }
+    itDirty=false;
+    if(!silent)toast('품목 마스터 '+rows.length+'건 공유 저장');
+    setItStat('🟢 품목 공유');
+  }catch(e){ setItStat('🔴 품목 공유 실패'); if(!silent)toast('품목 공유 실패: '+e.message); }
+  itBusy=false;
+}
+async function pullItems(silent){
+  try{
+    const rows=await fetchAll(SB_URL+'/rest/v1/'+IT_TABLE+'?select=*&order=pn.asc',
+      {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
+    if(!rows.length){ await pushItems(true); return {add:0,upd:0}; }
+    const loc=new Map(S.items.map(i=>[i.pn,i]));
+    let add=0,upd=0;
+    rows.forEach(r=>{
+      if(isExcl(r.pn))return;
+      const l=loc.get(r.pn);
+      if(!l){
+        const o={no:0,cnt:null,ua:r.ua};
+        IT_COLS.forEach(c=>o[c]=(c==='bd')?(r.bd||today()):(r[c]==null?(['bx','sf','bs'].includes(c)?0:''):r[c]));
+        S.items.push(o); add++;
+      }else if((r.ua||'')>(l.ua||'')){
+        IT_COLS.forEach(c=>{ if(c!=='pn') l[c]=(c==='bd')?(r.bd||l.bd):(r[c]==null?l[c]:r[c]); });
+        l.ua=r.ua; upd++;
+      }
+    });
+    /* 원격에 없는 로컬 품목은 올려두기 */
+    const rem=new Set(rows.map(r=>r.pn));
+    if(S.items.some(i=>!rem.has(i.pn))) schedPush();
+    if(add||upd){ save(); if(!silent)toast('품목 공유 반영 · 신규 '+add+' / 갱신 '+upd); }
+    setItStat('🟢 품목 공유 '+rows.length+'건');
+    return {add,upd};
+  }catch(e){ setItStat('🔴 품목 공유 실패'); return {add:0,upd:0}; }
+}
+async function delItemRemote(pn){
+  try{ await fetch(SB_URL+'/rest/v1/'+IT_TABLE+'?pn=eq.'+encodeURIComponent(pn),
+    {method:'DELETE',headers:itHeaders('return=minimal')}); }catch(e){}
+}
+function setItStat(t){ const e=$('itStat'); if(e)e.textContent=t; }
 function bulkBd(){
   const d=$('cfgBd').value;
   if(!d){toast('날짜를 선택하세요');return;}
@@ -1331,7 +1402,7 @@ function bulkBd(){
   if(!confirm('기초일자를 '+d+' 로 변경합니다 ('+t.length+'품목)\n\n'
     +'· 이 날짜 이전 전표 '+cnt+'건은 계산에서 제외됩니다\n'
     +'· 기초재고 수량은 그대로 유지됩니다\n\n계속하시겠습니까?'))return;
-  t.forEach(i=>i.bd=d); save(); render();
+  t.forEach(i=>{i.bd=d;touchItem(i);}); save(); render(); pushItems(true);
   toast(t.length+'품목 기초일자 → '+d);
 }
 function rInsp(){
@@ -1478,14 +1549,18 @@ function saveItem(){
     bx:+$('yBx').value||0,sf:+$('ySf').value||0,bs:+$('yBs').value||0,bd:$('yBd').value||today(),
     cu:$('yCu').value.trim(),lc:$('yLc').value.trim(),wh:$('yWh').value,
     al:$('yAl').value.trim()};
-  if(i<0)S.items.push(Object.assign({cnt:null},o)); else Object.assign(S.items[i],o);
+  let tgt;
+  if(i<0){tgt=Object.assign({cnt:null},o);S.items.push(tgt);}
+  else{Object.assign(S.items[i],o);tgt=S.items[i];}
+  touchItem(tgt);
   S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
-  save();render();closeAll();toast('저장되었습니다');
+  save();render();closeAll();pushItems(true);toast('저장되었습니다');
 }
 function delItem(){
   const i=+$('yIdx').value;
-  if(!confirm(S.items[i].pn+' 품목을 삭제할까요?'))return;
-  S.items.splice(i,1);save();render();closeAll();toast('삭제되었습니다');
+  if(!confirm(S.items[i].pn+' 품목을 삭제할까요?\n(공유 목록에서도 삭제되어 전 기기에 반영됩니다)'))return;
+  const pn=S.items[i].pn;
+  S.items.splice(i,1);save();render();closeAll();delItemRemote(pn);toast('삭제되었습니다');
 }
 function sign(e){
   const v=prompt('결재자 성명',e.textContent==='인'?'':e.textContent);
@@ -1822,7 +1897,7 @@ function doImport(){
   const unk=[...new Set(R.filter(r=>!r.known).map(r=>r.pn))];
   if(unk.length&&!addNew){toast('미등록 품번 '+unk.length+'종이 있습니다. 자동 등록을 켜거나 품목대장에 먼저 등록하세요');return;}
   if(!confirm('전표 '+R.length+'건을 수불부에 등록합니다.'+(unk.length&&addNew?'\n신규 품목 '+unk.length+'종도 함께 등록됩니다.':'')))return;
-  if(addNew)unk.forEach(pn=>S.items.push({no:0,pn,nm:'',sp:'',un:'EA',bx:0,sf:0,bs:0,bd:R[0].d,cu:'',lc:'',cnt:null}));
+  if(addNew){unk.forEach(pn=>S.items.push({no:0,pn,nm:'',sp:'',un:'EA',bx:0,sf:0,bs:0,bd:R[0].d,cu:'',lc:'',cnt:null,ua:new Date().toISOString()}));if(unk.size)schedPush();}
   const seen=new Set(S.led.map(r=>r.d+'|'+r.pn+'|'+r.k+'|'+r.q));
   let add=0,skip=0;
   R.forEach(r=>{
@@ -1949,6 +2024,7 @@ async function syncMes(silent){
   if(mesBusy)return; mesBusy=true;
   const btn=$('mesBtn'); btn.disabled=true;
   let inspInfo=null;
+  try{ await pullItems(true); }catch(e){ console.warn('품목 공유:',e.message); }
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{
     /* 전체 누적: 기초일자 이후 전 기간 */
@@ -2263,10 +2339,12 @@ document.addEventListener('click',e=>{
   it.cnt=Math.max(0,cur+(b.dataset.a==='inc'?1:-1));save();rCnt();});
 $('tCfg').addEventListener('change',e=>{
   if(e.target.classList.contains('whs')){
-    S.items[+e.target.dataset.i].wh=e.target.value;save();render();return;}
+    const it=S.items[+e.target.dataset.i];
+    it.wh=e.target.value;touchItem(it);save();render();return;}
   if(e.target.tagName!=='INPUT')return;
   const it=S.items[+e.target.dataset.i],f=e.target.dataset.f;
-  it[f]=['bx','sf','bs'].includes(f)?(+e.target.value||0):e.target.value;save();rCfg();});
+  it[f]=['bx','sf','bs'].includes(f)?(+e.target.value||0):e.target.value;
+  touchItem(it);save();rCfg();});
 
 /* 숫자 카운트업 */
 const _cv={};
@@ -2307,7 +2385,7 @@ function init(){
   syncMes(true);
 }
 load();init();
-window.addEventListener('beforeunload',save);
+window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);});
 </script>
 </body>
 </html>
