@@ -225,7 +225,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.0</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.1</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -320,9 +320,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="fbar">
     <label>실사일자</label><input type="date" id="cntD">
     <label>+차이 구분</label>
-    <select id="cntKind" title="실사값이 전산보다 많을 때 발행할 전표 구분. 검사실 일일 업데이트는 '생산입고(검사합격)' 권장">
+    <select id="cntKind" title="실사값이 전산보다 많을 때 발행할 전표 구분">
       <option value="재고조정(+)">재고조정(+)</option>
       <option value="생산입고">생산입고 (검사합격)</option></select>
+    <label>−차이 구분</label>
+    <select id="cntKindM" title="실사값이 전산보다 적을 때 발행할 전표 구분. 검사 후 폐기분이면 '검사폐기' 선택">
+      <option value="재고조정(-)">재고조정(-)</option>
+      <option value="검사폐기">검사폐기</option>
+      <option value="선별제외">선별제외</option></select>
     <input id="cntQ" placeholder="품번 검색" style="width:160px">
     <div class="chip on" data-c="all">전체</div>
     <div class="chip" data-c="in">입력분</div>
@@ -615,7 +620,8 @@ const SEED=`1515-196,2000,5,24,2026-05-13
 1GE0-0009-1,50,0,16,2026-06-04`;
 /* 수불 구분: [명칭, 입고I/출고O] — 제조현장 표준 */
 const KINDS=[['생산입고','I'],['구매입고','I'],['반품입고','I'],['재고조정(+)','I'],
-             ['출하','O'],['생산투입','O'],['불량폐기','O'],['반품출고','O'],['재고조정(-)','O']];
+             ['출하','O'],['생산투입','O'],['불량폐기','O'],['검사폐기','O'],['선별제외','O'],
+             ['반품출고','O'],['재고조정(-)','O']];
 const PARTY='SKF,현대트랜시스,일진글로벌,세동산업,진양오일씰,대흥알앤티,부강스프링';
 /* SKF씰 출하대기현황 보드(2026-08-25 08:00 조사) 추가 형번 — 품번,박스단위,재고박스,적정박스 */
 const ADDV='skfboard-20260825';
@@ -981,11 +987,13 @@ function applyCount(){
   const t=S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0);
   if(!t.length){toast('차이가 있는 실사 입력이 없습니다');return;}
   if(!confirm(t.length+'개 품목의 차이분을 '+d+' 재고조정 전표로 발행합니다.'))return;
-  const pk=$('cntKind').value;
+  const pk=$('cntKind').value, mk=$('cntKindM').value;
   t.forEach(it=>{
     const df=it.cnt*it.bx-calc(it).cur;
-    S.led.push({id:S.seq++,d,pn:it.pn,k:df>0?pk:'재고조정(-)',q:Math.abs(df),
-      p:'',lot:'',n:df>0&&pk==='생산입고'?'검사합격 일일등록':'재고실사 차이조정',by:S.user});
+    const k=df>0?pk:mk;
+    const nt=(k==='생산입고')?'검사합격 일일등록'
+            :(k==='검사폐기'||k==='선별제외')?'검사실 '+k+' 등록':'재고실사 차이조정';
+    S.led.push({id:S.seq++,d,pn:it.pn,k,q:Math.abs(df),p:'',lot:'',n:nt,by:S.user});
   });
   S.items.forEach(it=>it.cnt=null);
   save();render();toast(t.length+'건 조정전표가 발행되었습니다');
