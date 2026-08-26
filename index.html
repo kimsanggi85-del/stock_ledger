@@ -444,7 +444,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.5</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.7</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -927,7 +927,7 @@ const SEED=`1515-196,2000,5,24,2026-05-13
 1866-599,500,0,5,
 1GE0-0009-1,50,0,16,2026-06-04`;
 /* 수불 구분: [명칭, 입고I/출고O] — 제조현장 표준 */
-const KINDS=[['생산입고','I'],['구매입고','I'],['반품입고','I'],['재고조정(+)','I'],
+const KINDS=[['생산입고','I'],['검사입고','I'],['구매입고','I'],['반품입고','I'],['재고조정(+)','I'],
              ['출하','O'],['생산투입','O'],['불량폐기','O'],['검사폐기','O'],['선별제외','O'],
              ['반품출고','O'],['재고조정(-)','O']];
 const PARTY='SKF,현대트랜시스,일진글로벌,세동산업,진양오일씰,대흥알앤티,부강스프링';
@@ -1297,6 +1297,10 @@ function applyCount(){
   const t=S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0);
   if(!t.length){toast('차이가 있는 실사 입력이 없습니다');return;}
   if(!confirm(t.length+'개 품목의 차이분을 '+d+' 재고조정 전표로 발행합니다.'))return;
+  if(S.inspOn!==false&&S.inspQty!==false&&$('cntKind').value==='생산입고'){
+    if(!confirm('검사수량 자동연동이 켜져 있어 검사합격분은 이미 검사입고로 등록됩니다.\n실사 +차이까지 생산입고로 잡으면 이중 계상됩니다.\n\n[확인]을 누르면 재고조정(+)으로 발행합니다.'))return;
+    $('cntKind').value='재고조정(+)';
+  }
   let mk=$('cntKindM').value;
   if(S.inspOn!==false&&mk==='검사폐기'){
     if(!confirm('출하검사 연동이 켜져 있어 검사폐기는 자동 등록됩니다.\n실사 차이까지 검사폐기로 잡으면 이중 차감됩니다.\n\n[확인]을 누르면 재고조정(-)으로 발행합니다.'))return;
@@ -1322,11 +1326,17 @@ function rInsp(){
   const list=[...new Set([...(S.inspSeen||[]),...sel,...DEF_INSP_CUST.split(',')])].sort();
   const skip=S.inspSkip||{}, sk=Object.keys(skip);
   $('inspBox').innerHTML=
-   `<h4 style="display:flex;align-items:center;margin:0 0 6px">출하검사 불량 자동연동
+   `<h4 style="display:flex;align-items:center;margin:0 0 6px">출하검사 자동연동
       <label style="margin-left:auto;font-size:12px;font-weight:700;cursor:pointer">
         <input type="checkbox" id="inspOn" ${on?'checked':''} style="vertical-align:-2px"> 사용</label></h4>
-    <div class="hint" style="margin:0 0 8px">불량관리 시스템의 출하검사 불량수를 <b>검사폐기</b> 전표로 자동 등록합니다.
+    <div class="hint" style="margin:0 0 8px">불량관리 시스템의 출하검사 실적을 전표로 자동 등록합니다.
       체크한 고객사만 반영되고, 불량관리에서 수정·삭제하면 여기도 따라갑니다.</div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+      background:#F2F5F7;border-radius:7px;padding:9px 11px;margin-bottom:9px;cursor:pointer;
+      ${on?'':'opacity:.4;pointer-events:none'}">
+      <input type="checkbox" id="inspQty" ${S.inspQty!==false?'checked':''}>
+      검사수량도 <b style="color:var(--ok)">검사입고</b>로 등록
+      <span style="margin-left:auto;font-weight:400;color:var(--sub);font-size:11px">순증 = 합격수량</span></label>
     <div style="display:flex;flex-wrap:wrap;gap:6px;${on?'':'opacity:.4;pointer-events:none'}">
       ${list.map(c=>`<label class="chip ${sel.includes(c)?'on':''}" style="cursor:pointer">
         <input type="checkbox" class="ic" value="${esc(c)}" ${sel.includes(c)?'checked':''}
@@ -1347,6 +1357,7 @@ function rInsp(){
       </table></div>
       <div class="hint">품번을 고르면 별칭으로 등록되어 다음 연동부터 자동 반영됩니다.</div></div>`:''}`;
   $('inspOn').onchange=e=>{S.inspOn=e.target.checked;save();rInsp();if(e.target.checked)syncMes(false);};
+  if($('inspQty'))$('inspQty').onchange=e=>{S.inspQty=e.target.checked;save();rInsp();syncMes(false);};
   $('inspBox').querySelectorAll('.ic').forEach(c=>c.onchange=()=>{
     S.inspCust=[...$('inspBox').querySelectorAll('.ic')].filter(x=>x.checked).map(x=>x.value).join(',');
     save();rInsp();syncMes(false);});
@@ -1830,13 +1841,9 @@ async function syncInsp(){
   const cust=(S.inspCust===undefined?DEF_INSP_CUST:S.inspCust)
     .split(',').map(s=>s.trim()).filter(Boolean);
   if(!cust.length) return {n:0,skip:[]};
-  const [y,m]=ym.split('-').map(Number);
-  const d=new Date(y,m-4,1);
-  const since=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-01';
+  const since=syncSince();
   const hd={apikey:DF_KEY,Authorization:'Bearer '+DF_KEY};
-  const r=await fetch(DF_URL+'/rest/v1/defect_history?select=*&limit=5000',{headers:hd});
-  if(!r.ok) throw new Error('불량DB HTTP '+r.status);
-  const all=await r.json();
+  const all=await fetchAll(DF_URL+'/rest/v1/defect_history?select=*&order=id.asc',hd);
   const agg={}, skip={}, seen=new Set();
   all.forEach(x=>{
     const cu=String(x.customer||x.inspect_line||'').trim();
@@ -1844,21 +1851,41 @@ async function syncInsp(){
     if(!cust.includes(cu)) return;
     const dt=String(x.defect_date||x.recorded_at||'').slice(0,10);
     if(!dt||dt<since) return;
-    const q=+x.qty||0; if(q<=0) return;
+    const q=+x.qty||0;
+    const iq=+x.inspect_qty||0;
+    if(q<=0&&iq<=0) return;
     const pn=modelToPn(x.model_name);
     if(!pn||isExcl(pn)) return;
-    if(!S.items.some(i=>i.pn===pn)){skip[pn]=(skip[pn]||0)+q;return;}
+    if(!S.items.some(i=>i.pn===pn)){skip[pn]=(skip[pn]||0)+(q||iq);return;}
     const k=dt.replace(/-/g,'')+'|'+pn;
-    const a=agg[k]=agg[k]||{d:dt,pn,q:0,cu:new Set(),ty:{}};
-    a.q+=q; a.cu.add(cu);
-    const t=String(x.defect_type||'기타').trim();
-    a.ty[t]=(a.ty[t]||0)+q;
+    const a=agg[k]=agg[k]||{d:dt,pn,q:0,cu:new Set(),ty:{},ins:{}};
+    a.cu.add(cu);
+    if(q>0){
+      a.q+=q;
+      const t=String(x.defect_type||'기타').trim();
+      a.ty[t]=(a.ty[t]||0)+q;
+    }
+    /* 검사수량은 같은 검사건(라인·작업자)에서 행마다 반복 기록될 수 있어 최댓값만 취함 */
+    if(iq>0){
+      const g=(x.inspect_line||'')+'/'+(x.worker||'')+'/'+(x.side||'');
+      a.ins[g]=Math.max(a.ins[g]||0,iq);
+    }
   });
-  const recs=Object.entries(agg).map(([k,a])=>({
-    src_key:'INSP|'+k, led_date:a.d, pn:a.pn, kind:'검사폐기', qty:a.q,
-    party:[...a.cu].join(','), lot:'',
-    note:('출하검사 불량 '+Object.entries(a.ty).map(([t,v])=>t+':'+v).join(' / ')).slice(0,200),
-    by_name:'검사실', updated_at:new Date().toISOString()}));
+  const nowIso=new Date().toISOString(), qIn=S.inspQty!==false;
+  const recs=[];
+  Object.entries(agg).forEach(([k,a])=>{
+    const insQ=Object.values(a.ins).reduce((s,v)=>s+v,0);
+    if(a.q>0) recs.push({
+      src_key:'INSP|'+k, led_date:a.d, pn:a.pn, kind:'검사폐기', qty:a.q,
+      party:[...a.cu].join(','), lot:'',
+      note:('출하검사 불량 '+Object.entries(a.ty).map(([t,v])=>t+':'+v).join(' / ')).slice(0,200),
+      by_name:'검사실', updated_at:nowIso});
+    if(qIn&&insQ>0) recs.push({
+      src_key:'INSPQ|'+k, led_date:a.d, pn:a.pn, kind:'검사입고', qty:insQ,
+      party:[...a.cu].join(','), lot:'',
+      note:('출하검사 실적 '+nf(insQ)+' EA'+(a.q>0?' · 불량 '+nf(a.q)+' EA ('+(a.q/insQ*100).toFixed(2)+'%)':' · 불량 0')).slice(0,200),
+      by_name:'검사실', updated_at:nowIso});
+  });
   const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
   if(recs.length){
     const w=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?on_conflict=src_key',
@@ -1868,7 +1895,7 @@ async function syncInsp(){
   }
   /* 불량관리에서 삭제·수정된 건 정리 */
   const g=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?select=src_key&led_date=gte.'+since
-    +'&src_key=like.'+encodeURIComponent('INSP|*'),{headers:sh});
+    +'&src_key=like.'+encodeURIComponent('INSP*'),{headers:sh});
   if(g.ok){
     const cur=new Set(recs.map(x=>x.src_key));
     const stale=(await g.json()).map(x=>x.src_key).filter(k=>!cur.has(k));
@@ -1888,21 +1915,33 @@ function mesStat(t,col){const e=$('mesSt');e.textContent=t;e.style.color=col||'#
   const off=/안됨|실패/.test(t); $('tstMes').textContent=off?'MES Disconnected':'MES Connected';
   document.querySelector('.tst').classList.toggle('off',off); $('bsSt').textContent=t||'Ready';}
 setInterval(()=>{const d=new Date();$('clk').textContent=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());},1000);
+/* 전체 누적 기준일: 품목 기초일자 중 가장 이른 날 (없으면 2020-01-01) */
+function syncSince(){
+  const ds=S.items.map(i=>i.bd).filter(Boolean).sort();
+  return ds.length?ds[0]:'2020-01-01';
+}
+/* 5000건 초과분까지 모두 가져오는 페이지 조회 */
+async function fetchAll(url,hd,cap){
+  const out=[]; const step=5000; cap=cap||60000;
+  for(let off=0;off<cap;off+=step){
+    const r=await fetch(url+'&limit='+step+'&offset='+off,{headers:hd});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json(); out.push(...j);
+    if(j.length<step)break;
+  }
+  return out;
+}
 async function syncMes(silent){
   if(mesBusy)return; mesBusy=true;
   const btn=$('mesBtn'); btn.disabled=true;
   let inspInfo=null;
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{
-    /* 기준월 앞뒤로 넉넉히: 3개월 전 1일부터 */
-    const [y,m]=ym.split('-').map(Number);
-    const since=new Date(y,m-4,1);
-    const sinceIso=since.getFullYear()+'-'+p2(since.getMonth()+1)+'-01';
-    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE
-      +'?select=*&led_date=gte.'+sinceIso+'&order=led_date.asc&limit=5000',
-      {headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    let rows=await r.json();
+    /* 전체 누적: 기초일자 이후 전 기간 */
+    const sinceIso=syncSince();
+    let rows=await fetchAll(SB_URL+'/rest/v1/'+SB_TABLE
+      +'?select=*&led_date=gte.'+sinceIso+'&order=led_date.asc',
+      {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
     rows=rows.filter(x=>!isExcl(canonPn(x.pn)));
     let add=0,upd=0,del=0; const unk=new Set();
     const seen=new Set(rows.map(x=>x.src_key));
