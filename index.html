@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.3</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.4</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -304,8 +304,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="fld"><label>품번</label><input id="xPn" list="dlPn" autocomplete="off"><datalist id="dlPn"></datalist>
       <div class="hint" id="xInfo" style="margin-top:4px"></div></div>
     <div class="g2">
-      <div class="fld"><label>수량 (EA)</label><input type="number" id="xQ" inputmode="numeric"></div>
-      <div class="fld"><label>박스 환산</label><input type="number" id="xB" inputmode="numeric" placeholder="박스수 입력시 자동환산"></div>
+      <div class="fld"><label>수량 (박스)</label><input type="number" id="xB" inputmode="numeric" placeholder="박스수 입력"></div>
+      <div class="fld"><label>→ 수량 (EA, 자동·수정가능)</label><input type="number" id="xQ" inputmode="numeric"></div>
     </div>
     <div class="g2">
       <div class="fld"><label>거래처 / 호기</label><input id="xP" list="dlP"><datalist id="dlP"></datalist></div>
@@ -334,11 +334,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <div class="fld"><label>규격</label><input id="ySp" style="font-family:var(--sans)"></div></div>
     <div class="g3">
       <div class="fld"><label>단위</label><input id="yUn" value="EA"></div>
-      <div class="fld"><label>박스단위</label><input type="number" id="yBx"></div>
-      <div class="fld"><label>안전재고(EA)</label><input type="number" id="ySf"></div></div>
-    <div class="g2">
-      <div class="fld"><label>기초재고(EA)</label><input type="number" id="yBs"></div>
+      <div class="fld"><label>박스단위 (ea/박스)</label><input type="number" id="yBx"></div>
       <div class="fld"><label>기초일자</label><input type="date" id="yBd"></div></div>
+    <div class="g2">
+      <div class="fld"><label>안전재고 (박스)</label><input type="number" inputmode="numeric" id="ySfB" placeholder="박스수 입력"></div>
+      <div class="fld"><label>→ EA (자동, 수정가능)</label><input type="number" id="ySf"></div></div>
+    <div class="g2">
+      <div class="fld"><label>기초재고 (박스)</label><input type="number" inputmode="numeric" id="yBsB" placeholder="박스수 입력"></div>
+      <div class="fld"><label>→ EA (자동, 수정가능)</label><input type="number" id="yBs"></div></div>
     <div class="g2">
       <div class="fld"><label>고객사</label><input id="yCu" style="font-family:var(--sans)"></div>
       <div class="fld"><label>보관위치</label><input id="yLc" style="font-family:var(--sans)"></div></div>
@@ -905,7 +908,9 @@ function openIO(id){
   $('xId').value=r?r.id:'';
   $('xD').value=r?r.d:(ym===today().slice(0,7)?today():mEnd());
   $('xK').value=r?r.k:'생산입고';
-  $('xPn').value=r?r.pn:''; $('xQ').value=r?r.q:''; $('xB').value='';
+  $('xPn').value=r?r.pn:''; $('xQ').value=r?r.q:'';
+  {const it=r?S.items.find(x=>x.pn===r.pn):null;
+   $('xB').value=(r&&it&&it.bx)?+(r.q/it.bx).toFixed(2):'';}
   $('xP').value=r?(r.p||''):''; $('xL').value=r?(r.lot||''):''; $('xN').value=r?(r.n||''):'';
   $('xDel').style.display=r?'block':'none';
   xInfo(); $('mIO').classList.add('on');
@@ -932,6 +937,11 @@ function delIO(){
   if(!confirm('이 전표를 삭제할까요?'))return;
   S.led=S.led.filter(x=>x.id!==+$('xId').value);save();render();closeAll();toast('삭제되었습니다');
 }
+function wireBoxPair(bF,eF){
+  const bx=()=>+$('yBx').value||0;
+  $(bF).oninput=()=>{if(bx()&&$(bF).value!=='')$(eF).value=Math.round(+$(bF).value*bx());};
+  $(eF).oninput=()=>{$(bF).value=bx()&&$(eF).value!==''?+(+$(eF).value/bx()).toFixed(2):'';};
+}
 function openItem(i){
   const n=i<0, it=n?{pn:'',nm:'',sp:'',un:'EA',bx:'',sf:'',bs:0,bd:today(),cu:'',lc:'',wh:WH||'현장',al:''}:S.items[i];
   $('yWh').innerHTML=WHS.map(([v,nm,dp])=>`<option value="${v}">${nm} · ${dp}</option>`).join('');
@@ -940,6 +950,12 @@ function openItem(i){
   $('yIdx').value=i;
   [['yPn','pn'],['yNm','nm'],['ySp','sp'],['yUn','un'],['yBx','bx'],['ySf','sf'],['yBs','bs'],['yBd','bd'],['yCu','cu'],['yLc','lc'],['yAl','al']]
     .forEach(([f,k])=>$(f).value=it[k]==null?'':it[k]);
+  const bxv=+it.bx||0;
+  $('ySfB').value=bxv&&it.sf?+(it.sf/bxv).toFixed(2):'';
+  $('yBsB').value=bxv&&it.bs?+(it.bs/bxv).toFixed(2):'';
+  wireBoxPair('ySfB','ySf'); wireBoxPair('yBsB','yBs');
+  $('yBx').oninput=()=>{[['ySfB','ySf'],['yBsB','yBs']].forEach(([f,e])=>{
+    if($(f).value!==''&&+$('yBx').value)$(e).value=Math.round(+$(f).value*+$('yBx').value);});};
   $('yDel').style.display=n?'none':'block';
   $('mIt').classList.add('on');
 }
@@ -1393,7 +1409,9 @@ $('binPn').onchange=rBin;
 $('cntD').onchange=()=>$('i4').textContent=$('cntD').value;
 $('xPn').oninput=xInfo;
 $('xB').oninput=()=>{const it=S.items.find(x=>x.pn===$('xPn').value.trim());
-  if(it&&it.bx&&$('xB').value!=='')$('xQ').value=(+$('xB').value||0)*it.bx;};
+  if(it&&it.bx&&$('xB').value!=='')$('xQ').value=Math.round((+$('xB').value||0)*it.bx);};
+$('xQ').oninput=()=>{const it=S.items.find(x=>x.pn===$('xPn').value.trim());
+  $('xB').value=(it&&it.bx&&$('xQ').value!=='')?+((+$('xQ').value||0)/it.bx).toFixed(2):'';};
 $('tCnt').addEventListener('change',e=>{
   if(e.target.tagName!=='INPUT')return;
   const it=S.items[+e.target.dataset.i];
