@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.2</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.3</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -275,6 +275,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <button class="btn" onclick="pick('fCsv')">CSV 일괄등록</button>
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
     <input id="cfgQ" placeholder="품번 검색" style="width:160px">
+    <label style="margin-left:8px">관리제외</label>
+    <input id="cfgEx" placeholder="품번 쉼표구분, * 가능 (예: 54610-*)" style="width:230px"
+      title="여기 등록된 품번(패턴)은 품목대장·전표에서 제외되고 MES/출하 유입도 차단됩니다. 적용은 입력 후 Enter">
     <div class="rt">
       <button class="btn" onclick="backup()">백업</button>
       <button class="btn" onclick="pick('fBk')">복원</button>
@@ -589,6 +592,19 @@ let S={user:'',items:[],led:[],seq:1,party:PARTY.split(',')};
 let tab='sum', ym='', F='all', C='all', WH='';
 const inWh=it=>!WH||(it.wh||'현장')===WH;
 const whOf=pn=>{const i=S.items.find(x=>x.pn===pn);return i?(i.wh||'현장'):'현장';};
+/* 관리제외 품번: 목록에 있으면 마스터·전표에서 제외하고 유입도 차단 ( * 접두 와일드카드 ) */
+const DEF_EXCL='54610-*,IW/OW-*';
+function isExcl(pn){
+  const k=String(pn||'').trim();
+  return (S.excl||'').split(',').map(s=>s.trim()).filter(Boolean)
+    .some(pat=>pat.endsWith('*')?k.toUpperCase().startsWith(pat.slice(0,-1).toUpperCase()):k===pat);
+}
+function purgeExcl(){
+  const bi=S.items.length, bl=S.led.length;
+  S.items=S.items.filter(it=>!isExcl(it.pn));
+  S.led=S.led.filter(r=>!isExcl(r.pn));
+  return {i:bi-S.items.length, l:bl-S.led.length};
+}
 /* 별칭 → 대표품번 정규화 (전표 유입 시 적용) */
 function canonPn(pn){
   const k=String(pn||'').trim(); if(!k)return k;
@@ -617,6 +633,8 @@ function load(){
   mergeAdd();
   const BOARD=new Set(ADD.trim().split('\n').map(l=>l.split(',')[0].trim()));
   S.items.forEach(it=>{if(!it.wh)it.wh=BOARD.has(it.pn)?'출하대기':'현장';});
+  if(S.excl===undefined)S.excl=DEF_EXCL;
+  purgeExcl();
   if(S.alv!==ALV){
     Object.entries(DEF_ALIAS).forEach(([pn,als])=>{
       const it=S.items.find(x=>x.pn===pn); if(!it)return;
@@ -1176,7 +1194,7 @@ function buildRecs(){
   const out=[];
   for(let i=IMP.hdr+1;i<IMP.grid.length;i++){
     const r=IMP.grid[i]||[];if(!r.some(x=>String(x).trim()))continue;
-    const pn=canonPn(r[m.pn]);if(!pn)continue;
+    const pn=canonPn(r[m.pn]);if(!pn||isExcl(pn))continue;
     const d=xdate(r[m.d]);
     const it=S.items.find(x=>x.pn===pn);
     const cv=q=>U==='BOX'?q*((it&&it.bx)||0):q;
@@ -1306,7 +1324,8 @@ async function syncMes(silent){
       +'?select=*&led_date=gte.'+sinceIso+'&order=led_date.asc&limit=5000',
       {headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const rows=await r.json();
+    let rows=await r.json();
+    rows=rows.filter(x=>!isExcl(canonPn(x.pn)));
     let add=0,upd=0,del=0; const unk=new Set();
     const seen=new Set(rows.map(x=>x.src_key));
     /* 원천(MES·출하의뢰서)에서 삭제·정정된 전표는 수불부에서도 제거 (조회범위 내) */
@@ -1359,6 +1378,16 @@ $('whSel').onchange=e=>{WH=e.target.value;render();};
 $('ym').onchange=()=>{ym=$('ym').value;$('i1').textContent=ym;
   $('ioF').value=mStart();$('ioT').value=mEnd();render();};
 $('fq').oninput=rSum; $('cfgQ').oninput=rCfg; $('cntQ').oninput=rCnt;
+$('cfgEx').onchange=e=>{
+  const old=S.excl; S.excl=e.target.value.trim();
+  const t=purgeExcl();
+  if(t.i||t.l){
+    if(!confirm('관리제외 적용: 품목 '+t.i+'건, 전표 '+t.l+'건이 화면에서 제외됩니다.\n(목록에서 패턴을 지우면 다음 동기화 때 복원됩니다)')){
+      S.excl=old; e.target.value=old||''; return;
+    }
+  }
+  save(); render(); toast('관리제외 '+(t.i+t.l?'적용: 품목 '+t.i+' / 전표 '+t.l:'목록 저장됨'));
+};
 $('binPn').onchange=rBin;
 ['ioF','ioT','ioQ','ioK'].forEach(i=>{$(i).oninput=rIo;$(i).onchange=rIo;});
 $('cntD').onchange=()=>$('i4').textContent=$('cntD').value;
@@ -1391,7 +1420,8 @@ function render(){
 }
 function init(){
   ym=ym||today().slice(0,7);
-  $('whSel').value=WH;$('ym').value=ym;$('i1').textContent=ym;$('i2').textContent=S.user||'-';
+  $('whSel').value=WH;$('ym').value=ym;$('i1').textContent=ym;
+  $('cfgEx').value=S.excl||'';$('i2').textContent=S.user||'-';
   $('ioF').value=mStart();$('ioT').value=mEnd();
   $('cntD').value=today();$('i4').textContent=today();
   $('xK').innerHTML=KINDS.map(([k,io])=>`<option value="${k}">${io==='I'?'▲ 입고':'▼ 출고'} · ${k}</option>`).join('');
