@@ -444,7 +444,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.8</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v5.9</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -594,6 +594,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
     <input id="cfgQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label style="margin-left:8px">관리제외</label>
+    <label style="margin-left:8px">기초일자 일괄</label>
+    <input type="date" id="cfgBd" style="width:140px" title="전 품목의 기초일자를 한 번에 변경합니다">
+    <button class="btn" onclick="bulkBd()" title="기초일자 이전 전표는 계산에서 제외됩니다">적용</button>
     <input id="cfgEx" placeholder="품번 쉼표구분, * 가능 (예: 54610-*)" style="width:230px"
       title="여기 등록된 품번(패턴)은 품목대장·전표에서 제외되고 MES/출하 유입도 차단됩니다. 적용은 입력 후 Enter">
     <div class="rt">
@@ -1320,6 +1323,17 @@ function applyCount(){
 function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
 
 /* ═══════ 품목대장 ═══════ */
+function bulkBd(){
+  const d=$('cfgBd').value;
+  if(!d){toast('날짜를 선택하세요');return;}
+  const t=S.items.filter(inWh);
+  const cnt=S.led.filter(r=>r.d<=d&&t.some(i=>i.pn===r.pn)).length;
+  if(!confirm('기초일자를 '+d+' 로 변경합니다 ('+t.length+'품목)\n\n'
+    +'· 이 날짜 이전 전표 '+cnt+'건은 계산에서 제외됩니다\n'
+    +'· 기초재고 수량은 그대로 유지됩니다\n\n계속하시겠습니까?'))return;
+  t.forEach(i=>i.bd=d); save(); render();
+  toast(t.length+'품목 기초일자 → '+d);
+}
 function rInsp(){
   const on=S.inspOn!==false;
   const sel=(S.inspCust===undefined?DEF_INSP_CUST:S.inspCust).split(',').map(s=>s.trim()).filter(Boolean);
