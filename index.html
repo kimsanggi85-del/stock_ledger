@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.0</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.2</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -180,7 +180,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="sum">
     <div><span>관리품목</span><b id="q1">0</b><em>품목</em></div>
     <div class="g"><span>당월 입고</span><b id="q2">0</b><em>EA</em></div>
-    <div class="d"><span>당월 출고</span><b id="q3">0</b><em>EA</em></div>
+    <div class="d"><span>당월 납품(출하)</span><b id="q3">0</b><em>EA</em></div>
     <div><span>현재고</span><b id="q4">0</b><em>EA</em></div>
     <div class="d"><span>안전재고 미달</span><b id="q5">0</b><em>품목</em></div>
     <div class="w"><span>장기 미불출</span><b id="q6">0</b><em>품목</em></div>
@@ -339,6 +339,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>고객사</label><input id="yCu" style="font-family:var(--sans)"></div>
       <div class="fld"><label>보관위치</label><input id="yLc" style="font-family:var(--sans)"></div></div>
+    <div class="fld"><label>품번 별칭 (출하앱·MES 표기가 다를 때, 쉼표 구분)</label>
+      <input id="yAl" placeholder="예) 1856-627(628)-1"></div>
     <button class="btn k" style="width:100%;padding:11px" onclick="saveItem()">저장</button>
     <button class="btn r" id="yDel" style="width:100%;padding:11px;margin-top:6px" onclick="delItem()">삭제</button>
   </div>
@@ -514,6 +516,14 @@ const KINDS=[['생산입고','I'],['구매입고','I'],['반품입고','I'],['�
 const PARTY='SKF,현대트랜시스,일진글로벌,세동산업,진양오일씰,대흥알앤티,부강스프링';
 /* SKF씰 출하대기현황 보드(2026-08-25 08:00 조사) 추가 형번 — 품번,박스단위,재고박스,적정박스 */
 const ADDV='skfboard-20260825';
+/* 품번 별칭 기본값: 대표품번 ← [출하앱/MES 표기들]. 품목대장에서 수정 가능 */
+const DEF_ALIAS={
+ '1856-628-1':['1856-627(628)-1'],
+ '1856-627-2':['1856-627(628)-2'],
+ '1858-618-1':['1858-618'],
+ '1958-365-2':['1958-365-2(2호)']
+};
+const ALV='alias-20260826';
 const ADD=`1853-515-2,1000,4,7
 1858-619-2,1000,4,7
 1965-326-2,500,53,14
@@ -579,6 +589,15 @@ let S={user:'',items:[],led:[],seq:1,party:PARTY.split(',')};
 let tab='sum', ym='', F='all', C='all', WH='';
 const inWh=it=>!WH||(it.wh||'현장')===WH;
 const whOf=pn=>{const i=S.items.find(x=>x.pn===pn);return i?(i.wh||'현장'):'현장';};
+/* 별칭 → 대표품번 정규화 (전표 유입 시 적용) */
+function canonPn(pn){
+  const k=String(pn||'').trim(); if(!k)return k;
+  for(const it of S.items){
+    if(it.pn===k)return k;
+    if(it.al&&it.al.split(',').some(a=>a.trim()===k))return it.pn;
+  }
+  return k;
+}
 
 const p2=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());};
@@ -598,6 +617,15 @@ function load(){
   mergeAdd();
   const BOARD=new Set(ADD.trim().split('\n').map(l=>l.split(',')[0].trim()));
   S.items.forEach(it=>{if(!it.wh)it.wh=BOARD.has(it.pn)?'출하대기':'현장';});
+  if(S.alv!==ALV){
+    Object.entries(DEF_ALIAS).forEach(([pn,als])=>{
+      const it=S.items.find(x=>x.pn===pn); if(!it)return;
+      const cur=(it.al||'').split(',').map(s=>s.trim()).filter(Boolean);
+      als.forEach(a=>{if(!cur.includes(a))cur.push(a);});
+      it.al=cur.join(',');
+    });
+    S.alv=ALV; save();
+  }
 }
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('저장 공간 부족');}};
 
@@ -608,12 +636,13 @@ const dlt=r=>kindIO(r.k)==='I'?r.q:-r.q;
 
 function calc(it){
   const a=mStart(), b=mEnd();
-  let open=it.bs, iq=0, oq=0, last='';
+  let open=it.bs, iq=0, oq=0, sq=0, last='';
   S.led.forEach(r=>{
     if(r.pn!==it.pn||r.d<=it.bd) return;
     if(r.d<a){ open+=dlt(r); return; }
     if(r.d>b) return;
     if(kindIO(r.k)==='I') iq+=r.q; else oq+=r.q;
+    if(r.k==='출하') sq+=r.q;
     if(r.d>last) last=r.d;
   });
   const cur=open+iq-oq;
@@ -622,7 +651,7 @@ function calc(it){
   const doi=dayOut>0?cur/dayOut:null;
   const avg=(open+cur)/2;
   const trn=avg>0?oq/avg:0;
-  return {open,iq,oq,cur,gap:cur-it.sf,doi,trn,last,box:it.bx?Math.floor(cur/it.bx):0};
+  return {open,iq,oq,sq,cur,gap:cur-it.sf,doi,trn,last,box:it.bx?Math.floor(cur/it.bx):0};
 }
 /* 전체 기간 기준 최종 출고일 (장기 미불출 판정) */
 function lastOut(it){
@@ -635,12 +664,12 @@ function isDead(it){
 }
 
 /* ═══════ 총괄표 ═══════ */
-const SH=['No','구분','품번','품명','규격','단위','전월이월','당월입고','당월출고','현재고','박스','안전재고','과부족','재고일수','회전율','최종수불','비고'];
+const SH=['No','구분','품번','품명','규격','단위','전월이월','당월입고','당월출하(납품)','기타출고','현재고','박스','안전재고','과부족','재고일수','회전율','최종수불','비고'];
 function rSum(){
   const q=$('fq').value.trim().toLowerCase();
   let T={o:0,i:0,u:0,c:0}, nShort=0, nDead=0;
   const rows=S.items.filter(inWh).map(it=>({it,v:calc(it)}));
-  rows.forEach(({it,v})=>{T.o+=v.open;T.i+=v.iq;T.u+=v.oq;T.c+=v.cur;
+  rows.forEach(({it,v})=>{T.o+=v.open;T.i+=v.iq;T.u+=v.sq;T.c+=v.cur;
     if(v.gap<0)nShort++; if(isDead(it))nDead++;});
   const R=rows.filter(({it,v})=>{
     if(q&&!(it.pn+' '+it.nm).toLowerCase().includes(q))return false;
@@ -653,10 +682,10 @@ function rSum(){
   $('q1').textContent=nf(rows.length);$('q2').textContent=nf(T.i);$('q3').textContent=nf(T.u);
   $('q4').textContent=nf(T.c);$('q5').textContent=nf(nShort);$('q6').textContent=nf(nDead);
 
-  let s=0,e=0,f=0,g=0;
+  let s=0,e=0,f=0,f2=0,g=0;
   $('tSum').innerHTML=`<thead><tr>${SH.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>`
    +(R.length?R.map(({it,v},i)=>{
-      s+=v.open;e+=v.iq;f+=v.oq;g+=v.cur;
+      s+=v.open;e+=v.iq;f+=v.sq;f2+=v.oq-v.sq;g+=v.cur;
       return `<tr>
        <td class="c">${i+1}</td>
        <td class="c" style="font-family:var(--sans);font-size:10.5px">${esc(whNm(it.wh))}</td>
@@ -666,7 +695,8 @@ function rSum(){
        <td class="c">${esc(it.un)}</td>
        <td>${nf(v.open)}</td>
        <td class="${v.iq?'pos':''}">${v.iq?nf(v.iq):'-'}</td>
-       <td class="${v.oq?'neg':''}">${v.oq?nf(v.oq):'-'}</td>
+       <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}</td>
+       <td class="${v.oq-v.sq?'wn':''}">${v.oq-v.sq?nf(v.oq-v.sq):'-'}</td>
        <td style="font-weight:700">${nf(v.cur)}</td>
        <td>${v.box}</td>
        <td>${nf(it.sf)}</td>
@@ -675,9 +705,9 @@ function rSum(){
        <td>${v.trn?v.trn.toFixed(2):'-'}</td>
        <td class="c">${v.last||'-'}</td>
        <td class="c ${isDead(it)?'wn':''}">${isDead(it)?'장기미불출':''}</td></tr>`;
-    }).join(''):`<tr><td colspan="17" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
+    }).join(''):`<tr><td colspan="18" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}품목)</td>
-     <td>${nf(s)}</td><td>${nf(e)}</td><td>${nf(f)}</td><td>${nf(g)}</td>
+     <td>${nf(s)}</td><td>${nf(e)}</td><td>${nf(f)}</td><td>${nf(f2)}</td><td>${nf(g)}</td>
      <td colspan="7"></td></tr></tfoot>`;
 }
 
@@ -833,7 +863,7 @@ function rCfg(){
      <td class="c">${i+1}</td>
      <td class="c" style="padding:0"><select class="whs" data-i="${i}">${WHS.map(([v,n])=>
        `<option value="${v}" ${(it.wh||'현장')===v?'selected':''}>${n}</option>`).join('')}</select></td>
-     <td class="l" style="font-weight:700;cursor:pointer" onclick="openItem(${i})">${esc(it.pn)}</td>
+     <td class="l" style="font-weight:700;cursor:pointer" onclick="openItem(${i})">${esc(it.pn)}${it.al?'<div style="font-size:9px;color:#888;font-weight:400">별칭 '+esc(it.al)+'</div>':''}</td>
      <td class="l"><input class="l" data-i="${i}" data-f="nm" value="${esc(it.nm)}"></td>
      <td class="l"><input class="l" data-i="${i}" data-f="sp" value="${esc(it.sp)}"></td>
      <td class="c">${esc(it.un)}</td>
@@ -885,13 +915,13 @@ function delIO(){
   S.led=S.led.filter(x=>x.id!==+$('xId').value);save();render();closeAll();toast('삭제되었습니다');
 }
 function openItem(i){
-  const n=i<0, it=n?{pn:'',nm:'',sp:'',un:'EA',bx:'',sf:'',bs:0,bd:today(),cu:'',lc:'',wh:WH||'현장'}:S.items[i];
+  const n=i<0, it=n?{pn:'',nm:'',sp:'',un:'EA',bx:'',sf:'',bs:0,bd:today(),cu:'',lc:'',wh:WH||'현장',al:''}:S.items[i];
   $('yWh').innerHTML=WHS.map(([v,nm,dp])=>`<option value="${v}">${nm} · ${dp}</option>`).join('');
   $('yWh').value=it.wh||'현장';
   $('itT').firstChild.textContent=n?'품목 등록':'품목 수정';
   $('yIdx').value=i;
-  [['yPn','pn'],['yNm','nm'],['ySp','sp'],['yUn','un'],['yBx','bx'],['ySf','sf'],['yBs','bs'],['yBd','bd'],['yCu','cu'],['yLc','lc']]
-    .forEach(([f,k])=>$(f).value=it[k]);
+  [['yPn','pn'],['yNm','nm'],['ySp','sp'],['yUn','un'],['yBx','bx'],['ySf','sf'],['yBs','bs'],['yBd','bd'],['yCu','cu'],['yLc','lc'],['yAl','al']]
+    .forEach(([f,k])=>$(f).value=it[k]==null?'':it[k]);
   $('yDel').style.display=n?'none':'block';
   $('mIt').classList.add('on');
 }
@@ -900,7 +930,8 @@ function saveItem(){
   if(!pn){toast('품번을 입력하세요');return;}
   const o={pn,nm:$('yNm').value.trim(),sp:$('ySp').value.trim(),un:$('yUn').value.trim()||'EA',
     bx:+$('yBx').value||0,sf:+$('ySf').value||0,bs:+$('yBs').value||0,bd:$('yBd').value||today(),
-    cu:$('yCu').value.trim(),lc:$('yLc').value.trim(),wh:$('yWh').value};
+    cu:$('yCu').value.trim(),lc:$('yLc').value.trim(),wh:$('yWh').value,
+    al:$('yAl').value.trim()};
   if(i<0)S.items.push(Object.assign({cnt:null},o)); else Object.assign(S.items[i],o);
   S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
   save();render();closeAll();toast('저장되었습니다');
@@ -920,7 +951,7 @@ function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
 function sumRows(){
   return S.items.filter(inWh).map((it,i)=>{const v=calc(it);
-    return [i+1,whNm(it.wh),it.pn,it.nm,it.sp,it.un,v.open,v.iq,v.oq,v.cur,v.box,it.sf,v.gap,
+    return [i+1,whNm(it.wh),it.pn,it.nm,it.sp,it.un,v.open,v.iq,v.sq,v.oq-v.sq,v.cur,v.box,it.sf,v.gap,
       v.doi===null?'':+v.doi.toFixed(1),v.trn?+v.trn.toFixed(2):'',v.last,isDead(it)?'장기미불출':''];});
 }
 const IH=['일자','구분','품번','품명','거래처/호기','LOT No.','입고','출고','비고','작성자'];
@@ -1145,7 +1176,7 @@ function buildRecs(){
   const out=[];
   for(let i=IMP.hdr+1;i<IMP.grid.length;i++){
     const r=IMP.grid[i]||[];if(!r.some(x=>String(x).trim()))continue;
-    const pn=String(r[m.pn]??'').trim();if(!pn)continue;
+    const pn=canonPn(r[m.pn]);if(!pn)continue;
     const d=xdate(r[m.d]);
     const it=S.items.find(x=>x.pn===pn);
     const cv=q=>U==='BOX'?q*((it&&it.bx)||0):q;
@@ -1285,11 +1316,11 @@ async function syncMes(silent){
     }
     rows.forEach(x=>{
       if(!x.pn||!x.led_date||!x.kind)return;
-      const o={d:x.led_date,pn:String(x.pn).trim(),k:x.kind,q:+x.qty||0,
+      const o={d:x.led_date,pn:canonPn(x.pn),k:x.kind,q:+x.qty||0,
                p:x.party||'',lot:x.lot||'',n:x.note||'',by:x.by_name||'MES',src:x.src_key};
       const ex=S.led.find(l=>l.src===x.src_key);
       if(ex){
-        if(ex.q!==o.q||ex.d!==o.d||ex.k!==o.k||ex.n!==o.n){Object.assign(ex,o);upd++;}
+        if(ex.q!==o.q||ex.d!==o.d||ex.k!==o.k||ex.n!==o.n||ex.pn!==o.pn){Object.assign(ex,o);upd++;}
       }else{
         S.led.push(Object.assign({id:S.seq++},o));add++;
       }
