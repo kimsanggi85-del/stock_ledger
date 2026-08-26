@@ -165,7 +165,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .fld input,.fld select{padding:12px;font-size:16px}
 }
 .ham{display:none;margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
-  color:#fff;border-radius:6px;width:40px;height:36px;font-size:19px;cursor:pointer;flex:0 0 auto}
+  border-radius:6px;width:42px;height:38px;cursor:pointer;flex:0 0 auto;
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0}
+.ham i{display:block;width:18px;height:2.5px;background:#fff;border-radius:2px}
 .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
 .scrim.on{display:block}
 #tbTools{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
@@ -174,7 +176,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   font-weight:800;color:var(--hd);cursor:pointer;font-family:var(--sans);flex:0 0 auto}
 @media(max-width:760px){
   .tb{flex-wrap:nowrap;gap:8px;align-items:center}
-  .ham{display:flex;align-items:center;justify-content:center}
+  .ham{display:flex}
   #tbNow{display:inline;color:#9FD8FF;font-weight:700}
   #tbTools{position:fixed;top:0;right:0;bottom:0;width:80%;max-width:310px;background:#fff;
     z-index:80;flex-direction:column;align-items:stretch;gap:9px;padding:16px 14px;flex-wrap:nowrap;
@@ -190,6 +192,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     background:#F2F5F7;border-radius:6px;padding:7px}
   #tbTools::before{content:"메뉴";font-size:13px;font-weight:800;color:var(--hd);
     border-bottom:2px solid var(--hd);padding-bottom:7px;margin-bottom:2px}
+  #dTabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px}
+  #dTabs button{padding:13px 4px;font-size:13.5px;font-weight:800;border:1.5px solid var(--line);
+    background:#F7F9FB;border-radius:9px;color:var(--ink);font-family:var(--sans)}
+  #dTabs button.on{background:var(--hd);color:#fff;border-color:var(--hd)}
+  .tabs{display:none!important}
+  body{padding-bottom:12px}
+  .fab{bottom:16px}
 }
 /* 모바일 카드 */
 .mc{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px 10px 15px;
@@ -252,9 +261,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.4</b><span id="tbNow"></span></small></div>
-  <button class="ham" onclick="tglDrawer()" aria-label="메뉴">☰</button>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.5</b><span id="tbNow"></span></small></div>
+  <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
   <div id="tbTools">
+    <div id="dTabs"></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -1799,10 +1809,18 @@ function mcIo(r){
 }
 window.addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(render,250);});
 
+function rDTabs(){
+  const el=$('dTabs'); if(!el)return;
+  const cur=document.querySelector('.tabs div.on');
+  const t=cur?cur.dataset.t:'sum';
+  el.innerHTML=[['sum','📊 총괄표'],['bin','📒 수불부'],['io','↔ 입출고'],['cnt','✅ 실사'],['cfg','⚙ 품목']]
+    .map(([k,n])=>`<button class="${k===t?'on':''}" onclick="setTab('${k}')">${n}</button>`).join('');
+}
 function tglDrawer(f){
   const t=$('tbTools'), s=$('scrim');
   const on=f===0?false:!t.classList.contains('open');
   t.classList.toggle('open',on); s.classList.toggle('on',on);
+  if(on)rDTabs();
 }
 /* 검색: 하이픈·공백 무시 + 숫자/문자 키패드 전환 */
 const nz=s=>String(s||'').toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
