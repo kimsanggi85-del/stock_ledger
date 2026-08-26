@@ -446,7 +446,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.5</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -567,6 +567,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <select id="cSel" class="fsel"><option value="all">전체</option><option value="in">입력분</option><option value="diff">차이발생</option></select>
     <div class="rt">
       <button class="btn g" onclick="applyCount()">차이 조정전표 발행</button>
+      <button class="btn" onclick="exportCnt()">⬇ 실사표 내려받기</button>
       <button class="btn" onclick="pick('fCnt')" style="background:#5B4B8A;color:#fff;border-color:#5B4B8A">📄 실사 CSV 불러오기</button>
       <input type="file" id="fCnt" accept=".csv,.txt" style="display:none">
       <button class="btn" onclick="clearCount()">실사값 지우기</button></div>
@@ -1621,6 +1622,18 @@ function exportXls(){
   dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel;charset=utf-8'}),'재고수불부_'+ym.replace('-','')+'.xls');
   toast('엑셀 파일이 저장되었습니다');
 }
+/* 실사표 내려받기 — 현장에서 [실사박스] 칸만 채워 다시 불러오면 됨 */
+function exportCnt(){
+  const R=S.items.filter(inWh).filter(i=>!isExcl(i.pn));
+  const head=['품번','실사박스','품명','보관위치','박스단위','전산(박스)','전산재고(EA)'];
+  const rows=R.map(it=>{const v=calc(it);
+    return [it.pn, (it.cnt==null?'':it.cnt), it.nm||'', it.lc||'', it.bx||0,
+            it.bx?Math.floor(v.cur/it.bx):0, v.cur];});
+  const c=[head,...rows].map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  dl(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}),
+     '재고실사표_'+(WH?whNm(WH):'전체')+'_'+($('cntD').value||today()).replace(/-/g,'')+'.csv');
+  toast(rows.length+'품목 실사표를 내려받았습니다');
+}
 function exportCsv(k){
   const [h,r]=k==='sum'?[SH,sumRows()]:[IH,ioRows()];
   const c=[h,...r].map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
@@ -2275,7 +2288,7 @@ const SUB={
   sum:[['🔄','조회','render()','pri'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
-  cnt:[['✅','조정전표발행','applyCount()','pri'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
+  cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
