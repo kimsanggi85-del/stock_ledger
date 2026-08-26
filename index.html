@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.5</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.6</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -253,6 +253,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="chip" data-c="diff">차이발생</div>
     <div class="rt">
       <button class="btn g" onclick="applyCount()">차이 조정전표 발행</button>
+      <button class="btn" onclick="openOcr()" style="background:#5B4B8A;color:#fff;border-color:#5B4B8A">📷 현황판 사진인식</button>
       <button class="btn" onclick="clearCount()">실사값 지우기</button></div>
   </div>
   <div class="sum" style="grid-template-columns:repeat(4,1fr)">
@@ -416,6 +417,21 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
     <div class="hint">· 한 행에 생산수량과 출고수량이 같이 있으면 <b>각각 별도 전표</b>로 생성됩니다. 불량수량은 불량폐기 출고로 처리됩니다.<br>
     · <b>.xlsx / .xlsm</b>(매크로 통합문서) 모두 그대로 올리시면 됩니다. 시트가 여러 개면 자동으로 데이터가 가장 많은 시트를 잡고, 위에서 바꿀 수 있습니다.<br>· 구형 <b>.xls</b>만 지원되지 않습니다 — 엑셀에서 <b>.xlsx</b>로 저장하거나 셀을 복사해 붙여넣기 하세요. CSV의 한글 인코딩(UTF-8/CP949)은 자동 판별합니다.</div>
+  </div>
+</div></div>
+
+<div class="mask" id="mOcr"><div class="modal" style="max-width:820px">
+  <h3>현황판 사진으로 재고 입력<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <button class="btn k" style="width:100%;padding:12px" onclick="pick('fOcr')">📷 현황판 사진 촬영 / 선택</button>
+    <input type="file" id="fOcr" accept="image/*" capture="environment" style="display:none">
+    <div id="ocrMsg" style="margin:9px 0"></div>
+    <div class="scroll" id="ocrPrev" style="max-height:340px;overflow-y:auto"></div>
+    <button class="btn g" id="ocrApply" style="width:100%;padding:12px;margin-top:10px;display:none"
+      onclick="applyOcr()">체크한 행을 실사표에 입력</button>
+    <div class="hint">· 손글씨 판독은 오차가 있을 수 있습니다. <b>노란 배경 행은 판독이 불확실</b>하니 반드시 확인하고 수정하세요.<br>
+    · 실사표에 값만 채워지며, 재고는 <b>[차이 조정전표 발행]</b>을 눌러야 반영됩니다.<br>
+    · 현황판 전체가 기울어지지 않게, 글씨가 선명하게 나오도록 촬영하세요. 열이 많으면 나눠서 여러 장 촬영하면 정확도가 올라갑니다.</div>
   </div>
 </div></div>
 
@@ -1383,6 +1399,91 @@ async function syncMes(silent){
   btn.disabled=false; mesBusy=false;
 }
 setInterval(()=>syncMes(true),SYNC_MIN*60*1000);
+
+
+/* ═══════ 현황판 사진 인식 (Claude Vision) ═══════ */
+let OCRrows=[];
+function openOcr(){
+  OCRrows=[]; $('ocrPrev').innerHTML=''; $('ocrMsg').textContent='';
+  $('ocrApply').style.display='none';
+  $('mOcr').classList.add('on');
+}
+$('fOcr').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return; e.target.value='';
+  const msg=$('ocrMsg');
+  msg.innerHTML='<span class="ipill w">사진 분석 중… 20초 정도 걸립니다</span>';
+  $('ocrPrev').innerHTML=''; $('ocrApply').style.display='none';
+  try{
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();
+      r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+    const known=S.items.filter(inWh).map(i=>i.pn);
+    const sys='당신은 제조현장 재고 화이트보드를 판독하는 도구입니다. JSON 배열만 출력하고 다른 말은 하지 마세요.';
+    const prompt=
+      '이 사진은 공장의 출하대기재고 현황판입니다. 표에서 각 행의 [품번, 박스단위, 재고수량, 적정재고]를 읽으세요.\n'
+      +'- 재고수량과 적정재고는 손글씨일 수 있습니다. 숫자만 추출하세요.\n'
+      +'- 칸이 비어 있으면 null 로 두세요.\n'
+      +'- 여러 열(블록)로 나뉘어 있으면 모두 읽으세요.\n'
+      +'- 판독이 불확실한 값은 conf 를 "low" 로 표시하세요.\n'
+      +'참고: 등록된 품번 목록 = '+JSON.stringify(known.slice(0,200))+'\n'
+      +'품번이 목록과 비슷하면 목록의 표기로 맞추세요.\n'
+      +'출력 형식(JSON 배열만): [{"pn":"1853-515-2","box":1000,"qty":4,"std":7,"conf":"high"}]';
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,system:sys,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:b64}},
+          {type:'text',text:prompt}]}]})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const txt=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    const m=txt.match(/\[[\s\S]*\]/);
+    if(!m) throw new Error('판독 결과를 해석하지 못했습니다');
+    OCRrows=JSON.parse(m[0]).map(x=>({
+      pn:canonPn(x.pn), box:+x.box||0, qty:(x.qty==null?null:+x.qty),
+      std:(x.std==null?null:+x.std), conf:x.conf||'high'}))
+      .filter(x=>x.pn&&!isExcl(x.pn));
+    drawOcr();
+  }catch(err){ msg.innerHTML='<span class="ipill r">인식 실패: '+esc(err.message)+'</span>'; }
+};
+function drawOcr(){
+  const n=OCRrows.length, low=OCRrows.filter(x=>x.conf==='low').length;
+  const unk=OCRrows.filter(x=>!S.items.some(i=>i.pn===x.pn)).length;
+  $('ocrMsg').innerHTML='<span class="ipill g">'+n+'행 인식</span>'
+    +(low?'<span class="ipill w">불확실 '+low+'행 — 반드시 확인</span>':'')
+    +(unk?'<span class="ipill r">미등록 품번 '+unk+'행</span>':'');
+  $('ocrPrev').innerHTML='<table class="t"><thead><tr><th>품번</th><th>박스단위</th>'
+    +'<th>현재고(박스)</th><th>사진 판독</th><th>적용</th></tr></thead><tbody>'
+    +OCRrows.map((x,i)=>{
+      const it=S.items.find(y=>y.pn===x.pn);
+      const cur=it?boxOf(it,calc(it).cur):'-';
+      return '<tr'+(x.conf==='low'?' style="background:#FFF8E1"':'')+'>'
+        +'<td class="l" style="font-weight:700">'+esc(x.pn)+(it?'':' <span class="ipill r">미등록</span>')+'</td>'
+        +'<td>'+(it?nf(it.bx):(x.box?nf(x.box):'-'))+'</td>'
+        +'<td>'+cur+'</td>'
+        +'<td style="background:#FFFDE7;width:80px"><input type="number" data-i="'+i+'" data-f="qty" value="'+(x.qty==null?'':x.qty)+'"></td>'
+        +'<td class="c" style="width:44px"><input type="checkbox" data-i="'+i+'" data-f="use"'
+          +(x.qty==null||!it?'':' checked')+(it?'':' disabled')+'></td></tr>';
+    }).join('')+'</tbody></table>';
+  $('ocrApply').style.display='block';
+}
+$('ocrPrev').addEventListener('change',e=>{
+  const i=+e.target.dataset.i, f=e.target.dataset.f;
+  if(f==='qty') OCRrows[i].qty=e.target.value===''?null:+e.target.value;
+  if(f==='use') OCRrows[i].use=e.target.checked;
+});
+function applyOcr(){
+  let n=0;
+  $('ocrPrev').querySelectorAll('input[data-f="use"]').forEach(c=>{
+    if(!c.checked)return;
+    const x=OCRrows[+c.dataset.i];
+    const it=S.items.find(y=>y.pn===x.pn);
+    if(!it||x.qty==null)return;
+    it.cnt=x.qty; n++;
+  });
+  if(!n){toast('적용할 행이 없습니다');return;}
+  save(); closeAll(); setTab('cnt'); rCnt();
+  toast(n+'건이 실사표에 입력되었습니다 — 확인 후 [차이 조정전표 발행]');
+}
 
 /* ═══════ 이벤트 ═══════ */
 function setTab(t){
