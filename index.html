@@ -149,7 +149,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.4</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v2.5</b></small></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -243,6 +243,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <div class="page" id="p-cnt">
   <div class="fbar">
     <label>실사일자</label><input type="date" id="cntD">
+    <label>+차이 구분</label>
+    <select id="cntKind" title="실사값이 전산보다 많을 때 발행할 전표 구분. 검사실 일일 업데이트는 '생산입고(검사합격)' 권장">
+      <option value="재고조정(+)">재고조정(+)</option>
+      <option value="생산입고">생산입고 (검사합격)</option></select>
     <input id="cntQ" placeholder="품번 검색" style="width:160px">
     <div class="chip on" data-c="all">전체</div>
     <div class="chip" data-c="in">입력분</div>
@@ -863,10 +867,11 @@ function applyCount(){
   const t=S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0);
   if(!t.length){toast('차이가 있는 실사 입력이 없습니다');return;}
   if(!confirm(t.length+'개 품목의 차이분을 '+d+' 재고조정 전표로 발행합니다.'))return;
+  const pk=$('cntKind').value;
   t.forEach(it=>{
     const df=it.cnt*it.bx-calc(it).cur;
-    S.led.push({id:S.seq++,d,pn:it.pn,k:df>0?'재고조정(+)':'재고조정(-)',q:Math.abs(df),
-      p:'',lot:'',n:'재고실사 차이조정',by:S.user});
+    S.led.push({id:S.seq++,d,pn:it.pn,k:df>0?pk:'재고조정(-)',q:Math.abs(df),
+      p:'',lot:'',n:df>0&&pk==='생산입고'?'검사합격 일일등록':'재고실사 차이조정',by:S.user});
   });
   S.items.forEach(it=>it.cnt=null);
   save();render();toast(t.length+'건 조정전표가 발행되었습니다');
