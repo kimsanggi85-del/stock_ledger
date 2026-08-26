@@ -164,11 +164,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .mask{align-items:flex-end}
   .fld input,.fld select{padding:12px;font-size:16px}
 }
-.ham{display:none;margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
-  border-radius:6px;width:42px;height:38px;cursor:pointer;flex:0 0 auto;
-  flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0}
-.ham i{display:block;width:18px;height:2.5px;background:#fff;border-radius:2px}
-.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
+.ham{display:none;margin-left:auto;background:#fff;border:none;-webkit-appearance:none;appearance:none;
+  border-radius:8px;width:44px;height:40px;cursor:pointer;flex:0 0 auto;
+  flex-direction:column;align-items:center;justify-content:center;gap:4.5px;padding:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.ham i{display:block;width:20px;height:3px;background:var(--hd);border-radius:2px}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40}
 .scrim.on{display:block}
 #tbTools{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
 #tbNow{display:none}
@@ -261,7 +262,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.5</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.6</b><span id="tbNow"></span></small></div>
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
   <div id="tbTools">
     <div id="dTabs"></div>
