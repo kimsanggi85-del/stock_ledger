@@ -164,6 +164,33 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .mask{align-items:flex-end}
   .fld input,.fld select{padding:12px;font-size:16px}
 }
+.ham{display:none;margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:6px;width:40px;height:36px;font-size:19px;cursor:pointer;flex:0 0 auto}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70}
+.scrim.on{display:block}
+#tbTools{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
+#tbNow{display:none}
+.kb{border:1px solid var(--line);background:#fff;border-radius:3px;padding:0 10px;font-size:12px;
+  font-weight:800;color:var(--hd);cursor:pointer;font-family:var(--sans);flex:0 0 auto}
+@media(max-width:760px){
+  .tb{flex-wrap:nowrap;gap:8px;align-items:center}
+  .ham{display:flex;align-items:center;justify-content:center}
+  #tbNow{display:inline;color:#9FD8FF;font-weight:700}
+  #tbTools{position:fixed;top:0;right:0;bottom:0;width:80%;max-width:310px;background:#fff;
+    z-index:80;flex-direction:column;align-items:stretch;gap:9px;padding:16px 14px;flex-wrap:nowrap;
+    transform:translateX(102%);transition:transform .25s ease;overflow-y:auto;
+    box-shadow:-4px 0 20px rgba(0,0,0,.35)}
+  #tbTools.open{transform:none}
+  #tbTools label{display:block!important;font-size:11px;color:var(--sub);font-weight:800;margin-bottom:-5px}
+  #tbTools select,#tbTools input{width:100%;flex:none;color:var(--ink);border:1px solid var(--line);
+    padding:11px 9px;font-size:14px;background:#fff}
+  #tbTools .sp{flex-direction:column;width:100%;gap:7px;margin:0}
+  #tbTools .sp button{width:100%;padding:13px;font-size:14px;flex:none}
+  #tbTools #mesSt{order:-1;color:var(--sub)!important;font-size:11.5px;text-align:center;
+    background:#F2F5F7;border-radius:6px;padding:7px}
+  #tbTools::before{content:"메뉴";font-size:13px;font-weight:800;color:var(--hd);
+    border-bottom:2px solid var(--hd);padding-bottom:7px;margin-bottom:2px}
+}
 /* 모바일 카드 */
 .mc{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px 10px 15px;
   margin-bottom:7px;position:relative;overflow:hidden}
@@ -225,7 +252,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <body>
 
 <div class="tb">
-  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.3</b></small></div>
+  <div class="ttl">재고수불부<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v3.4</b><span id="tbNow"></span></small></div>
+  <button class="ham" onclick="tglDrawer()" aria-label="메뉴">☰</button>
+  <div id="tbTools">
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -241,7 +270,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <button onclick="window.print()">인쇄</button>
     <button onclick="exportXls()">엑셀</button>
   </div>
+  </div>
 </div>
+<div class="scrim" id="scrim" onclick="tglDrawer(0)"></div>
 
 <div class="tabs">
   <div class="on" data-t="sum"><span class="lg">재고수불 총괄표</span><span class="sm">총괄표</span></div>
@@ -262,7 +293,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="w"><span>장기 미불출</span><b id="q6">0</b><em>품목</em></div>
   </div>
   <div class="fbar">
-    <input id="fq" placeholder="품번 / 품명 검색" style="width:180px">
+    <input id="fq" placeholder="품번 / 품명 검색" inputmode="numeric" style="width:150px">
+    <button class="kb" onclick="tglKb(this,'fq')" title="숫자/문자 키패드 전환">가</button>
     <div class="chip on" data-f="all">전체</div>
     <div class="chip" data-f="short">안전재고 미달</div>
     <div class="chip" data-f="zero">재고 0</div>
@@ -301,7 +333,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <div class="page" id="p-io">
   <div class="fbar">
     <label>기간</label><input type="date" id="ioF"><span>~</span><input type="date" id="ioT">
-    <input id="ioQ" placeholder="품번 / 거래처 / LOT 검색" style="width:190px">
+    <input id="ioQ" placeholder="품번 / 거래처 / LOT 검색" inputmode="numeric" style="width:160px">
+    <button class="kb" onclick="tglKb(this,'ioQ')" title="숫자/문자 키패드 전환">가</button>
     <select id="ioK"><option value="">전체 구분</option></select>
     <div class="rt"><button class="btn g" onclick="openImp()">엑셀 불러오기</button>
       <button class="btn k" onclick="openIO()">＋ 등록</button>
@@ -328,7 +361,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <option value="재고조정(-)">재고조정(-)</option>
       <option value="검사폐기">검사폐기</option>
       <option value="선별제외">선별제외</option></select>
-    <input id="cntQ" placeholder="품번 검색" style="width:160px">
+    <input id="cntQ" placeholder="품번 검색" inputmode="numeric" style="width:130px">
+    <button class="kb" onclick="tglKb(this,'cntQ')" title="숫자/문자 키패드 전환">가</button>
     <div class="chip on" data-c="all">전체</div>
     <div class="chip" data-c="in">입력분</div>
     <div class="chip" data-c="diff">차이발생</div>
@@ -360,7 +394,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <button class="btn k" onclick="openItem(-1)">＋ 품목 등록</button>
     <button class="btn" onclick="pick('fCsv')">CSV 일괄등록</button>
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
-    <input id="cfgQ" placeholder="품번 검색" style="width:160px">
+    <input id="cfgQ" placeholder="품번 검색" inputmode="numeric" style="width:130px">
+    <button class="kb" onclick="tglKb(this,'cfgQ')" title="숫자/문자 키패드 전환">가</button>
     <label style="margin-left:8px">관리제외</label>
     <input id="cfgEx" placeholder="품번 쉼표구분, * 가능 (예: 54610-*)" style="width:230px"
       title="여기 등록된 품번(패턴)은 품목대장·전표에서 제외되고 MES/출하 유입도 차단됩니다. 적용은 입력 후 Enter">
@@ -797,7 +832,7 @@ function rSum(){
   rows.forEach(({it,v})=>{T.o+=v.open;T.i+=v.iq;T.u+=v.sq;T.c+=v.cur;
     if(v.gap<0)nShort++; if(isDead(it))nDead++;});
   const R=rows.filter(({it,v})=>{
-    if(q&&!(it.pn+' '+it.nm).toLowerCase().includes(q))return false;
+    if(q&&!nz(it.pn+' '+it.nm).includes(nz(q)))return false;
     if(F==='short')return v.gap<0;
     if(F==='zero')return v.cur<=0;
     if(F==='move')return v.iq||v.oq;
@@ -911,7 +946,7 @@ function rIo(){
   const R=S.led.filter(r=>{
     if(f&&r.d<f)return false; if(t&&r.d>t)return false; if(k&&r.k!==k)return false;
     if(WH&&whOf(r.pn)!==WH)return false;
-    if(q&&!((r.pn+' '+(r.p||'')+' '+(r.lot||'')+' '+(r.n||'')).toLowerCase().includes(q)))return false;
+    if(q&&!nz(r.pn+' '+(r.p||'')+' '+(r.lot||'')+' '+(r.n||'')).includes(nz(q)))return false;
     return true;}).sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
   let ti=0,to=0;R.forEach(r=>kindIO(r.k)==='I'?ti+=r.q:to+=r.q);
   if(isMob()){
@@ -955,7 +990,7 @@ function rCnt(){
   $('c1').textContent=n;$('c2').textContent=nd;$('c3').textContent=nf(sd);
   $('c4').textContent=tc>0?(100-sd/tc*100).toFixed(1):'—';
   const R=rows.filter(({it,real,df})=>{
-    if(q&&!it.pn.toLowerCase().includes(q))return false;
+    if(q&&!nz(it.pn+' '+it.nm).includes(nz(q)))return false;
     if(C==='in')return real!==null;
     if(C==='diff')return df!==null&&df!==0;
     return true;});
@@ -1053,7 +1088,7 @@ function rInsp(){
 function rCfg(){
   rInsp();
   const q=$('cfgQ').value.trim().toLowerCase();
-  const R=S.items.map((it,i)=>({it,i})).filter(({it})=>inWh(it)&&(!q||(it.pn+' '+it.nm).toLowerCase().includes(q)));
+  const R=S.items.map((it,i)=>({it,i})).filter(({it})=>inWh(it)&&(!q||nz(it.pn+' '+it.nm).includes(nz(q))));
   $('tCfg').innerHTML=`<thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>규격</th><th>단위</th>
     <th>박스단위</th><th>안전재고(EA)</th><th>안전(박스)</th><th>기초재고(EA)</th><th>기초일자</th>
     <th>고객사</th><th>보관위치</th><th>현재고</th></tr></thead><tbody>`
@@ -1764,11 +1799,24 @@ function mcIo(r){
 }
 window.addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(render,250);});
 
+function tglDrawer(f){
+  const t=$('tbTools'), s=$('scrim');
+  const on=f===0?false:!t.classList.contains('open');
+  t.classList.toggle('open',on); s.classList.toggle('on',on);
+}
+/* 검색: 하이픈·공백 무시 + 숫자/문자 키패드 전환 */
+const nz=s=>String(s||'').toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
+function tglKb(b,id){
+  const e=$(id), num=e.getAttribute('inputmode')!=='text';
+  e.setAttribute('inputmode',num?'text':'numeric');
+  b.textContent=num?'123':'가';
+  e.blur(); setTimeout(()=>e.focus(),40);
+}
 /* ═══════ 이벤트 ═══════ */
 function setTab(t){
   tab=t;document.querySelectorAll('.tabs div').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));$('p-'+t).classList.add('on');
-  render();
+  tglDrawer(0); render();
 }
 document.querySelectorAll('.tabs div').forEach(n=>n.onclick=()=>setTab(n.dataset.t));
 document.querySelectorAll('#p-sum .chip').forEach(c=>c.onclick=()=>{
@@ -1819,6 +1867,7 @@ let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on'
 function whLabel(){
   const t=WH?whNm(WH)+' · '+whDp(WH)+' 관리':'전체 (현장재고 + 출하대기재고)';
   $('iw1').textContent=t;$('iw2').textContent=t;
+  $('tbNow').textContent=' · '+(WH?whNm(WH):'전체')+' · '+ym;
 }
 function render(){
   whLabel();
