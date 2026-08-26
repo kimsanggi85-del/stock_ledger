@@ -446,7 +446,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.4</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.5</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -594,6 +594,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="fbar">
     <button class="btn k" onclick="openItem(-1)">＋ 품목 등록</button>
     <button class="btn" onclick="pick('fCsv')">CSV 일괄등록</button>
+    <button class="btn" onclick="fixNm()" title="품명 칸에 숫자만 들어간 항목을 비웁니다">🧹 품명 숫자 정리</button>
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
     <input id="cfgQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label style="margin-left:8px">관리제외</label>
@@ -1397,6 +1398,16 @@ async function delItemRemote(pn){
     {method:'DELETE',headers:itHeaders('return=minimal')}); }catch(e){}
 }
 function setItStat(t){ const e=$('itStat'); if(e)e.textContent=t; }
+/* 품명 칸에 숫자만 들어간 항목 정리 (실사 CSV 오등록 복구용) */
+function fixNm(){
+  const t=S.items.filter(i=>i.nm!=null&&String(i.nm).trim()!==''&&/^[0-9,.\s-]+$/.test(String(i.nm)));
+  if(!t.length){toast('정리할 항목이 없습니다');return;}
+  if(!confirm('품명이 숫자로만 되어 있는 '+t.length+'품목의 품명을 비웁니다.\n\n'
+    +t.slice(0,8).map(i=>'· '+i.pn+' : '+i.nm).join('\n')
+    +(t.length>8?'\n… 외 '+(t.length-8)+'건':'')+'\n\n계속할까요?'))return;
+  t.forEach(i=>{i.nm='';touchItem(i);});
+  save();render();pushItems(true);toast(t.length+'건 품명 정리 완료');
+}
 function bulkBd(){
   const d=$('cfgBd').value;
   if(!d){toast('날짜를 선택하세요');return;}
@@ -2265,7 +2276,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
+  cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
 function rL2(){
