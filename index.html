@@ -446,7 +446,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.3</b><span id="tbNow"></span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.4</b><span id="tbNow"></span></small></div>
   <span id="tbPage" style="margin-left:auto"></span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1629,6 +1629,11 @@ $('fBk').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRea
   r.readAsText(f);e.target.value='';};
 $('fCsv').onchange=async e=>{const f=e.target.files[0];if(!f)return;
   const txt=(await readText(f)).replace(/^\uFEFF/,'');
+  {const ln=txt.split(/\r?\n/).filter(x=>x.trim());
+   if(ln.length&&ln.every(x=>x.split(',').length<=2)){
+     alert('이 파일은 [품번,수량] 2칸 형식입니다.\n\n실사값이라면 재고실사표 탭의\n[📄 실사 CSV 불러오기]로 넣어주세요.');
+     e.target.value=''; return;
+   }}
   {let a=0,u=0;
     /* 따옴표 안의 쉼표를 보존하는 CSV 분해 */
     const csvSplit=l=>{const o=[];let c='',q=false;
@@ -1641,12 +1646,16 @@ $('fCsv').onchange=async e=>{const f=e.target.files[0];if(!f)return;
       if(!l.trim())return;
       const p=csvSplit(l);
       if(!p[0]||p[0]==='품번'||p[0].indexOf('품번')===0)return;
-      const ex=S.items.find(x=>x.pn===p[0]);
-      const o={nm:p[1]||'',sp:p[2]||'',bx:+p[3]||0,sf:+p[4]||0,cu:p[6]||''};
-      if(ex){Object.assign(ex,o);if(p[5]!==undefined&&p[5]!=='')ex.bs=+p[5]||0;u++;}
-      else{S.items.push(Object.assign({no:0,pn:p[0],un:'EA',bs:+p[5]||0,bd:today(),lc:'',cnt:null},o));a++;}});
+      const ex=S.items.find(x=>x.pn===canonPn(p[0]))||S.items.find(x=>x.pn===p[0]);
+      /* 값이 있는 칸만 반영 — 빠진 칸은 기존 값 유지 */
+      const set=(t,k,v,num)=>{if(v===undefined||v==='')return;t[k]=num?(+String(v).replace(/[^0-9.-]/g,'')||0):v;};
+      if(ex){set(ex,'nm',p[1]);set(ex,'sp',p[2]);set(ex,'bx',p[3],1);set(ex,'sf',p[4],1);
+             set(ex,'bs',p[5],1);set(ex,'cu',p[6]);touchItem(ex);u++;}
+      else{const o={no:0,pn:p[0],nm:p[1]||'',sp:p[2]||'',un:'EA',bx:+p[3]||0,sf:+p[4]||0,
+             bs:+p[5]||0,cu:p[6]||'',bd:today(),lc:'',cnt:null,ua:new Date().toISOString()};
+           S.items.push(o);a++;}});
     S.items.sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
-    save();render();toast('신규 '+a+'건 / 갱신 '+u+'건');}
+    save();render();pushItems(true);toast('신규 '+a+'건 / 갱신 '+u+'건');}
   e.target.value='';};
 function wipe(){
   if(!confirm('입출고 내역 '+S.led.length+'건을 모두 삭제합니다.'))return;
