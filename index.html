@@ -81,8 +81,31 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   text-align:right;padding:1px 2px}
 .t input:focus{outline:1.5px solid var(--hd);background:#FFFDE7;color:var(--ink)}
 /* 표에서 바로 고치는 칸 */
-.t input.ce,.t select.ce{width:100%;border:0;background:#FFFEF2;font-family:var(--mono);font-size:11.5px;
-  text-align:right;padding:4px 4px;border-radius:2px}
+.t input.ce,.t select.ce{width:100%;min-width:0;border:0;background:#FFFEF2;font-family:var(--mono);
+  font-size:11.5px;text-align:right;padding:4px 4px;border-radius:2px}
+/* 창을 줄여도 칸이 뭉개지지 않도록 표에 최소폭을 준다 (가로 스크롤) */
+.gw .scroll{overflow:auto}
+.t.fix{table-layout:fixed}
+.t.fix th,.t.fix td{overflow:hidden}
+#tRaw.w-coil{min-width:1680px}
+#tRaw.w-eq{min-width:1420px}
+#tRaw.w-sup{min-width:1180px}
+#tRaw.w-spec{min-width:1020px}
+#tRaw.w-led{min-width:1000px}
+#tRaw.w-bom{min-width:1120px}
+/* 가로 스크롤 중에도 No·코일번호는 붙어 있게 */
+#tRaw.w-coil th:nth-child(1),#tRaw.w-coil td:nth-child(1){position:sticky;left:0;z-index:4;background:#fff}
+#tRaw.w-coil th:nth-child(3),#tRaw.w-coil td:nth-child(3){position:sticky;left:34px;z-index:4;background:#fff;
+  box-shadow:2px 0 0 -1px #d0d7de}
+#tRaw.w-coil thead th:nth-child(1),#tRaw.w-coil thead th:nth-child(3){z-index:6;
+  background:linear-gradient(#f3f6f8,#dce3e9)}
+#tRaw.w-coil tbody tr:nth-child(even) td:nth-child(1),
+#tRaw.w-coil tbody tr:nth-child(even) td:nth-child(3){background:#fafbfc}
+#tRaw.w-coil tbody tr.sel td:nth-child(1),#tRaw.w-coil tbody tr.sel td:nth-child(3){background:#2f68ad}
+@media(max-width:860px){
+  #tRaw.w-coil th:nth-child(3),#tRaw.w-coil td:nth-child(3){position:static;box-shadow:none}
+  #tRaw.w-coil th:nth-child(1),#tRaw.w-coil td:nth-child(1){position:static}
+}
 .t select.ce{font-family:var(--sans);font-size:10.5px;text-align:center;padding:4px 1px}
 .t input.ce:hover,.t select.ce:hover{background:#FFF8C4;cursor:text}
 .t input.ce:focus,.t select.ce:focus{outline:1.5px solid var(--hd);background:#fff}
@@ -6588,6 +6611,8 @@ function rRaw(){
   if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
   else W.style.display='none';
 
+  {const tb=$('tRaw'); if(tb){tb.className='t '+({coil:'w-coil',eq:'w-eq',sup:'w-sup',spec:'w-spec',
+    led:'w-led',bom:'w-bom'}[RV]||'');}}
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
             bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황',
             sup:'공 급 업 체 별 코 일 수 불 현 황'};
@@ -6601,12 +6626,19 @@ function rRaw(){
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
     $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'
       +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
-      +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>';
+      +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
+      +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>';
     $('rawHint').innerHTML='· <b>노란 칸은 표에서 바로 고칠 수 있습니다</b>. 칸을 클릭해 값을 바꾸고 다른 곳을 누르면 저장됩니다.<br>'
       +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
       +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
       +'· 코일번호를 누르면 전체 수정·삭제 창이 열립니다.';
-    $('tRaw').innerHTML=`<thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
+    $('tRaw').innerHTML=`<colgroup>
+      <col style="width:34px"><col style="width:112px"><col style="width:158px"><col style="width:82px">
+      <col style="width:58px"><col style="width:60px"><col style="width:80px"><col style="width:70px">
+      <col style="width:78px"><col style="width:50px"><col style="width:56px"><col style="width:72px">
+      <col style="width:104px"><col style="width:100px"><col style="width:124px"><col style="width:124px">
+      <col style="width:96px"><col style="width:48px"><col style="width:170px"></colgroup>
+      <thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
       <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
