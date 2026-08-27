@@ -93,6 +93,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 #tRaw.w-spec{min-width:1020px}
 #tRaw.w-led{min-width:1000px}
 #tRaw.w-bom{min-width:1120px}
+#tRaw.w-cnt{min-width:1180px}
 /* 가로 스크롤 중에도 No·코일번호는 붙어 있게 */
 #tRaw.w-coil th:nth-child(1),#tRaw.w-coil td:nth-child(1){position:sticky;left:0;z-index:4;background:#fff}
 #tRaw.w-coil th:nth-child(3),#tRaw.w-coil td:nth-child(3){position:sticky;left:34px;z-index:4;background:#fff;
@@ -5174,6 +5175,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <span class="chip" data-rv="eq" onclick="setRV('eq')"><span class="ic">🏭</span>설비 현황</span>
     <span class="chip" data-rv="coil" onclick="setRV('coil')"><span class="ic">🧱</span>코일 목록</span>
     <span class="chip" data-rv="spec" onclick="setRV('spec')"><span class="ic">📐</span>규격별 재고</span>
+    <span class="chip" data-rv="cnt" onclick="setRV('cnt')"><span class="ic">✅</span>재고 실사</span>
     <span class="chip" data-rv="led" onclick="setRV('led')"><span class="ic">↔</span>입출고 내역</span>
     <span class="chip" data-rv="bom" onclick="setRV('bom')"><span class="ic">⚖</span>제품 소요량</span>
     <input id="rawQ" placeholder="코일번호 · 업체 · 품번 검색" class="kbi" style="width:180px;margin-left:10px">
@@ -5181,6 +5183,19 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
       <option value="__hold">⛔ 검사 안 끝난 것</option>
       <option value="__miss">🩹 보완 등록분</option></select>
+  </div>
+
+  <div class="fbar" id="cntBar" style="display:none;padding:7px 10px;background:#F7FAFD">
+    <label>실사일자</label><input type="date" id="cntD2" style="width:140px">
+    <label>실사자</label><input id="cntBy" style="width:110px" placeholder="성명">
+    <button class="btn" onclick="cntAllOk()" title="아직 입력하지 않은 코일을 전산 잔량 그대로 확인 처리합니다">✔ 나머지 전산값 그대로</button>
+    <button class="btn" onclick="cntSheet()" title="현장에 들고 나갈 실사표를 엑셀로 내려받습니다">⬇ 실사표 받기</button>
+    <button class="btn" onclick="pick('fCnt2')" title="현장에서 적어온 값을 파일로 올립니다">📥 실사값 올리기</button>
+    <input type="file" id="fCnt2" accept=".csv,.txt,.tsv" style="display:none">
+    <div class="rt">
+      <button class="btn" onclick="cntClear()">🧹 실사값 지우기</button>
+      <button class="btn g" onclick="applyCoilCount()" title="전산과 다른 코일에 재고조정 전표를 발행합니다">✅ 조정전표 발행</button>
+    </div>
   </div>
 
   <div id="rawWarn" style="display:none;max-width:1400px;margin:0 auto 10px;background:#FBE9E7;border:1px solid #E0A9A2;
@@ -5356,6 +5371,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
           직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
         · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
+        · <b>재고 실사</b> 화면에서 코일별로 실제 잔량을 확인합니다. 순서는 이렇습니다 —
+          ① <b>[⬇ 실사표 받기]</b>로 받아 현장에서 적어 오거나 화면에서 직접 입력 →
+          ② 미개봉 코일은 <b>[있음]</b>만 누르고, 사용중 코일만 실제 무게 입력 (없으면 <b>[없음]</b> 또는 0) →
+          ③ <b>[✅ 조정전표 발행]</b>을 누르면 전산과 다른 코일만 <b>재고조정(+/−)</b> 전표가 만들어져 원장이 맞춰집니다.<br>
+        · 실사값은 저장해 두었다가 나중에 이어서 입력할 수 있고, <b>[🧹 실사값 지우기]</b>로 초기화합니다.
+          발행한 조정전표는 <b>입출고 내역</b>에 <b>실사조정</b>으로 남습니다.<br>
         · <b>업체별 현황</b> 화면에서 공급업체별로 <b>입고 코일수 · 반출(소진) · 재고 코일수 · 잔량 kg</b>을
           한눈에 봅니다. 소진율 막대가 90% 이상이면 붉게 표시되어 재발주 시점을 잡을 수 있고,
           업체 행 아래에 규격별 소계가 붙습니다. 엑셀에도 첫 시트로 들어갑니다.<br>
@@ -6444,6 +6465,88 @@ function autoBom(verbose){
 }
 
 
+
+/* ═══════ 원소재(코일) 재고 실사 ═══════
+   · 코일은 개체 단위라 "있는지 / 남은 무게가 얼마인지"를 코일별로 확인한다.
+   · 미개봉 코일은 입고중량 그대로, 사용중 코일만 실측한다.
+   · 전산 잔량과 다르면 재고조정(+/−) 전표를 발행해 원장을 맞춘다.          */
+function cntTargets(){
+  return S.coils.map((c,i)=>({c,i})).filter(({c})=>remOf(c)>0.5||c.ct!=null);
+}
+function cntAllOk(){
+  const T=cntTargets().filter(({c})=>c.ct==null);
+  if(!T.length){toast('이미 모두 입력되어 있습니다');return;}
+  if(!confirm('아직 입력하지 않은 코일 '+T.length+'본을 전산 잔량 그대로 확인 처리합니다.\n'
+    +'(실제로 확인한 코일만 하세요. 차이가 없는 것으로 기록됩니다)\n\n진행할까요?'))return;
+  T.forEach(({c})=>c.ct=Math.round(remOf(c)*10)/10);
+  save(); rRaw(); toast(T.length+'본을 전산값으로 확인 처리했습니다');
+}
+function cntClear(){
+  if(!confirm('입력한 실사값을 모두 지웁니다.\n(이미 발행한 조정전표는 지워지지 않습니다)'))return;
+  S.coils.forEach(c=>{delete c.ct;});
+  save(); rRaw(); toast('실사값을 지웠습니다');
+}
+function cntSheet(){
+  const R=cntTargets();
+  if(!R.length){toast('실사할 코일이 없습니다');return;}
+  const h=['No','코일 No.','재질','두께','폭','공급업체','보관위치','전산 잔량(kg)','실사 잔량(kg)','비고'];
+  const rows=R.map(({c},i)=>[i+1,c.cno,c.mt||'',tmm(c.t),c.w||'',c.sup||'',c.lc||'',
+    Math.round(remOf(c)*10)/10,'','']);
+  const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse}'
+    +'td,th{border:1px solid #999;padding:4px 7px;font-size:11px;font-family:맑은 고딕}'
+    +'th{background:#DCE3EF;font-weight:700}</style></head><body>'
+    +'<h3>원소재 재고 실사표 &nbsp; 실사일자 '+($('cntD2').value||today())+' &nbsp; 실사자 ______</h3>'
+    +'<table><tr>'+h.map(x=>'<th>'+x+'</th>').join('')+'</tr>'
+    +rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('')+'</table></body></html>';
+  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),'원소재실사표_'+today().replace(/-/g,'')+'.xls');
+  toast('실사표 '+R.length+'본을 내려받았습니다 — 실사 잔량 칸을 채워 오세요');
+}
+/* 실사값 CSV: 코일No,실사잔량kg  (헤더 있어도 됨) */
+$('fCnt2').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return; e.target.value='';
+  const txt=(await readText(f)).replace(/^\ufeff/,'');
+  let ok=0; const unk=[];
+  txt.split(/\r?\n/).forEach(l=>{
+    if(!l.trim())return;
+    const p2=l.split(/[,\t;]/).map(x=>x.trim().replace(/^"|"$/g,''));
+    const cno=p2[0]; if(!cno||/코일|No|no/.test(cno)&&p2.length&&isNaN(parseFloat(p2[1])))return;
+    const c=S.coils.find(x=>x.cno===cno);
+    if(!c){unk.push(cno);return;}
+    const v=p2[1];
+    c.ct=(v===''||v==null)?null:Math.max(0,Math.round((parseFloat(String(v).replace(/[^0-9.]/g,''))||0)*10)/10);
+    ok++;
+  });
+  save(); setRV('cnt');
+  toast('실사값 '+ok+'본 반영'+(unk.length?' · 없는 코일 '+unk.length+'건':'')+' — 확인 후 [조정전표 발행]');
+  if(unk.length)alert('코일 목록에 없어 건너뛴 코일번호 '+unk.length+'건:\n'+unk.slice(0,20).join(', '));
+};
+function applyCoilCount(){
+  const d0=$('cntD2').value||today(), by=$('cntBy').value.trim()||S.user||'실사';
+  const R=cntTargets().filter(({c})=>c.ct!=null);
+  if(!R.length){toast('실사값을 먼저 입력하세요');return;}
+  const diff=R.map(({c})=>({c,sys:Math.round(remOf(c)*100)/100,real:+c.ct||0}))
+              .map(o=>Object.assign(o,{gap:Math.round((o.real-o.sys)*100)/100}))
+              .filter(o=>Math.abs(o.gap)>0.05);
+  if(!diff.length){
+    S.coils.forEach(c=>{delete c.ct;});
+    save(); render(); toast('전산과 차이가 없습니다 · 실사 완료로 기록했습니다'); return;
+  }
+  const plus=diff.filter(o=>o.gap>0), minus=diff.filter(o=>o.gap<0);
+  if(!confirm('실사 결과 차이가 있는 코일 '+diff.length+'본에 재고조정 전표를 발행합니다.\n\n'
+    +'  · 실사가 많음(+) '+plus.length+'본 / '+kg(plus.reduce((a,o)=>a+o.gap,0))+' kg\n'
+    +'  · 실사가 적음(−) '+minus.length+'본 / '+kg(Math.abs(minus.reduce((a,o)=>a+o.gap,0)))+' kg\n\n'
+    +diff.slice(0,8).map(o=>'  '+o.c.cno+' : 전산 '+kg(o.sys)+' → 실사 '+kg(o.real)+' ('+(o.gap>0?'+':'')+kg(o.gap)+')').join('\n')
+    +(diff.length>8?'\n  … 외 '+(diff.length-8)+'본':'')+'\n\n발행할까요?'))return;
+  diff.forEach(o=>{
+    S.mled.push({id:S.mseq++,d:d0,cid:o.c.id,cno:o.c.cno,
+      k:o.gap>0?'재고조정(+)':'재고조정(-)',q:Math.abs(o.gap),pn:'',
+      n:'실사조정 (전산 '+kg(o.sys)+' → 실사 '+kg(o.real)+')',by,cnt:1});
+  });
+  S.coils.forEach(c=>{delete c.ct;});
+  save(); autoBom(false); render();
+  toast('조정전표 '+diff.length+'건을 발행했습니다 · 원장이 실사값과 맞춰졌습니다');
+}
+
 /* ═══════ 공급업체별 코일 수불 집계 ═══════
    입고 = 등록된 코일, 반출 = 소진(잔량 0.5kg 이하), 재고 = 잔량이 남은 코일 */
 function supAgg(){
@@ -6515,7 +6618,11 @@ function specAgg(){
 }
 
 /* ── 렌더 ─────────────────────────────────────────────────── */
-function setRV(v){RV=v;document.querySelectorAll('#p-raw .chip[data-rv]').forEach(c=>c.classList.toggle('on',c.dataset.rv===v));rRaw();}
+function setRV(v){RV=v;
+  document.querySelectorAll('#p-raw .chip[data-rv]').forEach(c=>c.classList.toggle('on',c.dataset.rv===v));
+  const cb=$('cntBar'); if(cb)cb.style.display=(v==='cnt')?'flex':'none';
+  if(v==='cnt'&&$('cntD2')&&!$('cntD2').value)$('cntD2').value=today();
+  rRaw();}
 function rRaw(){
   const q=nz($('rawQ').value.trim()), fst=$('rawSt').value;
   const a=mStart(),b=mEnd();
@@ -6655,9 +6762,9 @@ function rRaw(){
   else W.style.display='none';
 
   {const tb=$('tRaw'); if(tb){tb.className='t '+({coil:'w-coil',eq:'w-eq',sup:'w-sup',spec:'w-spec',
-    led:'w-led',bom:'w-bom'}[RV]||'');}}
+    led:'w-led',bom:'w-bom',cnt:'w-cnt'}[RV]||'');}}
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
-            bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황',
+            bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황',cnt:'원 소 재 재 고 실 사 표',
             sup:'공 급 업 체 별 코 일 수 불 현 황'};
   $('rawTtl').textContent=TT[RV];
 
@@ -6772,6 +6879,54 @@ function rRaw(){
        }).join(''):`<tr><td colspan="11" class="c" style="padding:30px;color:#93A0AB">해당 기간 수불 내역이 없습니다.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="5" class="c">합　계 (${R.length}건)</td>
        <td>${kg(ti)}</td><td>${kg(to)}</td><td colspan="4"></td></tr></tfoot>`;
+  }
+
+  else if(RV==='cnt'){
+    const R=cntTargets().filter(({c})=>{
+      if(fst==='__hold'){ if(usable(c))return false; }
+      else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
+      else if(fst&&coilSt(c)!==fst)return false;
+      return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.lc).includes(q);});
+    const done=R.filter(({c})=>c.ct!=null).length;
+    let gPlus=0,gMinus=0,nGap=0;
+    R.forEach(({c})=>{ if(c.ct==null)return; const g=(+c.ct||0)-remOf(c);
+      if(Math.abs(g)>0.05){nGap++; if(g>0)gPlus+=g; else gMinus+=g;} });
+    $('gt-raw').innerHTML='재고 실사 · 대상 <b>'+R.length+'</b>본 · 입력 <b>'+done+'</b>본'
+      +(nGap?' · <b style="color:#B3261E">차이 '+nGap+'본</b>':'')
+      +' · 미입력 '+(R.length-done)+'본';
+    $('rawHint').innerHTML='· <b>미개봉 코일</b>은 [있음]만 누르면 전산 잔량 그대로 확인됩니다. <b>사용중 코일</b>만 실제 무게를 재서 넣으세요.<br>'
+      +'· 코일이 <b>없으면 0</b>을 넣으세요. 전량 재고조정(−)으로 처리됩니다.<br>'
+      +'· 다 넣은 뒤 <b>[✅ 조정전표 발행]</b>을 누르면 전산과 다른 코일만 재고조정 전표가 만들어집니다.<br>'
+      +'· 현장에 들고 나가려면 <b>[⬇ 실사표 받기]</b>로 받아 적어 온 뒤 <b>[📥 실사값 올리기]</b>로 올리세요.';
+    $('tRaw').innerHTML=`<thead><tr><th>No</th><th>코일 No.</th><th>규격</th><th>공급업체</th><th>보관위치</th>
+      <th>상태</th><th>전산 잔량(kg)</th><th>실사 잔량(kg)</th><th>있음</th><th>없음</th><th>차이(kg)</th><th>판정</th></tr></thead><tbody>`
+     +(R.length?R.map(({c,i},n)=>{
+        const sys=Math.round(remOf(c)*10)/10;
+        const has=c.ct!=null, g=has?Math.round(((+c.ct||0)-sys)*10)/10:null;
+        const ok=has&&Math.abs(g)<=0.05;
+        return `<tr ${has?(ok?'style="background:#F1F8F3"':'style="background:#FDECEA"'):''}>
+         <td class="c">${n+1}</td>
+         <td class="l" style="font-weight:700;cursor:pointer" onclick="openCoil(${i})">${esc(c.cno)}</td>
+         <td class="l" style="font-family:var(--sans)">${esc(specNm(c))}</td>
+         <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
+         <td class="l" style="font-family:var(--sans)">${esc(c.lc||'')}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10.5px">${coilSt(c)}</td>
+         <td style="font-weight:700">${kg(sys)}</td>
+         <td style="padding:0"><input type="number" step="0.1" class="ce cnt-i" data-ci="${i}"
+            value="${has?c.ct:''}" placeholder="입력"></td>
+         <td class="c" style="padding:0"><button class="btn" data-cnt="ok" data-ci="${i}"
+            style="padding:3px 8px;font-size:11px;margin:2px">있음</button></td>
+         <td class="c" style="padding:0"><button class="btn r" data-cnt="no" data-ci="${i}"
+            style="padding:3px 8px;font-size:11px;margin:2px">없음</button></td>
+         <td class="${has?(ok?'pos':'neg'):''}" style="font-weight:700">${has?((g>0?'+':'')+kg(g)):'-'}</td>
+         <td class="c" style="font-family:var(--sans);font-weight:700;color:${has?(ok?'#0B6B3A':'#B3261E'):'#93A0AB'}">
+            ${has?(ok?'일치':(g>0?'과다':'부족')):'미실사'}</td></tr>`;
+       }).join(''):`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">실사할 코일이 없습니다.</td></tr>`)
+     +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본 · 입력 ${done}본)</td>
+       <td>${kg(R.reduce((a,{c})=>a+remOf(c),0))}</td>
+       <td>${kg(R.reduce((a,{c})=>a+(c.ct!=null?+c.ct:0),0))}</td>
+       <td colspan="2"></td>
+       <td>${gPlus||gMinus?((gPlus+gMinus>0?'+':'')+kg(gPlus+gMinus)):'-'}</td><td></td></tr></tfoot>`;
   }
 
   else if(RV==='sup'){
@@ -7581,9 +7736,25 @@ function lockField(c,f){
 }
 function unlockAll(c){ delete c.lk; }
 function isLocked(c,f){ return String(c.lk||'').split(',').includes(f); }
+/* 실사 입력 */
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(!el.classList||!el.classList.contains('cnt-i'))return;
+  const c=S.coils[+el.dataset.ci]; if(!c)return;
+  c.ct=el.value===''?null:Math.max(0,Math.round((+el.value||0)*10)/10);
+  if(c.ct===null)delete c.ct;
+  save(); rRaw();
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('#tRaw button[data-cnt]'); if(!b)return;
+  const c=S.coils[+b.dataset.ci]; if(!c)return;
+  c.ct=b.dataset.cnt==='ok'?Math.round(remOf(c)*10)/10:0;
+  save(); rRaw();
+});
 document.addEventListener('change',e=>{
   const el=e.target;
   if(!el.classList||!el.classList.contains('ce'))return;
+  if(el.classList.contains('cnt-i'))return;
   if(!el.closest('#tRaw'))return;
   const c=S.coils[+el.dataset.ci], f=el.dataset.f;
   if(!c)return;
