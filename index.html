@@ -5141,6 +5141,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           <div class="grp">빠진 자료 채우기</div>
           <button onclick="tglTools(0);fixMesLots()"><b>프레스에 물렸는데 목록에 없는 코일 등록</b><em>수입검사 누락분을 MES 정보로 보완</em></button>
           <button onclick="tglTools(0);openSpecBulk()"><b>소재 규격(재질·두께) 채우기</b><em>여러 품번을 한 화면에서 입력</em></button>
+          <button onclick="tglTools(0);fixDates()"><b>입고일 바로잡기</b><em>등록일로 잘못 들어간 날짜를 실제 입고일로</em></button>
           <button onclick="tglTools(0);openBom(-1)"><b>제품 소요량 직접 등록</b><em>1개 만드는 데 필요한 소재 무게</em></button>
           <div class="grp">점검 · 정리</div>
           <button onclick="tglTools(0);autoBom(true)"><b>사용량 다시 계산</b><em>생산실적으로 코일을 다시 차감</em></button>
@@ -5335,6 +5336,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           같은 HEAT 코일이 원장에 이미 있으면 그 코일에서 <b>재고조정(-) 전표로 분할 차감</b>하여 이중계상을 막습니다.
           이렇게 만든 코일은 검사 칸에 <b>미등록 🩹</b>으로 남아 정상 입고분과 구분되며, 상태 필터로 따로 볼 수 있습니다.
           나중에 검사앱에 성적서가 정식 등록되면 그 코일로 교체하고 보완분은 삭제하세요.<br>
+        · <b>입고일</b>은 ① 성적서의 입고일 → ② 검사 발행분의 입고일 → ③ 검사일 → ④ 등록일 순으로 채웁니다.
+          성적서에 입고일이 비어 있으면 비고에 <b>입고일 추정</b>이라고 남고, 나중에 검사가 발행되면
+          <b>[관리 도구 → 입고일 바로잡기]</b>로 실제 입고일로 되돌릴 수 있습니다.
+          입고일을 손으로 고친 코일은 바뀌지 않습니다.<br>
         · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
           직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
         · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
@@ -5828,6 +5833,7 @@ function load(){
   if(!S.msf||typeof S.msf!=='object')S.msf={};
   if(!Array.isArray(S.eq))S.eq=[];
   if(!S.spec||typeof S.spec!=='object')S.spec={};
+  if(!S.lotDate||typeof S.lotDate!=='object')S.lotDate={};
   S.diag={noBom:[],noCoil:[]};
   if(!S.cseq)S.cseq=Math.max(1,...S.coils.map(c=>+c.id||0))+1;
   if(!S.mseq)S.mseq=Math.max(1,...S.mled.map(m=>+m.id||0))+1;
@@ -6573,6 +6579,15 @@ function rRaw(){
     if(bn)msgs.push('ℹ <b>재고 시작일 '+BD+'</b> — 그 이전 생산분('+nf(bq)+' EA)은 계산에서 빠집니다. '
       +'그때 쓴 소재는 지금 목록에 없는 옛 재고이기 때문입니다.');
   }
+  /* 입고일이 등록일로 대체된 코일 */
+  {
+    const LD=S.lotDate||{};
+    const wrong=S.coils.filter(c=>{ if(isLocked(c,'d'))return false;
+      const d2=LD[c.cno]||LD[lotBase(c.cno)]||LD[c.ms||'']||''; return d2&&d2!==c.d; });
+    if(wrong.length)msgs.push('⚠ <b>입고일이 실제와 다른 코일 '+wrong.length+'본</b> — 수입검사 성적서에 입고일이 비어 있어 '
+      +'<b>등록한 날짜</b>가 들어갔습니다. 검사 발행분에 실제 입고일이 있으니 바로잡을 수 있습니다. &nbsp;'
+      +'<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixDates()">📅 지금 바로잡기</button>');
+  }
   /* 같은 LOT 이 두 번 등록된 경우 */
   const cnt={}; S.coils.forEach(c=>{const k=String(c.cno||'').replace(/#\d+$/,''); cnt[k]=(cnt[k]||0)+1;});
   const dupL=Object.keys(cnt).filter(k=>k&&cnt[k]>1);
@@ -7069,7 +7084,7 @@ async function syncIqc(silent){
     /* ① 수요자 검사 발행분을 먼저 읽는다.
        inspection_certs.final_judge 는 공급자 판정일 수 있어 판정 근거로 쓸 수 없다.
        수입검사 판정은 iqc_inspections.final_judge 가 정본이다. */
-    const JG={}, SP=S.spec||{};
+    const JG={}, SP=S.spec||{}, LD=S.lotDate||{};
     let insN=0;
     try{
       const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc',
@@ -7091,8 +7106,12 @@ async function syncIqc(silent){
         if(x.heat_no)keys.push(x.heat_no);
         keys.forEach(k=>{ putJ(k,jv); putJ(lotBase(k),jv); if(sp.mt&&sp.t){putS(k,sp);putS(lotBase(k),sp);} });
         if(jv.gk)putJ('GK|'+jv.gk+'@'+jv.rd,jv);
+        /* LOT → 실제 입고일 사전 (성적서에 입고일이 비어 있을 때 사용) */
+        const dd=String(x.receipt_date||x.insp_date||'').slice(0,10);
+        if(dd)keys.forEach(k=>{ const kk=String(k||'').trim();
+          if(kk&&!LD[kk])LD[kk]=dd; const bb=lotBase(kk); if(bb&&!LD[bb])LD[bb]=dd; });
       });
-      S.spec=SP;
+      S.spec=SP; S.lotDate=LD;
     }catch(e){ console.warn('iqc_inspections:',e.message); }
     /* 검사 발행분에서 LOT 판정 찾기 (정확 LOT → LOT베이스 → 그룹키+입고일) */
     const judgeOf=(lot,r)=>{
@@ -7110,12 +7129,12 @@ async function syncIqc(silent){
     /* 최신 행 우선 + LOT@입고일 커버리지로 이중 적재 차단 (검사앱 v3.5 로직과 동일) */
     rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
     /* 진단: 원천에 실제로 무엇이 있는지 월별로 집계한다 */
-    const DG={total:rows.length,byYm:{},noDate:0,before:0,dup:0,used:0,coils:0,noWt:0,minD:'',maxD:''};
+    const DG={total:rows.length,byYm:{},noDate:0,noRecv:0,before:0,dup:0,used:0,coils:0,noWt:0,minD:'',maxD:''};
     const covered=new Set(), picks=[];
     rows.forEach(r=>{
       /* 입고일이 비어 있으면 등록일로 대체 — 이것 때문에 통째로 누락되는 일이 없게 */
       let rd=String(r.receipt_date||'').slice(0,10);
-      if(!rd&&r.created_at)rd=String(r.created_at).slice(0,10);
+      if(!rd){DG.noRecv++; if(r.created_at)rd=String(r.created_at).slice(0,10);}
       if(!rd){DG.noDate++;return;}
       r.__rd=rd;
       const ym2=rd.slice(0,7);
@@ -7134,7 +7153,7 @@ async function syncIqc(silent){
       }else DG.dup++;
     });
     S.iqcDiag=DG;
-    let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0;
+    let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0,estD=0;
     const seen=new Set();
     picks.forEach(({r,lots,rd})=>{
       const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
@@ -7142,8 +7161,17 @@ async function syncIqc(silent){
       const tot=fnum(r.weight), n=lots.length;
       const each=n?Math.round(tot/n*10)/10:tot;
       const certJg=iqcJudge(r.final_judge);
+      const rawRecv=String(r.receipt_date||'').slice(0,10);
       lots.forEach((lot,i)=>{
         const jv=judgeOf(lot,r);
+        /* 입고일: ① 성적서 입고일 ② 검사 발행분 입고일 ③ 검사일 ④ LOT 사전 ⑤ 등록일 */
+        const dRecv=rawRecv
+          ||String((jv&&jv.rd)||'').slice(0,10)
+          ||String((jv&&jv.ins)||'').slice(0,10)
+          ||LD[String(lot).trim()]||LD[lotBase(lot)]
+          ||rd;
+        const dEst=!rawRecv;
+        if(dEst)estD++;
         /* 수요자 검사 발행분이 있으면 그 판정이 정본, 없으면 성적서 판정(공급자일 수 있음) */
         const jg=jv?jv.jg:certJg;
         if(jg!=='합격'&&jg!=='특채')hold++;
@@ -7160,10 +7188,11 @@ async function syncIqc(silent){
           if(t0){ ex=t0; ex.src=src; takeover++; }
           else if(S.coils.some(c=>c.cno===cno))cno+='#'+String(rd).slice(5).replace('-','');
         }
-        const o={d:rd,cno,mt,t,w,wt:each,sup:r.supplier||'',ms:r.heat_no||lotBase(lot),iq:jg,
+        const o={d:dRecv,cno,mt,t,w,wt:each,sup:r.supplier||'',ms:r.heat_no||lotBase(lot),iq:jg,
                  cert:jv?jv.cert:'', ins:jv?jv.ins:'',
                  n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':'',
-                    jv?('검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:'')):'검사 미발행']
+                    jv?('검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:'')):'검사 미발행',
+                    dEst?'입고일 추정':'']
                     .filter(Boolean).join(' · '),
                  src};
         if(ex){
@@ -7232,6 +7261,8 @@ async function syncIqc(silent){
           L.push('     검사앱에 소급 입력하거나, [📥 코일 CSV 등록]으로 직접 넣으세요.');}
       }
       if(DG.before)L.push('\n  · 기초일자 이전이라 건너뛴 행: '+DG.before+'건 (기초일자를 앞당기면 들어옵니다)');
+      if(DG.noRecv)L.push('  · 성적서에 입고일이 비어 있는 행: '+DG.noRecv+'건'
+        +(estD?' → 코일 '+estD+'본은 검사 발행분의 입고일로 채웠습니다':''));
       if(DG.noDate)L.push('  · 입고일·등록일이 모두 없어 건너뛴 행: '+DG.noDate+'건');
       if(DG.dup)L.push('  · 같은 LOT@입고일 중복 적재로 제외한 행: '+DG.dup+'건');
       if(DG.noWt)L.push('  · 중량이 0인 행: '+DG.noWt+'건 (코일 중량이 0으로 등록됩니다)');
@@ -7482,6 +7513,27 @@ function purgeLegacy(){
 }
 
 
+
+/* 이미 등록된 코일 중 입고일이 등록일로 대체된 것을 검사 발행분 입고일로 되돌린다 */
+function fixDates(){
+  const LD=S.lotDate||{};
+  if(!Object.keys(LD).length){toast('먼저 [🔄 최신화]를 눌러 검사 자료를 가져오세요');return;}
+  const cand=[];
+  S.coils.forEach(c=>{
+    if(isLocked(c,'d'))return;
+    const d2=LD[c.cno]||LD[lotBase(c.cno)]||LD[c.ms||'']||'';
+    if(d2&&d2!==c.d)cand.push([c,d2]);
+  });
+  if(!cand.length){toast('바로잡을 입고일이 없습니다');return;}
+  if(!confirm('코일 '+cand.length+'본의 입고일을 검사 발행분의 실제 입고일로 바꿉니다.\n\n'
+    +cand.slice(0,8).map(([c,d2])=>'  '+c.cno+' : '+c.d+' → '+d2).join('\n')
+    +(cand.length>8?'\n  … 외 '+(cand.length-8)+'본':'')+'\n\n진행할까요?'))return;
+  cand.forEach(([c,d2])=>{c.d=d2; c.n=String(c.n||'').replace(' · 입고일 추정','');});
+  S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
+  save(); autoBom(false); render();
+  toast('코일 '+cand.length+'본의 입고일을 바로잡았습니다');
+}
+
 /* ═══════ 코일 목록 직접 수정 ═══════
    연동으로 받아오는 항목(재질·두께·폭·중량·판정·업체)을 손으로 고치면
    그 칸에 잠금을 걸어 다음 최신화 때 덮어쓰지 않는다. */
@@ -7650,7 +7702,8 @@ function fixMesLots(){
     if(!c||!c.mt)nospec++;
     const wt=e.ckg||0;
     const nid=S.cseq++;
-    S.coils.push({id:nid, d:(c&&c.d)||today(), cno:e.lot,
+    const dd=(S.lotDate||{})[e.lot]||(S.lotDate||{})[lotBase(e.lot)]||(c&&c.d)||today();
+    S.coils.push({id:nid, d:dd, cno:e.lot,
       mt:(c&&c.mt)||'', t:(c&&+c.t)||0, w:0,          /* 폭은 미상 → 무관 처리 */
       wt, sup:(c&&c.sup)||'', ms:lotBase(e.lot),
       iq:'미등록', st:'사용중', lc:'', src:'MESLOT|'+e.lot,
