@@ -113,6 +113,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   #p-raw .guide{font-size:11.5px;padding:8px 10px;line-height:1.7}
   #p-raw .guide .step{width:15px;height:15px;line-height:15px;font-size:9px}
   #p-raw .sum{grid-template-columns:repeat(2,1fr)!important;gap:1px}
+  #p-raw .sum>div:nth-last-child(-n+2){border-bottom:0}
   #p-raw .sum>div{padding:7px 9px}
   #p-raw .sum b{font-size:15px}
   #p-raw .fbar{padding:7px 8px;gap:6px}
@@ -151,6 +152,44 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .mbar i{display:block;height:100%}
 }
 @media(min-width:761px){ .m-only{display:none} }
+
+/* ═══ 휴대폰: 표 어긋남 방지 (모든 탭 공통) ═══ */
+@media(max-width:760px){
+  /* 가로로 밀 때 머리글·합계줄이 따라다니며 칸이 어긋나는 것을 막는다 */
+  .t th{position:static!important;top:auto!important}
+  .t tfoot td{position:static!important;bottom:auto!important}
+  .gw .scroll{max-height:none;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* 칸이 눌려 겹치지 않도록 최소폭 유지 (카드형 표는 제외) */
+  .t:not(.mcard){min-width:660px;table-layout:auto}
+  .t:not(.mcard) th,.t:not(.mcard) td{white-space:nowrap;padding:0 7px;font-size:11px}
+  .t:not(.mcard) th{height:30px;font-size:10.5px}
+  .t:not(.mcard) td{height:30px}
+  .t:not(.mcard) input,.t:not(.mcard) select{font-size:13px}   /* iOS 확대 방지 */
+  /* 좌우로 밀 수 있다는 표시 */
+  .gw{position:relative}
+  .gt{height:auto;min-height:28px;padding:5px 8px;font-size:10.5px;flex-wrap:wrap;line-height:1.5}
+  .gt .r{margin-left:0;width:100%;color:#8A6D1F}
+  /* 용지 여백 축소 */
+  .sheet{padding:9px 7px;border-radius:0}
+  .doc-hd{flex-wrap:wrap;padding-bottom:5px;margin-bottom:7px}
+  .doc-hd h1{font-size:15px;letter-spacing:2px;padding-top:2px;width:100%;text-align:left}
+  .doc-hd .appr,.doc-no{display:none}
+  .doc-info{font-size:11px;gap:8px}
+  .pt{flex-wrap:wrap;gap:6px}
+  .pt h2{font-size:14px}
+  .pt .pa{width:100%;display:flex;gap:6px}
+  .pt .pa .btn{flex:1}
+  .fbar{padding:7px 8px;gap:6px}
+  .fbar input,.fbar select{font-size:13px;padding:8px}
+  .hint{font-size:11px;line-height:1.65}
+  .sum{grid-template-columns:repeat(2,1fr)!important}
+  .modal{width:100%;max-width:none;max-height:100vh;height:100%;border:0}
+  .mask{align-items:stretch}
+  .mb{padding:12px 12px 24px}
+  .mb .g2,.mb .g3{grid-template-columns:1fr!important}
+  .mb input,.mb select{font-size:15px;padding:10px}
+  .mb .act{position:sticky;bottom:0;background:#fff;padding-bottom:6px}
+}
 .t select.ce{font-family:var(--sans);font-size:10.5px;text-align:center;padding:4px 1px}
 .t input.ce:hover,.t select.ce:hover{background:#FFF8C4;cursor:text}
 .t input.ce:focus,.t select.ce:focus{outline:1.5px solid var(--hd);background:#fff}
@@ -5205,6 +5244,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           <button onclick="tglTools(0);openBom(-1)"><b>제품 소요량 직접 등록</b><em>1개 만드는 데 필요한 소재 무게</em></button>
           <div class="grp">점검 · 정리</div>
           <button onclick="tglTools(0);autoBom(true)"><b>사용량 다시 계산</b><em>생산실적으로 코일을 다시 차감</em></button>
+          <button onclick="tglTools(0);rebuildIqc()"><b>코일 다시 만들기</b><em>재고가 부풀려졌을 때 수입검사에서 새로 받기</em></button>
           <button onclick="tglTools(0);purgeLegacy()"><b>예전 연동 자료 지우기</b><em>4월 이전 옛 시스템에서 넘어온 코일</em></button>
           <button onclick="tglTools(0);eqFields()"><b>MES 연결 상태 확인</b><em>어떤 정보가 넘어오는지 점검</em></button>
           <button onclick="tglTools(0);pushRaw(false)"><b>이 기기 자료 올리기</b><em>PC·휴대폰 값을 맞춥니다</em></button>
@@ -5419,6 +5459,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
           직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
         · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
+        · 수입검사 앱에는 <b>코일별 성적서</b>와 <b>묶음 성적서</b>(여러 LOT을 한 건으로 묶고 중량은 합계)가 섞여 있습니다.
+          코일별 성적서를 먼저 반영하고, 묶음 성적서는 <b>아직 코일이 없는 LOT만</b> 보충합니다.
+          묶음에서 나온 코일은 비고에 <b>묶음성적서 균등배분</b>이라고 남습니다.<br>
+        · 재고가 실제보다 많게 잡히면 [관리 도구 → <b>코일 다시 만들기</b>]로 수입검사 자동 코일만 지우고 새로 받으세요.
+          직접 등록·보완한 코일과 손으로 고친 코일은 남습니다.<br>
         · <b>휴대폰</b>에서는 코일 목록·업체별 재고·설비 현황·재고 실사가 <b>카드 형태</b>로 바뀌어 표가 깨지지 않습니다.
           카드를 누르면 수정 창이 열리고, 실사도 카드에서 바로 입력합니다.<br>
         · 원소재 자료(코일·소요량·수기 전표)는 <b>서버에 공유 저장</b>되어 PC와 휴대폰이 같은 값을 봅니다.
@@ -6766,6 +6811,14 @@ function rRaw(){
     if(bn)msgs.push('ℹ <b>재고 시작일 '+BD+'</b> — 그 이전 생산분('+nf(bq)+' EA)은 계산에서 빠집니다. '
       +'그때 쓴 소재는 지금 목록에 없는 옛 재고이기 때문입니다.');
   }
+  /* 성적서 HEAT 와 코일번호가 다른 것 — 묶음 성적서를 잘못 펼친 흔적 */
+  {
+    const bad=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0&&c.ms&&
+      lotBase(c.cno)!==lotBase(c.ms)&&remOf(c)>0.5);
+    if(bad.length)msgs.push('⚠ <b>성적서와 LOT이 어긋난 코일 '+bad.length+'본 / '+kg(bad.reduce((a2,c)=>a2+remOf(c),0))+' kg</b>'
+      +' — 수입검사 앱의 묶음 성적서를 잘못 펼쳐 만들어진 코일입니다. 재고가 실제보다 부풀려집니다. &nbsp;'
+      +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="rebuildIqc()">🔁 코일 다시 만들기</button>');
+  }
   /* 폭을 모르는 코일 */
   {
     const nw=S.coils.filter(c=>!+c.w&&remOf(c)>0.5);
@@ -6822,7 +6875,7 @@ function rRaw(){
   if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
   else W.style.display='none';
 
-  const MC=isMob()&&['coil','sup','eq','cnt'].includes(RV);   /* 휴대폰은 카드형 */
+  const MC=isMob();   /* 휴대폰은 모든 화면 카드형 */
   {const tb=$('tRaw'); if(tb){tb.className='t '+(MC?'mcard':({coil:'w-coil',eq:'w-eq',sup:'w-sup',
     spec:'w-spec',led:'w-led',bom:'w-bom',cnt:'w-cnt'}[RV]||''));}}
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
@@ -6900,6 +6953,11 @@ function rRaw(){
     const R=SP.filter(o=>!q||nz(specNm(o)).includes(q));
     $('gt-raw').innerHTML='규격별 재고 · 총 <b>'+R.length+'</b>규격 · 기준월 '+ym;
     $('rawHint').innerHTML='· <b>안전재고(kg)</b> 칸은 직접 입력하여 저장됩니다. 미달 시 붉게 표시됩니다.<br>· 가용재고는 수입검사 <b>불합격(격리)</b> 코일을 제외한 수량입니다.<br>· 재고일수 = 가용재고 ÷ 당월 일평균 투입량';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(o=>mcSpec(o)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">코일을 먼저 등록하세요.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>재질</th><th>두께 t</th><th>폭 W</th><th>보유코일</th><th>사용가능</th>
       <th>가용재고(kg)</th><th>보류(대기/불합격)</th><th>당월입고</th><th>당월투입</th><th>안전재고(kg)</th><th>과부족</th><th>재고일수</th><th>최고참 입고일</th></tr></thead><tbody>`
      +(R.length?R.map((o,i)=>`<tr>
@@ -6926,6 +6984,11 @@ function rRaw(){
       .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
     $('gt-raw').innerHTML='원소재 수불 · 총 <b>'+R.length+'</b>건 · '+a+' ~ '+b;
     $('rawHint').innerHTML='· <b>자동</b> 표시 전표는 제품 [생산입고] 전표에서 원단위로 산출된 것입니다. 제품 전표가 바뀌면 재계산됩니다.';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(m=>mcRawIo(m)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">해당 기간 수불 내역이 없습니다.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     let ti=0,to=0;
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>일자</th><th>구분</th><th>코일 No.</th><th>규격</th>
       <th>입고(kg)</th><th>투입/출고(kg)</th><th>연계 제품품번</th><th>구분</th><th>비고</th><th>작성</th></tr></thead><tbody>`
@@ -7109,6 +7172,11 @@ function rRaw(){
     $('gt-raw').innerHTML='제품별 원단위 · 총 <b>'+R.length+'</b>품목'
       +(S.diag&&S.diag.noBom.length?' · <b style="color:#B3261E">미등록 '+S.diag.noBom.length+'종</b>':'');
     $('rawHint').innerHTML='· 원단위(kg/EA)가 등록된 품번만 <b>생산입고 시 자동차감</b>됩니다.<br>· 폭(W)을 비워두면 재질·두께만 맞으면 어떤 폭의 코일이든 사용합니다.';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({b:b2,i})=>mcBom(b2,i)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">[🔄 최신화]를 누르면 MES에서 자동 등록됩니다.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>제품 품번</th><th>품명</th><th>재질</th><th>두께 t</th><th>폭 W</th>
       <th>소요(g/EA)</th><th>원단위(kg/EA)</th><th>출처</th><th>당월 생산(EA)</th><th>당월 소요(kg)</th>
       <th>해당규격 재고(kg)</th><th>비고</th></tr></thead><tbody>`
@@ -7397,7 +7465,22 @@ async function syncIqc(silent){
     rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
     /* 진단: 원천에 실제로 무엇이 있는지 월별로 집계한다 */
     const DG={total:rows.length,byYm:{},noDate:0,noRecv:0,before:0,dup:0,used:0,coils:0,noWt:0,minD:'',maxD:''};
-    const covered=new Set(), picks=[];
+    /* 검사앱은 [코일별 행]과 [그룹 요약행(lots_detail=그룹 전체 LOT, weight=합계)]이 섞여 있다.
+       그룹행의 LOT 목록을 코일로 펼치면 남의 HEAT LOT까지 만들어지고 중량도 엉킨다.
+       → 코일별 행을 먼저 확정하고, 그룹행은 아직 코일이 없는 LOT 만 보충한다. */
+    const lotsOf=r=>{
+      let L2=String(r.lots_detail||'').split(',').map(x=>x.trim()).filter(Boolean);
+      const one=String(r.lot_no||r.lot||'').trim();
+      if(!L2.length)L2=one?[one]:[];
+      return {lots:L2, one, group:L2.length>1};
+    };
+    rows.sort((a,b)=>{                       /* 코일별 행 우선 → 그다음 최신순 */
+      const ga=lotsOf(a).group?1:0, gb=lotsOf(b).group?1:0;
+      if(ga!==gb)return ga-gb;
+      return new Date(b.created_at||0)-new Date(a.created_at||0);
+    });
+    const covered=new Set(), coveredLot=new Set(), picks=[];
+    DG.grpUsed=0; DG.grpSkip=0;
     rows.forEach(r=>{
       /* 입고일이 비어 있으면 등록일로 대체 — 이것 때문에 통째로 누락되는 일이 없게 */
       let rd=String(r.receipt_date||'').slice(0,10);
@@ -7409,12 +7492,19 @@ async function syncIqc(silent){
       if(!DG.minD||rd<DG.minD)DG.minD=rd;
       if(rd>DG.maxD)DG.maxD=rd;
       if(rd<from){DG.before++;return;}
-      let lots=String(r.lots_detail||'').split(',').map(x=>x.trim()).filter(Boolean);
-      if(!lots.length){const one=String(r.lot_no||r.lot||'').trim(); lots=one?[one]:['(noLot#'+(r.id||'')+')'];}
+      const LI=lotsOf(r);
+      let lots=LI.lots.length?LI.lots:['(noLot#'+(r.id||'')+')'];
+      if(LI.group){
+        /* 그룹행: 이미 코일이 만들어진 LOT 은 제외하고 남은 것만 */
+        const left=lots.filter(l=>!coveredLot.has(l));
+        if(!left.length){DG.grpSkip++; DG.dup++; return;}
+        lots=left; DG.grpUsed++;
+      }
       const keys=lots.map(l=>l+'@'+rd);
       if(keys.some(k=>!covered.has(k))){
         keys.forEach(k=>covered.add(k));
-        picks.push({r,lots,rd});
+        lots.forEach(l=>coveredLot.add(l));
+        picks.push({r,lots,rd,group:LI.group,full:LI.lots});
         DG.used++; DG.coils+=lots.length;
         if(!(fnum(r.weight)>0))DG.noWt++;
       }else DG.dup++;
@@ -7422,10 +7512,17 @@ async function syncIqc(silent){
     S.iqcDiag=DG;
     let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0,estD=0;
     const seen=new Set();
-    picks.forEach(({r,lots,rd})=>{
+    picks.forEach(({r,lots,rd,group,full})=>{
       const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
       const t=fnum(r.thickness), w=fnum(r.width_mm||r.width);
-      const tot=fnum(r.weight), n=lots.length;
+      let tot=fnum(r.weight);
+      if(group&&full&&full.length>lots.length){
+        /* 묶음 중량에서 이미 만들어진 코일 몫을 빼고 남은 것만 나눈다 */
+        const doneKg=full.filter(l=>lots.indexOf(l)<0)
+          .reduce((a2,l)=>{const c0=S.coils.find(x=>x.cno===l); return a2+(c0?(+c0.wt||0):0);},0);
+        if(doneKg>0&&doneKg<tot)tot=Math.round((tot-doneKg)*10)/10;
+      }
+      const n=lots.length;
       const each=n?Math.round(tot/n*10)/10:tot;
       const certJg=iqcJudge(r.final_judge);
       const rawRecv=String(r.receipt_date||'').slice(0,10);
@@ -7459,7 +7556,7 @@ async function syncIqc(silent){
                  cert:jv?jv.cert:'', ins:jv?jv.ins:'',
                  n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':'',
                     jv?('검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:'')):'검사 미발행',
-                    dEst?'입고일 추정':'']
+                    dEst?'입고일 추정':'', group?'묶음성적서 균등배분('+n+'코일)':'']
                     .filter(Boolean).join(' · '),
                  src};
         if(ex){
@@ -7540,6 +7637,8 @@ async function syncIqc(silent){
         +(estD?' → 코일 '+estD+'본은 검사 발행분의 입고일로 채웠습니다':''));
       if(DG.noDate)L.push('  · 입고일·등록일이 모두 없어 건너뛴 행: '+DG.noDate+'건');
       if(DG.dup)L.push('  · 같은 LOT@입고일 중복 적재로 제외한 행: '+DG.dup+'건');
+      if(DG.grpUsed||DG.grpSkip)L.push('  · 묶음 성적서: '+DG.grpUsed+'건 사용(빠진 LOT 보충) / '
+        +DG.grpSkip+'건 건너뜀(코일별 성적서가 이미 있음)');
       if(DG.noWt)L.push('  · 중량이 0인 행: '+DG.noWt+'건 (코일 중량이 0으로 등록됩니다)');
       alert(L.join('\n'));
     }
@@ -7731,6 +7830,76 @@ function mcRawCnt(c,i){
         placeholder="실사 잔량 kg" style="flex:1;min-width:90px;border:1px solid #c9d4e2;text-align:right;padding:8px">
       <button class="btn" data-cnt="ok" data-ci="${i}" style="padding:8px 12px">있음</button>
       <button class="btn r" data-cnt="no" data-ci="${i}" style="padding:8px 12px">없음</button></div>
+  </td></tr>`;
+}
+
+
+
+/* 수입검사 연동으로 만든 코일을 전부 지우고 다시 만든다.
+   묶음 성적서를 잘못 펼쳐 코일이 부풀려졌을 때 쓴다.
+   수기 등록분·보완분·손으로 고친 코일은 남긴다. */
+async function rebuildIqc(){
+  const auto=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0&&!c.lk);
+  const keep=S.coils.length-auto.length;
+  const used=auto.filter(c=>S.mled.some(m=>m.cid===c.id&&!m.auto));
+  if(!confirm('수입검사에서 자동으로 만든 코일 '+auto.length+'본을 지우고 다시 가져옵니다.\n\n'
+    +'· 남기는 것: 직접 등록·보완한 코일과 손으로 고친 코일 '+keep+'본\n'
+    +'· 수기 전표가 달린 코일 '+used.length+'본은 지우지 않습니다\n\n'
+    +'묶음 성적서를 잘못 펼쳐 재고가 부풀려졌을 때 쓰는 기능입니다. 진행할까요?'))return;
+  const del=new Set(auto.filter(c=>!S.mled.some(m=>m.cid===c.id&&!m.auto)).map(c=>c.id));
+  S.mled=S.mled.filter(m=>!del.has(m.cid));
+  S.coils=S.coils.filter(c=>!del.has(c.id));
+  save();
+  const r=await syncIqc(false);
+  await pushRaw(true);
+  render();
+  toast('코일 '+del.size+'본을 지우고 다시 만들었습니다 · 현재 '+S.coils.length+'본');
+}
+
+/* 규격별·수불·소요량 카드 (휴대폰) */
+function mcSpec(o){
+  const bc=o.sf>0&&o.gap<0?'#B3261E':'#2f6e49';
+  return `<tr><td>
+    <div class="mtitle"><span class="pn" style="font-family:var(--sans)">${esc(specNm(o))}</span>
+      <span class="tag" style="background:#EEF2F6;color:#4a5968">${o.live}/${o.n}코일</span></div>
+    <div class="mrow"><b class="mbig" style="color:${bc}">${kg(o.rem)}</b><span>kg 가용</span>
+      ${o.hold?'<span style="color:#9A6400;font-weight:700;margin-left:auto">보류 '+kg(o.hold)+'kg</span>':''}</div>
+    <div class="mrow"><span>당월입고 ${o.iq?kg(o.iq):'-'}</span><span>당월투입 ${o.oq?kg(o.oq):'-'}</span>
+      ${o.doi!==null?'<span style="margin-left:auto">재고 '+o.doi.toFixed(1)+'일</span>':''}</div>
+    <div class="mrow"><span>안전재고</span>
+      <input type="number" step="1" data-sf="${esc(o.k)}" value="${o.sf||''}" placeholder="0"
+        style="width:96px;border:1px solid #c9d4e2;text-align:right;padding:6px">
+      <span>kg</span>
+      ${o.sf>0?'<b style="margin-left:auto;color:'+(o.gap<0?'#B3261E':'#2f6e49')+'">'+(o.gap>0?'+':'')+kg(o.gap)+'</b>':''}</div>
+  </td></tr>`;
+}
+function mcRawIo(m){
+  const c=S.coils.find(x=>x.id===m.cid), io=mKindIO(m.k);
+  return `<tr ${m.sh?'style="border-color:#e0a9a2"':''}><td onclick="openMio(${m.id})">
+    <div class="mtitle"><span class="pn">${esc(m.cno||'-')}</span>
+      <span class="tag" style="background:${io==='I'?'#E4F1EA':'#FBE9E7'};color:${io==='I'?'#0B6B3A':'#B3261E'}">${esc(m.k)}</span>
+      ${m.auto?'<span class="tag" style="background:#E3EDF7;color:#1F5FA8">자동</span>':''}</div>
+    <div class="mrow"><b class="mbig" style="color:${io==='I'?'#0B6B3A':'#B3261E'}">${io==='I'?'+':'−'}${kg(m.q)}</b>
+      <span>kg</span><span style="margin-left:auto">${m.d}</span></div>
+    <div class="mrow"><span>${c?esc(specNm(c)):''}</span>${m.pn?'<span>'+esc(m.pn)+'</span>':''}</div>
+    ${m.n?`<div class="mrow"><span>${esc(m.n)}</span></div>`:''}
+  </td></tr>`;
+}
+function mcBom(b2,i){
+  const a=mStart(),b=mEnd();
+  let pq=0; S.led.forEach(r=>{if(r.pn===b2.pn&&r.k==='생산입고'&&r.d>=a&&r.d<=b)pq+=r.q;});
+  const need=pq*(+b2.uw||0);
+  const av=S.coils.filter(c=>matchSpec(c,b2)&&usable(c)).reduce((s2,c)=>s2+Math.max(0,remOf(c)),0);
+  const it=S.items.find(x=>x.pn===b2.pn);
+  return `<tr><td onclick="openBom(${i})">
+    <div class="mtitle"><span class="pn">${esc(b2.pn)}</span>
+      <span class="tag" style="background:${b2.src==='MES'?'#E3EDF7':'#EEF2F6'};color:${b2.src==='MES'?'#1F5FA8':'#4a5968'}">${b2.src==='MES'?'MES':'수기'}</span></div>
+    <div class="mrow"><span>${esc(it?it.nm:'')}</span></div>
+    <div class="mrow"><span>${b2.mt?esc(b2.mt)+' '+tmm(b2.t)+'t'+(b2.w?' × '+nf(b2.w)+'W':' 폭무관'):'<b style="color:#B3261E">규격 미상</b>'}</span></div>
+    <div class="mrow"><b class="mbig">${(+b2.uw*1000).toFixed(1)}</b><span>g/EA</span>
+      <span style="margin-left:auto">당월 ${pq?nf(pq)+'EA · '+kg(need)+'kg':'-'}</span></div>
+    <div class="mrow"><span>쓸 수 있는 재고</span>
+      <b style="margin-left:auto;color:${av<need?'#B3261E':'#2f6e49'}">${kg(av)} kg</b></div>
   </td></tr>`;
 }
 
@@ -9020,7 +9189,7 @@ function applyOcr(){
 
 /* ═══════ 모바일 카드 렌더 ═══════ */
 const isMob=()=>window.innerWidth<=760;
-const CARD=false;  /* true: 모바일 카드형, false: 셀(그리드)형 */
+const CARD=true;   /* 휴대폰에서는 카드형으로 (총괄표·실사·입출고) */
 function mcSum(it,v){
   const cls=v.gap<0?'short':(v.cur<=0?'zero':(v.cur<0?'neg':'ok'));
   const gc=v.gap>0?'p':(v.gap===0?'z':'n');
@@ -9075,7 +9244,10 @@ function mcIo(r){
     ${(r.p||r.lot||r.n)?`<div class="mc-sub" style="margin-top:5px">${[r.p,r.lot?'LOT '+r.lot:'',r.n].filter(Boolean).map(esc).join(' · ')}</div>`:''}
   </div>`;
 }
-window.addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(render,250);});
+let _wasMob=isMob();
+window.addEventListener('resize',()=>{clearTimeout(window._rz);
+  window._rz=setTimeout(()=>{ const m=isMob(); if(m!==_wasMob){_wasMob=m;} render(); },250);});
+window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고수불 총괄표','SUMMARY'],['bin','📒','품목별 수불부','BIN CARD'],['io','↔','입출고 내역','IN / OUT'],['cnt','✅','재고실사표','COUNT'],['raw','🧱','원소재 재고','RAW COIL'],['cfg','⚙','품목 마스터','MASTER'],['help','❓','사용안내','HELP']];
 const SUB={
