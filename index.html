@@ -5071,13 +5071,17 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <label style="margin-left:6px">연동 시작일</label>
     <input type="date" id="iqcFrom" style="width:140px" title="이 날짜 이후 수입검사 합격분만 코일로 가져옵니다">
     <select id="rawSt" class="fsel" style="min-width:110px">
-      <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option></select>
+      <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
+      <option value="__hold">⛔ 검사대기·불합격(보류)</option></select>
     <div class="rt">
       <button class="btn k" onclick="openCoil(-1)">＋ 코일 입고</button>
       <button class="btn" onclick="openMio()">＋ 수불 등록</button>
       <button class="btn" onclick="openBom(-1)">＋ 원단위 등록</button>
       <button class="btn" onclick="autoBom(true)" title="생산입고 전표를 읽어 원소재를 FIFO로 자동 차감합니다">🔄 자동차감 실행</button>
       <button class="btn g" onclick="syncIqc(false)" title="소재 수입검사 앱(검사증명서)에서 합격 코일을 가져옵니다">🧪 수입검사 연동</button>
+      <button class="btn" onclick="pick('fCoil')" title="엑셀에서 코일 입고내역을 한 번에 등록합니다">📥 코일 CSV 등록</button>
+      <button class="btn" onclick="coilTpl()" title="CSV 양식을 내려받습니다">📄 양식</button>
+      <input type="file" id="fCoil" accept=".csv,.txt,.tsv" style="display:none">
     </div>
   </div>
 
@@ -5207,12 +5211,20 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · 수입검사 결과가 <b>불합격</b>인 코일은 자동차감 대상에서 제외됩니다(격리재고).<br>
         · <b>규격별 집계</b>에서 재질·두께·폭 단위 안전재고(kg)를 입력하면 미달 시 붉게 표시됩니다.<br>
         · 잔재(자투리) 회수는 <b>잔재반납</b>, 폐기는 <b>스크랩폐기</b> 구분으로 등록합니다.<br>
-        · <b>🧪 수입검사 연동</b>: 소재 수입검사 앱의 <b>검사증명서</b>를 읽어 코일을 자동 생성합니다.
-          성적서 1건(밀시트 1LOT) = <b>조(CUT)수만큼의 슬릿 코일</b>로 분할하고 중량을 균등 배분하며,
-          코일번호는 <b>HEAT-폭W-조번호</b> 형식으로 자동 부여됩니다.
-          같은 성적서를 다시 읽어도 중복 생성되지 않고, MES 동기화 때마다 함께 실행됩니다.<br>
+        · <b>🧪 수입검사 연동</b>: 소재 수입검사 앱(v3.7)의 <b>소재입고(inspection_certs)</b>를 읽어 코일을 자동 생성합니다.
+          <b>LOT 1개 = 코일 1본</b>이며, 한 입고건에 LOT이 여러 개면 그 수만큼 코일로 나누고 중량을 균등 배분합니다.
+          코일번호는 <b>LOT No.</b>를 그대로 씁니다. 같은 LOT을 다시 읽어도 중복 생성되지 않고, MES 동기화 때마다 함께 실행됩니다.<br>
+        · 판정이 <b>검사대기·불합격</b>인 코일은 가용재고와 자동차감에서 <b>보류</b>되고, 규격별 집계의 [보류] 열에 따로 표시됩니다.
+          검사앱에서 판정이 확정되면 다음 연동 때 자동으로 풀립니다.<br>
         · <b>연동 시작일</b> 이후 성적서만 가져옵니다. 이미 생산투입된 코일은 검사앱에서 성적서가 지워져도 남습니다.<br>
-        · 실제 슬릿 중량이 균등배분과 다르면 코일을 열어 <b>입고중량</b>을 직접 고치면 됩니다(잔량 자동 재계산).
+        · 실제 슬릿 중량이 균등배분과 다르면 코일을 열어 <b>입고중량</b>을 직접 고치면 됩니다(잔량 자동 재계산).<br>
+        · <b>📥 코일 CSV 등록</b>: 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
+          양식은 <b>입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고</b> 이며,
+          <b>조수</b>를 2 이상 넣으면 그 수만큼 코일로 분할하고 중량을 균등 배분합니다.
+          코일No를 비우면 <b>밀시트-폭W-조번호</b>로 자동 부여되고, 이미 있는 코일No는 건너뜁니다.<br>
+        · <b>자동차감이 안 될 때</b>: [🔄 자동차감] 버튼을 누르면 사유가 표시됩니다. 원인은 대부분 둘 중 하나입니다 —
+          ① <b>원단위 미등록</b>(원소재 탭 상단 붉은 박스의 품번을 눌러 바로 등록), ② <b>규격 불일치</b>(BOM의 재질·두께·폭이 코일과 다름).
+          SUS304와 STS304는 같은 재질로 인식하고 두께 ±0.03mm / 폭 ±1mm는 허용하며, 폭을 비우면 폭 무관으로 배정합니다.
       </div>
     </div>
 
@@ -5241,7 +5253,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>MILL SHEET / 성적서 No.</label><input id="cMs"></div>
       <div class="fld"><label>수입검사</label><select id="cIq" style="font-family:var(--sans)">
-        <option value="합격">합격</option><option value="대기">검사대기</option><option value="특채">특채</option><option value="불합격">불합격</option></select></div></div>
+        <option value="합격">합격</option><option value="특채">특채</option><option value="대기">검사대기 (투입 보류)</option><option value="불합격">불합격 (격리)</option></select></div></div>
     <div class="g2">
       <div class="fld"><label>보관위치</label><input id="cLc" style="font-family:var(--sans)" placeholder="예: 코일장 A-3"></div>
       <div class="fld"><label>상태</label><select id="cSt" style="font-family:var(--sans)">
@@ -5292,7 +5304,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <div class="fld"><label>수율 (%)</label><input type="number" step="0.1" id="bY" inputmode="decimal" placeholder="예: 72"></div>
       <div class="fld"><label>원단위 (kg/EA)</label><input type="number" step="0.0001" id="bUw" inputmode="decimal"></div></div>
     <div class="hint" style="margin-bottom:8px">· 제품중량과 수율을 입력하면 <b>원단위</b>가 자동 계산됩니다 (원단위 = 제품중량 ÷ 수율 ÷ 1000).<br>
-      · 직접 산출한 값이 있으면 원단위 칸에 바로 입력해도 됩니다.</div>
+      · 직접 산출한 값이 있으면 원단위 칸에 바로 입력해도 됩니다.<br>
+      · <b>재질·두께·폭이 코일과 맞아야 차감</b>됩니다. SUS304와 STS304는 같은 것으로 인식하며,
+        두께 ±0.03mm / 폭 ±1mm 오차는 허용합니다. <b>폭을 비우면 폭 무관</b>으로 배정합니다.</div>
+    <div class="hint" id="bMatch" style="margin-bottom:8px"></div>
     <div class="fld"><label>비고 (금형/피치/열수)</label><input id="bN" style="font-family:var(--sans)"></div>
     <button class="btn k" style="width:100%;padding:11px" onclick="saveBom()">저장</button>
     <button class="btn r" id="bDel" style="width:100%;padding:11px;margin-top:6px" onclick="delBom()">삭제</button>
@@ -5662,6 +5677,7 @@ function load(){
   if(!Array.isArray(S.mled))S.mled=[];
   if(!Array.isArray(S.bom))S.bom=[];
   if(!S.msf||typeof S.msf!=='object')S.msf={};
+  S.diag={noBom:[],noCoil:[]};
   if(!S.cseq)S.cseq=Math.max(1,...S.coils.map(c=>+c.id||0))+1;
   if(!S.mseq)S.mseq=Math.max(1,...S.mled.map(m=>+m.id||0))+1;
   mergeAdd();
@@ -6115,18 +6131,42 @@ function rCfg(){
 const MKINDS=[['구매입고','I'],['반품입고','I'],['잔재반납','I'],['재고조정(+)','I'],
               ['생산투입','O'],['스크랩폐기','O'],['반품출고','O'],['재고조정(-)','O']];
 const mKindIO=k=>(MKINDS.find(x=>x[0]===k)||['','O'])[1];
-const MT_DEF='SPCC,SPHC,SPHD,SAPH440,SPFH590,SPFC590,SGARC,SUS304,SUS430,S45C';
-const SUP_DEF='포스코,현대제철,동국제강,세아제강,KG스틸,포스코강판';
+const MT_DEF='SPCC,SPHC,SPHD,SAPH440,SPFH590,SPFC590,SGARC,STS304,STS430,STS316,C67S,S55CM,S45C,SK5';
+const SUP_DEF='태경스틸,정민스틸,㈜동일스테인레스,포스코,현대제철,동국제강,세아제강,KG스틸';
 let RV='coil';   /* 원소재 탭 하위화면: coil / spec / led / bom */
 
 const kg=n=>(Math.round((+n||0)*10)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const specKey=o=>[String(o.mt||'').toUpperCase().trim(),(+o.t||0).toFixed(2),(+o.w||0)].join('|');
 const specNm=o=>`${o.mt||'-'} ${(+o.t||0).toFixed(1)}t × ${nf(o.w)}W`;
+/* 재질 표기 정규화: SUS304 = STS304 = SUS-304 = sus 304 */
+function normMt(v){
+  let k=String(v||'').toUpperCase().replace(/[\s\-_().]/g,'');
+  k=k.replace(/^(SUS|STS)/,'STS');          /* SUS ↔ STS 통일 */
+  k=k.replace(/^KSD\d+/,'').replace(/^JISG\d+/,'').replace(/^ASTMA\d+M?/,'');
+  return k;
+}
+const T_TOL=0.03, W_TOL=1;   /* 두께·폭 매칭 허용오차 (실측/공칭 편차 흡수) */
 function matchSpec(c,b){
-  if(String(c.mt||'').toUpperCase().trim()!==String(b.mt||'').toUpperCase().trim())return false;
-  if(Math.abs((+c.t||0)-(+b.t||0))>0.005)return false;
-  if(+b.w&&+c.w!==+b.w)return false;      /* BOM 폭 미지정 시 폭 무관 */
+  if(normMt(c.mt)!==normMt(b.mt))return false;
+  if(Math.abs((+c.t||0)-(+b.t||0))>T_TOL)return false;
+  if(+b.w&&Math.abs((+c.w||0)-(+b.w||0))>W_TOL)return false;   /* BOM 폭 미지정 시 폭 무관 */
   return true;
+}
+/* 왜 매칭이 안 됐는지 사유 반환 */
+function whyNoMatch(b){
+  if(!S.coils.length)return '등록된 코일이 없습니다';
+  const mt=S.coils.filter(c=>normMt(c.mt)===normMt(b.mt));
+  if(!mt.length)return '재질 '+b.mt+' 코일 없음 (보유: '+[...new Set(S.coils.map(c=>c.mt))].join(', ')+')';
+  const th=mt.filter(c=>Math.abs((+c.t||0)-(+b.t||0))<=T_TOL);
+  if(!th.length)return '두께 '+(+b.t)+'t 코일 없음 (보유: '+[...new Set(mt.map(c=>+c.t))].sort((x,y)=>x-y).join('/')+'t)';
+  const wd=(+b.w)?th.filter(c=>Math.abs((+c.w||0)-(+b.w||0))<=W_TOL):th;
+  if(!wd.length)return '폭 '+nf(b.w)+'W 코일 없음 (보유: '+[...new Set(th.map(c=>+c.w))].sort((x,y)=>x-y).join('/')+'W) — 폭을 비우면 폭 무관';
+  const ok=wd.filter(c=>usable(c)&&remOf(c)>0.01);
+  if(!ok.length){
+    const hd=wd.filter(c=>!usable(c)&&remOf(c)>0.5);
+    return hd.length?'규격은 맞으나 '+hd.length+'본이 검사대기·불합격으로 보류 상태입니다 (검사앱에서 판정 확정 필요)'
+                   :'규격은 맞으나 가용 잔량 0 (소진/반품)';}
+  return '';
 }
 /* 코일 잔량(kg) = 입고중량 + 입고전표 − 출고전표 */
 function remOf(c){
@@ -6146,6 +6186,14 @@ function isDeadCoil(c){ return coilSt(c)!=='소진'&&coilSt(c)!=='반품'&&coilA
 /* ── 원단위 FIFO 자동차감 ─────────────────────────────────── */
 function autoBom(verbose){
   const bomOf=pn=>S.bom.find(b=>b.pn===pn&&+b.uw>0);
+  /* 진단: 당월 생산입고가 있는데 원단위가 없는 품번 */
+  const a0=mStart(), b0=mEnd(), NB=new Map();
+  S.led.forEach(r=>{
+    if(r.k!=='생산입고'||r.q<=0||r.d<a0||r.d>b0)return;
+    if(bomOf(r.pn))return;
+    NB.set(r.pn,(NB.get(r.pn)||0)+r.q);
+  });
+  S.diag={noBom:[...NB.entries()].sort((x,y)=>y[1]-x[1]),noCoil:[]};
   const src=S.led.filter(r=>r.k==='생산입고'&&r.q>0&&bomOf(r.pn));
   const M=new Map(src.map(r=>[r.id,r]));
   let del=0;
@@ -6161,7 +6209,7 @@ function autoBom(verbose){
     const b=bomOf(r.pn);
     let need=Math.round(r.q*(+b.uw)*100)/100;
     if(need<=0.01)return;
-    const cand=S.coils.filter(c=>matchSpec(c,b)&&c.iq!=='불합격'&&c.st!=='반품'&&remOf(c)>0.01)
+    const cand=S.coils.filter(c=>matchSpec(c,b)&&usable(c)&&remOf(c)>0.01)
       .sort((x,y)=>String(x.d||'').localeCompare(String(y.d||''))||x.id-y.id);   /* 선입선출 */
     for(const c of cand){
       if(need<=0.01)break;
@@ -6177,9 +6225,32 @@ function autoBom(verbose){
     }
   });
   S.coils.forEach(c=>{if(c.st!=='반품')c.st=coilSt(c);});
+  S.diag.noCoil=S.bom.map(b=>({pn:b.pn,why:whyNoMatch(b)})).filter(x=>x.why);
   if(add||del)save();
-  if(verbose)toast('자동차감 완료 · 생성 '+add+'건'+(del?' / 재계산 '+del:'')
-    +(shN?' · ⚠ 코일부족 '+shN+'건('+kg(shKg)+'kg)':''));
+  if(verbose){
+    const L=[];
+    L.push('자동차감 결과');
+    L.push('  · 생성 '+add+'건'+(del?' / 재계산 '+del:''));
+    L.push('  · 원단위 등록 품번: '+S.bom.filter(b=>+b.uw>0).length+'종');
+    L.push('  · 코일: 총 '+S.coils.length+'본 / 가용 '
+      +S.coils.filter(c=>usable(c)&&remOf(c)>0.5).length+'본');
+    if(shN)L.push('  · ⚠ 코일부족 '+shN+'건 ('+kg(shKg)+'kg 미배정)');
+    if(S.diag.noBom.length){
+      L.push('');
+      L.push('■ 원단위 미등록으로 차감되지 않은 품번 ('+S.diag.noBom.length+'종, 당월 생산입고 기준)');
+      S.diag.noBom.slice(0,15).forEach(([pn,q])=>L.push('   - '+pn+' : '+nf(q)+' EA'));
+      if(S.diag.noBom.length>15)L.push('   … 외 '+(S.diag.noBom.length-15)+'종');
+      L.push('  → [원단위(BOM)] 화면에서 등록하세요.');
+    }
+    if(S.diag.noCoil.length){
+      L.push('');
+      L.push('■ 원단위는 있으나 맞는 코일이 없는 품번 ('+S.diag.noCoil.length+'종)');
+      S.diag.noCoil.slice(0,15).forEach(x=>L.push('   - '+x.pn+' : '+x.why));
+      if(S.diag.noCoil.length>15)L.push('   … 외 '+(S.diag.noCoil.length-15)+'종');
+    }
+    if(!S.diag.noBom.length&&!S.diag.noCoil.length&&!shN)L.push('\n모든 생산입고 전표가 정상 차감되었습니다.');
+    alert(L.join('\n'));
+  }
   return {add,del,shN,shKg};
 }
 
@@ -6192,7 +6263,7 @@ function specAgg(){
     if(!M.has(k))M.set(k,{k,mt:c.mt,t:+c.t||0,w:+c.w||0,n:0,live:0,rem:0,hold:0,iq:0,oq:0,old:''});
     const o=M.get(k), r=remOf(c);
     o.n++;
-    if(r>0.5){ if(c.iq==='불합격')o.hold+=r; else {o.live++;o.rem+=r;} }
+    if(r>0.5){ if(!usable(c))o.hold+=r; else {o.live++;o.rem+=r;} }
     if(c.d>=mStart()&&c.d<=mEnd())o.iq+=(+c.wt||0);
     if(!o.old||String(c.d||'')<o.old)o.old=c.d||'';
   });
@@ -6219,7 +6290,7 @@ function rRaw(){
   /* 요약 */
   let nC=0,rem=0,iq=0,oq=0,dead=0;
   S.coils.forEach(c=>{const r=remOf(c);
-    if(c.st!=='반품'&&c.iq!=='불합격'&&r>0.5){nC++;rem+=r;} if(isDeadCoil(c))dead++;});
+    if(usable(c)&&r>0.5){nC++;rem+=r;} if(isDeadCoil(c))dead++;});
   S.coils.forEach(c=>{if(c.st!=='반품'&&c.d>=a&&c.d<=b)iq+=(+c.wt||0);});
   S.mled.forEach(m=>{if(m.d<a||m.d>b)return; if(mKindIO(m.k)==='I')iq+=m.q; else if(m.k==='생산투입')oq+=m.q;});
   const SP=specAgg(), nShort=SP.filter(o=>o.sf>0&&o.gap<0).length;
@@ -6231,20 +6302,45 @@ function rRaw(){
   /* 부족 경고 */
   const sh=S.mled.filter(m=>m.sh&&m.d>=a&&m.d<=b);
   const W=$('rawWarn');
+  const D=S.diag||{noBom:[],noCoil:[]};
+  const msgs=[];
   if(sh.length){
     const t=sh.reduce((s2,m)=>s2+m.q,0);
-    W.style.display='block';
-    W.innerHTML='⚠ <b>코일 재고 부족</b> — 당월 생산투입 중 '+sh.length+'건 / <b>'+kg(t)
-      +' kg</b> 이 배정할 코일이 없습니다. 해당 규격 코일을 입고 등록하면 자동으로 재배정됩니다. ('
-      +[...new Set(sh.map(m=>m.pn))].slice(0,6).join(', ')+')';
-  }else W.style.display='none';
+    msgs.push('⚠ <b>코일 재고 부족</b> — 당월 생산투입 중 '+sh.length+'건 / <b>'+kg(t)
+      +' kg</b> 이 배정할 코일이 없습니다. 해당 규격 코일을 입고하면 자동 재배정됩니다. ('
+      +[...new Set(sh.map(m=>m.pn))].slice(0,6).join(', ')+')');
+  }
+  if(D.noBom.length){
+    msgs.push('⚠ <b>원단위 미등록 '+D.noBom.length+'종</b> — 당월 생산입고가 있으나 원단위가 없어 <b>차감되지 않습니다</b>. '
+      +'품번을 눌러 바로 등록하세요 &nbsp;'
+      +D.noBom.slice(0,10).map(([pn,q])=>'<span onclick="openBom(-1,\''+esc(pn)+'\')" style="display:inline-block;'
+      +'background:#fff;border:1px solid #E0A9A2;border-radius:10px;padding:1px 8px;margin:2px 3px 0 0;cursor:pointer;'
+      +'font-weight:700">'+esc(pn)+' <em style="font-weight:400;color:#8A6D1F">'+nf(q)+'EA</em></span>').join('')
+      +(D.noBom.length>10?' <b>외 '+(D.noBom.length-10)+'종</b>':''));
+  }
+  if(D.noCoil.length){
+    msgs.push('⚠ <b>규격 불일치 '+D.noCoil.length+'종</b> — 원단위는 있으나 맞는 코일이 없습니다. '
+      +D.noCoil.slice(0,4).map(x=>'<b>'+esc(x.pn)+'</b>: '+esc(x.why)).join(' / ')
+      +(D.noCoil.length>4?' 외 '+(D.noCoil.length-4)+'종':''));
+  }
+  /* 수입검사 연동 데이터가 기준월보다 오래됐으면 알린다 */
+  const iqc=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0);
+  if(iqc.length){
+    const last=iqc.reduce((m2,c)=>String(c.d||'')>m2?c.d:m2,'');
+    if(last&&last<a)msgs.push('ℹ <b>수입검사 연동 최신 입고일: '+last+'</b> — 기준월('+ym+')에 해당하는 소재 입고분이 '
+      +'수입검사 앱에 아직 등록되지 않았습니다. 그 기간 코일은 <b>📥 코일 CSV 등록</b>으로 직접 넣거나, '
+      +'검사앱에 성적서를 입력한 뒤 다시 연동하세요.');
+  }
+  if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
+  else W.style.display='none';
 
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',bom:'제 품 별 원 단 위 표'};
   $('rawTtl').textContent=TT[RV];
 
   if(RV==='coil'){
     const R=S.coils.map((c,i)=>({c,i})).filter(({c})=>{
-      if(fst&&coilSt(c)!==fst)return false;
+      if(fst==='__hold'){ if(usable(c))return false; }
+      else if(fst&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
     $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'+kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg';
     $('rawHint').innerHTML='· 코일번호를 클릭하면 수정·삭제할 수 있습니다. 잔량은 수불전표로 자동 계산되며 직접 수정하지 않습니다.<br>· 수입검사 <b>불합격</b> 코일은 자동차감 대상에서 제외됩니다.';
@@ -6263,7 +6359,7 @@ function rRaw(){
          <td style="font-weight:700" class="${r<=0.5?'':'pos'}">${kg(r)}</td>
          <td>${pct.toFixed(0)}%</td>
          <td class="c" style="font-family:var(--sans);color:${sc};font-weight:700">${st}</td>
-         <td class="c" style="font-family:var(--sans);color:${c.iq==='불합격'?'#B3261E':(c.iq==='합격'?'#0B6B3A':'#9A6400')}">${esc(c.iq||'')}</td>
+         <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(usable(c)?'#0B6B3A':'#9A6400')}">${esc(c.iq||'')}${usable(c)?'':' ⛔'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
          <td class="l">${esc(c.ms||'')}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.lc||'')}</td>
@@ -6281,7 +6377,7 @@ function rRaw(){
     $('gt-raw').innerHTML='규격별 재고 · 총 <b>'+R.length+'</b>규격 · 기준월 '+ym;
     $('rawHint').innerHTML='· <b>안전재고(kg)</b> 칸은 직접 입력하여 저장됩니다. 미달 시 붉게 표시됩니다.<br>· 가용재고는 수입검사 <b>불합격(격리)</b> 코일을 제외한 수량입니다.<br>· 재고일수 = 가용재고 ÷ 당월 일평균 투입량';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>재질</th><th>두께 t</th><th>폭 W</th><th>보유코일</th><th>사용가능</th>
-      <th>가용재고(kg)</th><th>격리(불합격)</th><th>당월입고</th><th>당월투입</th><th>안전재고(kg)</th><th>과부족</th><th>재고일수</th><th>최고참 입고일</th></tr></thead><tbody>`
+      <th>가용재고(kg)</th><th>보류(대기/불합격)</th><th>당월입고</th><th>당월투입</th><th>안전재고(kg)</th><th>과부족</th><th>재고일수</th><th>최고참 입고일</th></tr></thead><tbody>`
      +(R.length?R.map((o,i)=>`<tr>
         <td class="c">${i+1}</td><td class="c" style="font-family:var(--sans);font-weight:700">${esc(o.mt)}</td>
         <td>${o.t.toFixed(2)}</td><td>${nf(o.w)}</td><td>${o.n}</td><td>${o.live}</td>
@@ -6330,7 +6426,8 @@ function rRaw(){
 
   else{ /* bom */
     const R=S.bom.map((b2,i)=>({b:b2,i})).filter(({b:b2})=>!q||nz(b2.pn+' '+b2.mt).includes(q));
-    $('gt-raw').innerHTML='제품별 원단위 · 총 <b>'+R.length+'</b>품목';
+    $('gt-raw').innerHTML='제품별 원단위 · 총 <b>'+R.length+'</b>품목'
+      +(S.diag&&S.diag.noBom.length?' · <b style="color:#B3261E">미등록 '+S.diag.noBom.length+'종</b>':'');
     $('rawHint').innerHTML='· 원단위(kg/EA)가 등록된 품번만 <b>생산입고 시 자동차감</b>됩니다.<br>· 폭(W)을 비워두면 재질·두께만 맞으면 어떤 폭의 코일이든 사용합니다.';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>제품 품번</th><th>품명</th><th>재질</th><th>두께 t</th><th>폭 W</th>
       <th>제품중량(g)</th><th>수율(%)</th><th>원단위(kg/EA)</th><th>당월 생산(EA)</th><th>당월 소요(kg)</th>
@@ -6338,7 +6435,7 @@ function rRaw(){
      +(R.length?R.map(({b:b2,i},n)=>{
         let pq=0; S.led.forEach(r=>{if(r.pn===b2.pn&&r.k==='생산입고'&&r.d>=a&&r.d<=b)pq+=r.q;});
         const need=pq*(+b2.uw||0);
-        const av=S.coils.filter(c=>matchSpec(c,b2)&&c.st!=='반품'&&c.iq!=='불합격').reduce((s2,c)=>s2+Math.max(0,remOf(c)),0);
+        const av=S.coils.filter(c=>matchSpec(c,b2)&&usable(c)).reduce((s2,c)=>s2+Math.max(0,remOf(c)),0);
         const it=S.items.find(x=>x.pn===b2.pn);
         return `<tr>
          <td class="c">${n+1}</td>
@@ -6431,8 +6528,8 @@ function delMio(){
 }
 
 /* ── 원단위(BOM) 모달 ─────────────────────────────────────── */
-function openBom(i){
-  const n=i<0, b=n?{pn:'',mt:'',t:'',w:'',net:'',y:'',uw:'',n:''}:S.bom[i];
+function openBom(i,pre){
+  const n=i<0, b=n?{pn:pre||'',mt:'',t:'',w:'',net:'',y:'',uw:'',n:''}:S.bom[i];
   $('bmT').firstChild.textContent=n?'원단위 등록':'원단위 수정';
   $('bIdx').value=i;
   [['bPn','pn'],['bMt','mt'],['bT','t'],['bW','w'],['bNet','net'],['bY','y'],['bUw','uw'],['bN','n']]
@@ -6445,6 +6542,20 @@ function bInfo(){
   const it=S.items.find(x=>x.pn===$('bPn').value.trim());
   $('bInfo').innerHTML=it?`${esc(it.nm||'품명 미등록')} · ${esc(it.sp||'')} · 현재고 ${nf(calc(it).cur)} EA`
     :'품목대장에 등록된 제품 품번을 입력하세요.';
+  bMatch();
+}
+/* 입력 중인 규격에 맞는 코일이 있는지 실시간 확인 */
+function bMatch(){
+  const el=$('bMatch'); if(!el)return;
+  const b={mt:$('bMt').value.trim(),t:+$('bT').value||0,w:+$('bW').value||0};
+  if(!b.mt||!b.t){el.innerHTML='';return;}
+  const hit=S.coils.filter(c=>matchSpec(c,b)&&usable(c)&&remOf(c)>0.01);
+  if(hit.length){
+    const t=hit.reduce((s2,c)=>s2+remOf(c),0);
+    el.innerHTML='<span style="color:#0B6B3A;font-weight:700">✔ 매칭되는 코일 '+hit.length+'본 · 가용 '+kg(t)+' kg</span>';
+  }else{
+    el.innerHTML='<span style="color:#B3261E;font-weight:700">✕ 맞는 코일 없음</span> — '+esc(whyNoMatch(b));
+  }
 }
 function calcUw(){
   const net=+$('bNet').value||0, y=+$('bY').value||0;
@@ -6505,98 +6616,143 @@ function exportRaw(){
 }
 
 
-/* ═══════ 소재 수입검사 앱(Material_IQC) 연동 ═══════
-   material_cert (검사증명서) 1건 = 밀시트 1LOT = 조(CUT)수 만큼의 슬릿 코일
-   → 조수만큼 코일을 생성하고 중량은 균등 배분한다.                     */
-const IQC_TABLE='material_cert';
-const IQC_FROM_DEF='2026-01-01';
-/* "0.5(T) X 118(mm)" / "0.6(T) X 90(W)mm" → {t,w} */
-function parseSize(s2){
-  const m=String(s2||'').match(/([\d.]+)\s*\(?\s*T\s*\)?\s*[X×x*]\s*([\d.]+)/i);
-  return m?{t:+m[1]||0,w:+m[2]||0}:{t:0,w:0};
-}
-/* "9조" / "7CUT" → 9 / 7 */
-function parseCut(s2){ const m=String(s2||'').match(/(\d+)/); return m?Math.max(1,+m[1]):1; }
-/* 규격문자열 → 재질코드 */
-function matOf(spec,commodity){
-  const s2=String(spec||'').toUpperCase()+' '+String(commodity||'').toUpperCase();
-  if(/STS\s*304|A240M?-?304|\b304\b/.test(s2))return 'STS304';
-  if(/STS\s*430|A240M?-?430|\b430\b/.test(s2))return 'STS430';
-  if(/STS\s*316|\b316\b/.test(s2))return 'STS316';
-  if(/SPCC|SPC1|G3141|A1008/.test(s2))return 'SPCC';
-  if(/SPHC|G3131/.test(s2))return 'SPHC';
-  if(/SAPH\s*440/.test(s2))return 'SAPH440';
-  if(/SPFH\s*590|SPFC\s*590/.test(s2))return 'SPFH590';
-  const m=s2.match(/[A-Z]{2,5}\s?\d{0,3}/); return m?m[0].replace(/\s/g,''):'미분류';
-}
-const iqcJudge=j=>{const v=String(j||'').toUpperCase();
-  return v==='OK'||v==='합격'?'합격':(v==='NG'||v==='불합격'?'불합격':(v==='특채'?'특채':'대기'));};
+/* ═══════ 소재 수입검사 앱(v3.7) 연동 ═══════
+   inspection_certs 1행 = 소재 입고건. LOT 1개 = 슬릿 코일 1본.
+   · lots_detail 에 LOT 이 여러 개면 그 수만큼 코일로 나누고 중량을 균등 배분한다.
+   · 같은 LOT@입고일이 그룹행·코일행으로 중복 적재되어 있어 최신 행 우선으로 1회만 취한다.  */
+const IQC_URL='https://omngtyewdaqpphnzeate.supabase.co';
+const IQC_KEY='sb_publishable_9j2YkkL-7ul1TrhH-NjVdQ_vWDG2-1D';
+const IQC_TABLE='inspection_certs';
+const IQC_FROM_DEF='2026-05-01';
+const fnum=v=>{const x=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,''));return isNaN(x)?0:x;};
+/* LOT 베이스: 26F12140-11-017B → 26F12140 */
+function lotBase(l){const s2=String(l||'').trim();const i=s2.indexOf('-');return i>=0?s2.slice(0,i):s2;}
+const iqcJudge=j=>{const v=String(j||'').trim().toUpperCase();
+  if(v==='OK'||v==='합격')return '합격';
+  if(v==='NG'||v==='불합격')return '불합격';
+  if(v==='특채')return '특채';
+  return '대기';};
+/* 자동차감·가용재고에 쓸 수 있는 코일인가 (불합격·검사대기는 제외) */
+const usable=c=>c.st!=='반품'&&(c.iq==='합격'||c.iq==='특채'||!c.iq);
 
+let iqcBusy=false;
 async function syncIqc(silent){
   if(iqcBusy)return; iqcBusy=true;
   const from=($('iqcFrom')&&$('iqcFrom').value)||S.iqcFrom||IQC_FROM_DEF;
   S.iqcFrom=from;
   try{
-    const rows=await fetchAll(SB_URL+'/rest/v1/'+IQC_TABLE
-      +'?select=id,date,recv_date,supplier,commodity,spec,surface,size,weight,cut,lot,heat,judge,label,remark'
-      +'&date=gte.'+from+'&order=date.asc',
-      {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
-    /* 검사앱에 동일 성적서가 여러 id로 중복 저장되어 있어 자연키로 1건만 취한다 */
-    const uniq=new Map();
-    rows.forEach(x=>{
-      if(!x.date||!x.size)return;
-      const k=['IQC',x.date,x.heat||'',x.size||'',x.weight||'',x.lot||'',x.cut||''].join('|');
-      if(!uniq.has(k))uniq.set(k,x);
+    const rows=await fetchAll(IQC_URL+'/rest/v1/'+IQC_TABLE+'?select=*&order=created_at.desc',
+      {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
+    /* 최신 행 우선 + LOT@입고일 커버리지로 이중 적재 차단 (검사앱 v3.5 로직과 동일) */
+    rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    const covered=new Set(), picks=[];
+    rows.forEach(r=>{
+      const rd=r.receipt_date||'';
+      if(!rd||rd<from)return;
+      let lots=String(r.lots_detail||'').split(',').map(x=>x.trim()).filter(Boolean);
+      if(!lots.length){const one=String(r.lot_no||r.lot||'').trim(); lots=one?[one]:['(noLot#'+(r.id||'')+')'];}
+      const keys=lots.map(l=>l+'@'+rd);
+      if(keys.some(k=>!covered.has(k))){
+        keys.forEach(k=>covered.add(k));
+        picks.push({r,lots,rd});
+      }
     });
-    let add=0,upd=0,skipNg=0;
+    let add=0,upd=0,hold=0;
     const seen=new Set();
-    [...uniq.entries()].forEach(([k,x])=>{
-      const jg=iqcJudge(x.judge);
-      if(jg==='불합격'){skipNg++;}
-      const {t,w}=parseSize(x.size), cut=parseCut(x.cut);
-      const tot=+x.weight||0, each=cut?Math.round(tot/cut*10)/10:tot;
-      const mt=matOf(x.spec,x.commodity);
-      const d=x.recv_date||x.date;
-      for(let i=1;i<=cut;i++){
-        const src=k+'#'+p2(i);
+    picks.forEach(({r,lots,rd})=>{
+      const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
+      const t=fnum(r.thickness), w=fnum(r.width_mm||r.width);
+      const tot=fnum(r.weight), n=lots.length;
+      const each=n?Math.round(tot/n*10)/10:tot;
+      const jg=iqcJudge(r.final_judge);
+      if(jg!=='합격'&&jg!=='특채')hold+=n;
+      lots.forEach((lot,i)=>{
+        const isNo=lot.indexOf('(noLot#')===0;
+        const src='IQC2|'+lot+'@'+rd;
         seen.add(src);
-        /* 코일번호: HEAT-폭W-조번호 (중복 시 입고일 접미) */
-        let cno=(x.heat||x.lot||'IQC')+'-'+(w||0)+'W-'+p2(i);
+        let cno=isNo?((r.heat_no||mt||'IQC')+'-'+(w||0)+'W-'+p2(i+1)):lot;
         const ex=S.coils.find(c=>c.src===src);
-        if(!ex&&S.coils.some(c=>c.cno===cno))cno+='-'+String(d).slice(5).replace('-','');
-        const o={d,cno,mt,t,w,wt:each,sup:x.supplier||'',ms:x.lot||'',
-                 iq:jg,lc:'',n:[x.commodity,x.surface,x.label?'라벨 '+x.label:''].filter(Boolean).join(' · '),
+        if(!ex&&S.coils.some(c=>c.cno===cno))cno+='#'+String(rd).slice(5).replace('-','');
+        const o={d:rd,cno,mt,t,w,wt:each,sup:r.supplier||'',ms:r.heat_no||lotBase(lot),iq:jg,
+                 n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':''].filter(Boolean).join(' · '),
                  src};
         if(ex){
-          /* 잔량에 영향 주는 항목만 갱신, 사용자가 고친 위치·상태는 보존 */
           if(ex.wt!==o.wt||ex.mt!==o.mt||ex.t!==o.t||ex.w!==o.w||ex.iq!==o.iq||ex.d!==o.d){
             Object.assign(ex,{d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms});upd++;}
         }else{
-          S.coils.push(Object.assign({id:S.cseq++,st:'대기'},o));add++;
+          S.coils.push(Object.assign({id:S.cseq++,st:'대기',lc:''},o));add++;
         }
-      }
+      });
     });
-    /* 검사앱에서 삭제된 성적서의 코일은 미사용분에 한해 정리 */
+    /* 검사앱에서 지워진 입고건의 코일은 미사용분만 정리 */
     let del=0;
     for(let i=S.coils.length-1;i>=0;i--){
       const c=S.coils[i];
-      if(!c.src||c.src.indexOf('IQC|')!==0)continue;
-      if(seen.has(c.src))continue;
-      if(c.d<from)continue;
-      if(S.mled.some(m=>m.cid===c.id))continue;   /* 이미 투입된 코일은 보존 */
+      if(!c.src||c.src.indexOf('IQC2|')!==0)continue;
+      if(seen.has(c.src)||c.d<from)continue;
+      if(S.mled.some(m=>m.cid===c.id))continue;
       S.coils.splice(i,1);del++;
     }
     S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
     if(add||upd||del){save();autoBom(false);render();}
-    if(!silent)toast('수입검사 연동 완료 · 성적서 '+uniq.size+'건 → 코일 신규 '+add
-      +(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:'')+(skipNg?' · 불합격 '+skipNg+'건 격리':''));
-    return {add,upd,del};
+    S.iqcLast=new Date().toISOString();
+    if(!silent)toast('수입검사 연동 · 입고 '+picks.length+'건 → 코일 신규 '+add
+      +(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:'')+(hold?' · 검사대기·불합격 '+hold+'본 보류':''));
+    return {add,upd,del,hold};
   }catch(e){
     if(!silent)toast('수입검사 연동 실패: '+e.message);
     console.warn('IQC 연동:',e.message);
   }finally{ iqcBusy=false; }
 }
-let iqcBusy=false;
+
+
+/* ═══════ 코일 CSV 일괄등록 ═══════
+   형식: 입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고
+   · 조수 2 이상이면 그 수만큼 코일로 분할하고 중량을 균등 배분한다.
+   · 코일No 를 비우면 [밀시트-폭W-조번호] 로 자동 부여한다.                */
+const COIL_TPL='입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고\n'
+  +'2026-08-05,,SPCC,0.6,90,3020,7,태경스틸,01SA133780,코일장 A-1,\n'
+  +'2026-08-06,5E56766-118W-01,STS304,0.5,118,570,,㈜동일스테인레스,QFD0287,코일장 B-2,\n';
+function coilTpl(){
+  dl(new Blob(['\ufeff'+COIL_TPL],{type:'text/csv;charset=utf-8'}),'코일입고_양식.csv');
+  toast('CSV 양식을 내려받았습니다');
+}
+$('fCoil').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return; e.target.value='';
+  const txt=(await readText(f)).replace(/^\ufeff/,'');
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
+  let add=0, dup=0, err=[];
+  lines.forEach((l,ln)=>{
+    const p=l.split(/[,\t;]/).map(x=>x.trim().replace(/^"|"$/g,''));
+    if(!p[0]||/입고일|일자|date/i.test(p[0]))return;         /* 헤더 */
+    const d=p[0].replace(/[./]/g,'-');
+    if(!/^\d{4}-\d{1,2}-\d{1,2}$/.test(d)){err.push((ln+1)+'행: 입고일 형식 오류 ['+p[0]+']');return;}
+    const mt=(p[2]||'').toUpperCase(), t=+p[3]||0, w=+p[4]||0, tot=+String(p[5]||'').replace(/[^0-9.]/g,'')||0;
+    if(!mt){err.push((ln+1)+'행: 재질 없음');return;}
+    if(!(tot>0)){err.push((ln+1)+'행: 중량 없음');return;}
+    const cut=Math.max(1,parseInt(p[6])||1);
+    const each=Math.round(tot/cut*10)/10;
+    const sup=p[7]||'', ms=p[8]||'', lc=p[9]||'', note=p[10]||'';
+    for(let i=1;i<=cut;i++){
+      let cno=(p[1]||'').trim();
+      if(!cno) cno=(ms||mt)+'-'+(w||0)+'W-'+p2(i);
+      else if(cut>1) cno=cno+'-'+p2(i);
+      if(S.coils.some(c=>c.cno===cno)){dup++;continue;}
+      S.coils.push({id:S.cseq++,d:pad3(d),cno,mt,t,w,wt:each,sup,ms,iq:'합격',
+        lc,st:'대기',n:note});
+      add++;
+    }
+  });
+  if(add){
+    S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
+    save(); autoBom(false); render();
+  }
+  toast('코일 '+add+'본 등록'+(dup?' · 중복 '+dup+'본 건너뜀':'')+(err.length?' · 오류 '+err.length+'행':''));
+  if(err.length)alert('아래 행은 등록되지 않았습니다.\n\n'+err.slice(0,20).join('\n')
+    +(err.length>20?'\n… 외 '+(err.length-20)+'행':''));
+};
+/* 2026-8-5 → 2026-08-05 */
+function pad3(d){const[y,m,dd]=d.split('-');return y+'-'+p2(+m)+'-'+p2(+dd);}
 
 /* ═══════ 모달 ═══════ */
 function closeAll(){document.querySelectorAll('.mask').forEach(m=>m.classList.remove('on'));}
@@ -7392,7 +7548,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
@@ -7493,6 +7649,7 @@ $('binPn').onchange=rBin;
 $('rawQ').oninput=rRaw; $('rawSt').onchange=rRaw;
 $('mCno').oninput=mInfo; $('bPn').oninput=bInfo;
 ['bNet','bY'].forEach(i=>$(i).oninput=calcUw);
+['bMt','bT','bW'].forEach(i=>$(i).oninput=bMatch);
 $('cWt').oninput=()=>{const i=+$('cIdx').value; if(i>=0)$('cInfo').innerHTML='입고중량을 바꾸면 잔량이 함께 조정됩니다.';};
 document.addEventListener('change',e=>{
   if(!e.target.matches('#tRaw input[data-sf]'))return;
