@@ -5130,14 +5130,15 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   </div>
 
   <div class="guide">
-    <span class="step">1</span><b>최신화</b> 버튼만 누르면 됩니다 — 수입검사에서 들어온 코일, 프레스에 물린 소재, 사용량이 한 번에 반영됩니다.
+    <span class="step">1</span><b>최신화</b> 버튼만 누르면 됩니다 — 생산·출하 실적, 수입검사에서 들어온 코일,
+    프레스에 물린 소재, 사용량이 한 번에 반영됩니다.
     &nbsp;·&nbsp; <span class="step">2</span>아래 <b>붉은 안내</b>가 뜨면 그 안의 버튼을 눌러 처리하세요.
     &nbsp;·&nbsp; <span class="step">3</span>평소에는 <b>업체별 재고</b>와 <b>설비 현황</b>만 보시면 됩니다.
   </div>
 
   <div class="fbar">
     <button class="btn k big" id="btnRefresh" onclick="refreshAll()"
-      title="수입검사 연동 → MES 설비 연동 → 사용량 자동차감 을 순서대로 실행합니다">🔄 최신화</button>
+      title="생산·출하 실적 → 수입검사 코일 → MES 설비 → 사용량 차감 을 순서대로 실행합니다">🔄 최신화</button>
     <span style="font-size:11px;color:#7d8b99" id="refreshInfo">아직 최신화하지 않았습니다</span>
 
     <div class="rt">
@@ -5371,6 +5372,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
           직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
         · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
+        · <b>🔄 최신화</b>는 ① 생산·출하 실적(MES·출하의뢰서) → ② 수입검사 코일 → ③ MES 설비 정보 →
+          ④ 소재 사용량 차감 순서로 한 번에 처리합니다. 출하가 빠진 것 같으면 이 버튼을 누르세요.
+          (제품 탭 상단의 [MES 동기화] 버튼과 같은 자료를 가져옵니다)<br>
         · <b>재고 실사</b> 화면에서 코일별로 실제 잔량을 확인합니다. 순서는 이렇습니다 —
           ① <b>[⬇ 실사표 받기]</b>로 받아 현장에서 적어 오거나 화면에서 직접 입력 →
           ② 미개봉 코일은 <b>[있음]</b>만 누르고, 사용중 코일만 실제 무게 입력 (없으면 <b>[없음]</b> 또는 0) →
@@ -7486,7 +7490,18 @@ async function refreshAll(){
   const btn=$('btnRefresh'), info=$('refreshInfo');
   const t0=btn.textContent; btn.disabled=true; btn.textContent='⏳ 가져오는 중…';
   const L=[];
+  const led0=S.led.length;
+  const cntK=k=>S.led.filter(r=>r.k===k&&r.d>=mStart()&&r.d<=mEnd()).reduce((a2,r)=>a2+r.q,0);
+  const ship0=cntK('출하'), prod0=cntK('생산입고');
   try{
+    /* ① 제품 수불(MES·출하의뢰서·검사실) — 출하·생산입고가 여기서 들어온다 */
+    if(info)info.textContent='생산·출하 실적을 가져오는 중…';
+    await syncMes(true);
+    const dShip=cntK('출하')-ship0, dProd=cntK('생산입고')-prod0;
+    L.push('· 생산·출하 실적 '+(S.led.length-led0>0?(S.led.length-led0)+'건 새로 반영':'변동 없음')
+      +(dShip?' · 이번 달 출하 +'+nf(dShip)+' EA':'')+(dProd?' · 생산입고 +'+nf(dProd)+' EA':''));
+    L.push('   (이번 달 누적 — 출하 '+nf(cntK('출하'))+' EA / 생산입고 '+nf(cntK('생산입고'))+' EA)');
+
     if(info)info.textContent='수입검사 자료를 가져오는 중…';
     const a=await syncIqc(true);
     if(a)L.push('· 수입검사에서 코일 '+(a.add||0)+'본 새로 등록'
