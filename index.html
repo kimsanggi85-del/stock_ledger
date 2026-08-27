@@ -5229,6 +5229,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           직접 등록한 원단위는 덮어쓰지 않습니다(출처 열에 [MES]/[수기] 표시).<br>
         · 설비에 현재 물려 있는 코일은 코일대장 <b>장착설비</b> 열에 표시되고, 자동차감 때 <b>그 코일이 최우선</b>으로
           배정됩니다(선입선출보다 우선). 실제 투입 코일과 원장이 어긋나지 않습니다.<br>
+        · <b>🧪 수입검사 연동</b>을 누르면 원천 데이터의 <b>월별 분포와 빠진 달</b>이 함께 표시됩니다.
+          특정 달이 통째로 비어 있으면 앱 문제가 아니라 <b>검사앱에 그 기간 소재입고 등록이 없는 것</b>입니다.<br>
+        · 입고일(receipt_date)이 비어 있는 행은 <b>등록일(created_at)</b>로 대체해 가져오므로, 날짜 누락으로 통째로 빠지지 않습니다.<br>
+        · <b>🗑 구버전 정리</b>: 예전 수입검사 앱(material_cert)에서 가져온 코일이 남아 있으면 재고가 부풀려집니다. 한 번 정리하세요.<br>
         · <b>🔧 규격 일괄 입력</b>: 소요g은 있으나 재질·두께를 모르는 품번을 한 화면에서 채웁니다.
           <b>폭은 비워두면 폭 무관</b>이라 슬릿 폭을 몰라도 되고, 같은 HEAT끼리는 한 줄만 채운 뒤
           <b>[같은 HEAT 일괄적용]</b>으로 나머지를 복사할 수 있습니다.<br>
@@ -6394,6 +6398,25 @@ function rRaw(){
       +D.noCoil.slice(0,4).map(x=>'<b>'+esc(x.pn)+'</b>: '+esc(x.why)).join(' / ')
       +(D.noCoil.length>4?' 외 '+(D.noCoil.length-4)+'종':''));
   }
+  /* 구버전 연동 잔존분 */
+  const legacy=S.coils.filter(c=>c.src&&c.src.indexOf('IQC|')===0);
+  if(legacy.length){
+    msgs.push('ℹ <b>구버전 연동 코일 '+legacy.length+'본</b> — 예전 수입검사 앱(material_cert, 2026-04-23에서 멈춤)에서 '
+      +'가져온 데이터가 남아 있습니다. 현재 앱(v3.7)과 무관해 재고가 부풀려집니다. &nbsp;'
+      +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="purgeLegacy()">🗑 구버전 코일 정리</button>');
+  }
+  /* 원천 데이터에 빠진 달이 있으면 알린다 */
+  const DGx=S.iqcDiag;
+  if(DGx&&DGx.byYm&&Object.keys(DGx.byYm).length){
+    const yms=Object.keys(DGx.byYm).sort();
+    const gap=[]; const [y0,m0]=yms[0].split('-').map(Number);
+    const [y1,m1]=yms[yms.length-1].split('-').map(Number);
+    for(let y=y0,m=m0;y<y1||(y===y1&&m<=m1);m++){ if(m>12){m=1;y++;}
+      const k=y+'-'+p2(m); if(!DGx.byYm[k])gap.push(k); }
+    if(gap.length)msgs.push('⚠ <b>원천 데이터 공백: '+gap.join(', ')+'</b> — 수입검사 앱에 이 기간 소재입고 등록이 없습니다. '
+      +'(원천 기간 '+DGx.minD+' ~ '+DGx.maxD+' · 전체 '+DGx.total+'행) '
+      +'검사앱에 소급 입력하거나 <b>[📥 코일 CSV 등록]</b>으로 직접 넣으세요.');
+  }
   /* 수입검사 연동 데이터가 기준월보다 오래됐으면 알린다 */
   const iqc=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0);
   if(iqc.length){
@@ -6759,18 +6782,31 @@ async function syncIqc(silent){
       {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
     /* 최신 행 우선 + LOT@입고일 커버리지로 이중 적재 차단 (검사앱 v3.5 로직과 동일) */
     rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    /* 진단: 원천에 실제로 무엇이 있는지 월별로 집계한다 */
+    const DG={total:rows.length,byYm:{},noDate:0,before:0,dup:0,used:0,coils:0,noWt:0,minD:'',maxD:''};
     const covered=new Set(), picks=[];
     rows.forEach(r=>{
-      const rd=r.receipt_date||'';
-      if(!rd||rd<from)return;
+      /* 입고일이 비어 있으면 등록일로 대체 — 이것 때문에 통째로 누락되는 일이 없게 */
+      let rd=String(r.receipt_date||'').slice(0,10);
+      if(!rd&&r.created_at)rd=String(r.created_at).slice(0,10);
+      if(!rd){DG.noDate++;return;}
+      r.__rd=rd;
+      const ym2=rd.slice(0,7);
+      DG.byYm[ym2]=(DG.byYm[ym2]||0)+1;
+      if(!DG.minD||rd<DG.minD)DG.minD=rd;
+      if(rd>DG.maxD)DG.maxD=rd;
+      if(rd<from){DG.before++;return;}
       let lots=String(r.lots_detail||'').split(',').map(x=>x.trim()).filter(Boolean);
       if(!lots.length){const one=String(r.lot_no||r.lot||'').trim(); lots=one?[one]:['(noLot#'+(r.id||'')+')'];}
       const keys=lots.map(l=>l+'@'+rd);
       if(keys.some(k=>!covered.has(k))){
         keys.forEach(k=>covered.add(k));
         picks.push({r,lots,rd});
-      }
+        DG.used++; DG.coils+=lots.length;
+        if(!(fnum(r.weight)>0))DG.noWt++;
+      }else DG.dup++;
     });
+    S.iqcDiag=DG;
     let add=0,upd=0,hold=0;
     const seen=new Set();
     picks.forEach(({r,lots,rd})=>{
@@ -6830,9 +6866,36 @@ async function syncIqc(silent){
       if(v){c.mt=v.mt;c.t=v.t; if(!+c.w)c.w=0; if(!c.sup)c.sup=v.sup; upd++;} });
     if(add||upd||del){save();fillBomSpec();autoBom(false);render();}
     S.iqcLast=new Date().toISOString();
-    if(!silent)toast('수입검사 연동 · 입고 '+picks.length+'건 → 코일 신규 '+add
-      +(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:'')+(hold?' · 검사대기·불합격 '+hold+'본 보류':''));
-    return {add,upd,del,hold};
+    if(!silent){
+      const L=[];
+      L.push('수입검사 연동 결과');
+      L.push('  · 원천(inspection_certs) 전체 '+DG.total+'행');
+      L.push('  · 데이터 기간: '+(DG.minD||'-')+' ~ '+(DG.maxD||'-'));
+      L.push('  · 연동 시작일 '+from+' 이후 '+DG.used+'건 채택 → 코일 '+DG.coils+'본');
+      L.push('  · 신규 '+add+(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:''));
+      if(hold)L.push('  · 검사대기·불합격 '+hold+'본 보류');
+      L.push('');
+      L.push('■ 원천 데이터 월별 분포 (입고일 기준, 없으면 등록일)');
+      const yms=Object.keys(DG.byYm).sort();
+      if(!yms.length)L.push('   (없음)');
+      else{
+        yms.forEach(k=>L.push('   '+k+' : '+DG.byYm[k]+'행'));
+        /* 빠진 달을 짚어 준다 */
+        const gap=[]; const [y0,m0]=yms[0].split('-').map(Number);
+        const [y1,m1]=yms[yms.length-1].split('-').map(Number);
+        for(let y=y0,m=m0;y<y1||(y===y1&&m<=m1);m++){ if(m>12){m=1;y++;}
+          const k=y+'-'+p2(m); if(!DG.byYm[k])gap.push(k); }
+        if(gap.length){L.push('');L.push('   ⚠ 원천에 아예 없는 달: '+gap.join(', '));
+          L.push('   → 이 기간은 수입검사 앱에 소재입고 등록이 안 된 것입니다.');
+          L.push('     검사앱에 소급 입력하거나, [📥 코일 CSV 등록]으로 직접 넣으세요.');}
+      }
+      if(DG.before)L.push('\n  · 연동 시작일 이전이라 건너뛴 행: '+DG.before+'건 (시작일을 앞당기면 들어옵니다)');
+      if(DG.noDate)L.push('  · 입고일·등록일이 모두 없어 건너뛴 행: '+DG.noDate+'건');
+      if(DG.dup)L.push('  · 같은 LOT@입고일 중복 적재로 제외한 행: '+DG.dup+'건');
+      if(DG.noWt)L.push('  · 중량이 0인 행: '+DG.noWt+'건 (코일 중량이 0으로 등록됩니다)');
+      alert(L.join('\n'));
+    }
+    return {add,upd,del,hold,diag:DG};
   }catch(e){
     if(!silent)toast('수입검사 연동 실패: '+e.message);
     console.warn('IQC 연동:',e.message);
@@ -6916,6 +6979,26 @@ function eqCompare(){
 }
 
 
+
+
+/* ═══════ 구버전 연동분 정리 ═══════
+   v6.1~6.3 에서 구 material_cert 로 만든 코일(src 가 IQC| 로 시작)은
+   현재 쓰는 수입검사 앱(v3.7)과 무관하므로 남아 있으면 재고가 부풀려진다. */
+function purgeLegacy(){
+  const old=S.coils.filter(c=>c.src&&c.src.indexOf('IQC|')===0);
+  if(!old.length){toast('구버전 연동 코일이 없습니다');return;}
+  const used=old.filter(c=>S.mled.some(m=>m.cid===c.id));
+  const kgTot=old.reduce((a,c)=>a+Math.max(0,remOf(c)),0);
+  if(!confirm('구버전(2026-04 이전 material_cert) 연동으로 만들어진 코일 '+old.length+'본을 삭제합니다.\n\n'
+    +'· 잔량 합계 '+kg(kgTot)+' kg\n'
+    +'· 이 중 수불 이력이 있는 코일 '+used.length+'본은 전표도 함께 삭제됩니다\n\n'
+    +'현재 쓰는 수입검사 앱(v3.7)과 무관한 데이터입니다. 삭제할까요?'))return;
+  const ids=new Set(old.map(c=>c.id));
+  S.mled=S.mled.filter(m=>!ids.has(m.cid));
+  S.coils=S.coils.filter(c=>!ids.has(c.id));
+  save(); autoBom(false); render();
+  toast('구버전 코일 '+old.length+'본 / 잔량 '+kg(kgTot)+'kg 을 정리했습니다');
+}
 
 /* ═══════ 규격 미상 일괄 입력 ═══════ */
 function openSpecBulk(){
@@ -7903,7 +7986,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['🔧','규격일괄','openSpecBulk()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['🔧','규격일괄','openSpecBulk()'],['🗑','구버전정리','purgeLegacy()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
