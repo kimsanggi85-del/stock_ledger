@@ -5053,13 +5053,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="pt"><h2>원소재 재고 (코일)</h2><span class="sub">RAW COIL STOCK · 코일 단위 수불 및 원단위 자동차감</span>
     <div class="pa"><button class="btn" onclick="rRaw()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportRaw()">엑셀</button></div></div>
 
-  <div class="sum" style="grid-template-columns:repeat(6,1fr)">
+  <div class="sum" style="grid-template-columns:repeat(7,1fr)">
     <div><span>보유 코일</span><b id="r1">0</b><em>코일</em></div>
     <div><span>현재고 중량</span><b id="r2">0</b><em>kg</em></div>
     <div class="g"><span>당월 입고</span><b id="r3">0</b><em>kg</em></div>
     <div class="d"><span>당월 생산투입</span><b id="r4">0</b><em>kg</em></div>
     <div class="d"><span>안전재고 미달</span><b id="r5">0</b><em>규격</em></div>
-    <div class="w"><span>장기체화(90일)</span><b id="r6">0</b><em>코일</em></div>
+    <div><span>설비 장착중</span><b id="r6">0</b><em>코일</em></div>
+    <div class="w"><span>장기체화(90일)</span><b id="r7">0</b><em>코일</em></div>
   </div>
 
   <div class="fbar">
@@ -5067,6 +5068,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <span class="chip" data-rv="spec" onclick="setRV('spec')">규격별 집계</span>
     <span class="chip" data-rv="led" onclick="setRV('led')">원소재 수불</span>
     <span class="chip" data-rv="bom" onclick="setRV('bom')">원단위(BOM)</span>
+    <span class="chip" data-rv="eq" onclick="setRV('eq')">설비 장착현황</span>
     <input id="rawQ" placeholder="코일No / 재질 / 품번 검색" class="kbi" style="width:170px;margin-left:8px">
     <label style="margin-left:6px">연동 시작일</label>
     <input type="date" id="iqcFrom" style="width:140px" title="이 날짜 이후 수입검사 합격분만 코일로 가져옵니다">
@@ -5078,7 +5080,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <button class="btn" onclick="openMio()">＋ 수불 등록</button>
       <button class="btn" onclick="openBom(-1)">＋ 원단위 등록</button>
       <button class="btn" onclick="autoBom(true)" title="생산입고 전표를 읽어 원소재를 FIFO로 자동 차감합니다">🔄 자동차감 실행</button>
-      <button class="btn g" onclick="syncIqc(false)" title="소재 수입검사 앱(검사증명서)에서 합격 코일을 가져옵니다">🧪 수입검사 연동</button>
+      <button class="btn g" onclick="syncIqc(false)" title="소재 수입검사 앱(v3.7)에서 입고 코일을 가져옵니다">🧪 수입검사 연동</button>
+      <button class="btn g" onclick="syncEq(false).then(()=>setRV('eq'))" title="MES 가동설비 모니터링에서 품번별 소요g(원단위)과 설비 장착 코일을 가져옵니다">⚙ MES 설비 연동</button>
       <button class="btn" onclick="pick('fCoil')" title="엑셀에서 코일 입고내역을 한 번에 등록합니다">📥 코일 CSV 등록</button>
       <button class="btn" onclick="coilTpl()" title="CSV 양식을 내려받습니다">📄 양식</button>
       <input type="file" id="fCoil" accept=".csv,.txt,.tsv" style="display:none">
@@ -5218,6 +5221,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           검사앱에서 판정이 확정되면 다음 연동 때 자동으로 풀립니다.<br>
         · <b>연동 시작일</b> 이후 성적서만 가져옵니다. 이미 생산투입된 코일은 검사앱에서 성적서가 지워져도 남습니다.<br>
         · 실제 슬릿 중량이 균등배분과 다르면 코일을 열어 <b>입고중량</b>을 직접 고치면 됩니다(잔량 자동 재계산).<br>
+        · <b>⚙ MES 설비 연동</b>: 가동설비 모니터링(machine_status)에서 <b>품번별 소요 g/EA</b>를 읽어
+          <b>원단위를 자동 등록</b>합니다. 재질·두께·폭은 그 설비에 물려 있는 코일 LOT에서 채워집니다.
+          직접 등록한 원단위는 덮어쓰지 않습니다(출처 열에 [MES]/[수기] 표시).<br>
+        · 설비에 현재 물려 있는 코일은 코일대장 <b>장착설비</b> 열에 표시되고, 자동차감 때 <b>그 코일이 최우선</b>으로
+          배정됩니다(선입선출보다 우선). 실제 투입 코일과 원장이 어긋나지 않습니다.<br>
+        · <b>설비 장착현황</b> 화면에서 설비별 <b>MES 예상잔량(코일중량 − 실적×소요g)</b>과 <b>원장 잔량</b>을 나란히 대조합니다.
+          차이가 크면 원단위나 투입전표를 점검하세요.<br>
         · <b>📥 코일 CSV 등록</b>: 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
           양식은 <b>입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고</b> 이며,
           <b>조수</b>를 2 이상 넣으면 그 수만큼 코일로 분할하고 중량을 균등 배분합니다.
@@ -5677,6 +5687,7 @@ function load(){
   if(!Array.isArray(S.mled))S.mled=[];
   if(!Array.isArray(S.bom))S.bom=[];
   if(!S.msf||typeof S.msf!=='object')S.msf={};
+  if(!Array.isArray(S.eq))S.eq=[];
   S.diag={noBom:[],noCoil:[]};
   if(!S.cseq)S.cseq=Math.max(1,...S.coils.map(c=>+c.id||0))+1;
   if(!S.mseq)S.mseq=Math.max(1,...S.mled.map(m=>+m.id||0))+1;
@@ -6209,13 +6220,19 @@ function autoBom(verbose){
     const b=bomOf(r.pn);
     let need=Math.round(r.q*(+b.uw)*100)/100;
     if(need<=0.01)return;
+    /* 배정 우선순위: ① MES에서 이 품번에 현재 물려 있는 코일 ② 선입선출 */
+    const mnt=new Set((S.eq||[]).filter(e=>e.pn===r.pn&&e.lot).map(e=>e.lot));
     const cand=S.coils.filter(c=>matchSpec(c,b)&&usable(c)&&remOf(c)>0.01)
-      .sort((x,y)=>String(x.d||'').localeCompare(String(y.d||''))||x.id-y.id);   /* 선입선출 */
+      .sort((x,y)=>{
+        const mx=mnt.has(x.cno)?0:1, my=mnt.has(y.cno)?0:1;
+        if(mx!==my)return mx-my;
+        return String(x.d||'').localeCompare(String(y.d||''))||x.id-y.id;});
     for(const c of cand){
       if(need<=0.01)break;
       const use=Math.min(remOf(c),need);
       S.mled.push({id:S.mseq++,d:r.d,cid:c.id,cno:c.cno,k:'생산투입',q:Math.round(use*100)/100,
-        pn:r.pn,n:'자동차감 '+nf(r.q)+'EA × '+(+b.uw)+'kg',by:'AUTO',auto:1,ref:r.id,bq:r.q});
+        pn:r.pn,n:(mnt.has(c.cno)?'MES 장착분 · ':'')+'자동차감 '+nf(r.q)+'EA × '+(+b.uw)+'kg',
+        by:'AUTO',auto:1,ref:r.id,bq:r.q});
       need=Math.round((need-use)*100)/100; add++;
     }
     if(need>0.01){
@@ -6295,7 +6312,8 @@ function rRaw(){
   S.mled.forEach(m=>{if(m.d<a||m.d>b)return; if(mKindIO(m.k)==='I')iq+=m.q; else if(m.k==='생산투입')oq+=m.q;});
   const SP=specAgg(), nShort=SP.filter(o=>o.sf>0&&o.gap<0).length;
   anim('r1',nC);anim('r2',Math.round(rem));anim('r3',Math.round(iq));anim('r4',Math.round(oq));
-  anim('r5',nShort);anim('r6',dead);
+  const mounted=S.coils.filter(c=>mountOf(c.cno)).length;
+  anim('r5',nShort);anim('r6',mounted);anim('r7',dead);
   $('r_ym').textContent=ym; $('r_by').textContent=S.user||'-';
   $('r_dt').textContent=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
 
@@ -6318,6 +6336,21 @@ function rRaw(){
       +'font-weight:700">'+esc(pn)+' <em style="font-weight:400;color:#8A6D1F">'+nf(q)+'EA</em></span>').join('')
       +(D.noBom.length>10?' <b>외 '+(D.noBom.length-10)+'종</b>':''));
   }
+  const noSpecB=S.bom.filter(b=>+b.uw>0&&!b.mt);
+  if(noSpecB.length){
+    msgs.push('⚠ <b>규격 미상 원단위 '+noSpecB.length+'종</b> — MES에서 소요g은 받았으나 재질·두께·폭을 모릅니다. '
+      +'해당 품번의 코일이 수입검사에서 들어오면 자동으로 채워지고, 급하면 품번을 눌러 직접 입력하세요 &nbsp;'
+      +noSpecB.slice(0,10).map((b,i)=>'<span onclick="openBom('+S.bom.indexOf(b)+')" style="display:inline-block;'
+      +'background:#fff;border:1px solid #E0A9A2;border-radius:10px;padding:1px 8px;margin:2px 3px 0 0;cursor:pointer;'
+      +'font-weight:700">'+esc(b.pn)+(b.lot?' <em style="font-weight:400;color:#8A6D1F">LOT '+esc(b.lot)+'</em>':'')+'</span>').join('')
+      +(noSpecB.length>10?' <b>외 '+(noSpecB.length-10)+'종</b>':''));
+  }
+  const missLot=[...new Set((S.eq||[]).filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot)).map(e=>e.lot))];
+  if(missLot.length){
+    msgs.push('⚠ <b>원장에 없는 장착 LOT '+missLot.length+'건</b> — 설비에 물려 있으나 코일대장에 없습니다. '
+      +'수입검사 앱에 입고 등록이 안 됐거나 연동 시작일 이전 코일입니다. &nbsp;<b>'
+      +missLot.slice(0,8).map(esc).join(', ')+(missLot.length>8?' 외 '+(missLot.length-8)+'건':'')+'</b>');
+  }
   if(D.noCoil.length){
     msgs.push('⚠ <b>규격 불일치 '+D.noCoil.length+'종</b> — 원단위는 있으나 맞는 코일이 없습니다. '
       +D.noCoil.slice(0,4).map(x=>'<b>'+esc(x.pn)+'</b>: '+esc(x.why)).join(' / ')
@@ -6334,7 +6367,8 @@ function rRaw(){
   if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
   else W.style.display='none';
 
-  const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',bom:'제 품 별 원 단 위 표'};
+  const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
+            bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황'};
   $('rawTtl').textContent=TT[RV];
 
   if(RV==='coil'){
@@ -6346,7 +6380,7 @@ function rRaw(){
     $('rawHint').innerHTML='· 코일번호를 클릭하면 수정·삭제할 수 있습니다. 잔량은 수불전표로 자동 계산되며 직접 수정하지 않습니다.<br>· 수입검사 <b>불합격</b> 코일은 자동차감 대상에서 제외됩니다.';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
-      <th>MILL SHEET</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
+      <th>MILL SHEET</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
         const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
         const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
@@ -6362,14 +6396,16 @@ function rRaw(){
          <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(usable(c)?'#0B6B3A':'#9A6400')}">${esc(c.iq||'')}${usable(c)?'':' ⛔'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
          <td class="l">${esc(c.ms||'')}</td>
+         <td class="l" style="font-family:var(--sans)">${(m2=>m2?'<b style="color:#0B4F9E">'+esc(m2.nm||m2.mc)+'</b>'
+            +(m2.pn?'<div style="font-size:9px;color:#888">'+esc(m2.pn)+'</div>':''):'')(mountOf(c.cno))}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.lc||'')}</td>
          <td class="${isDeadCoil(c)?'wn':''}">${coilAge(c)}</td>
          <td class="l" style="font-family:var(--sans)">${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span> ':''}${esc(c.n||'')}${isDeadCoil(c)?' <b style="color:#9A6400">장기체화</b>':''}</td></tr>`;
-       }).join(''):`<tr><td colspan="17" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
+       }).join(''):`<tr><td colspan="18" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
        <td>${kg(R.reduce((s2,{c})=>s2+(+c.wt||0),0))}</td>
        <td>${kg(R.reduce((s2,{c})=>s2+((+c.wt||0)-remOf(c)),0))}</td>
-       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="8"></td></tr></tfoot>`;
+       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="9"></td></tr></tfoot>`;
   }
 
   else if(RV==='spec'){
@@ -6424,13 +6460,50 @@ function rRaw(){
        <td>${kg(ti)}</td><td>${kg(to)}</td><td colspan="4"></td></tr></tfoot>`;
   }
 
+  else if(RV==='eq'){
+    const C=eqCompare().filter(x=>!q||nz((x.e.lot||'')+' '+(x.e.pn||'')+' '+(x.e.nm||'')).includes(q));
+    const all=(S.eq||[]).filter(e=>!q||nz((e.lot||'')+' '+(e.pn||'')+' '+(e.nm||'')).includes(q));
+    $('gt-raw').innerHTML='설비별 소재 사용현황 · 총 <b>'+all.length+'</b>대'
+      +(S.eqLast?' · 최종 연동 '+String(S.eqLast).slice(0,16).replace('T',' '):'');
+    $('rawHint').innerHTML='· <b>MES 예상잔량</b> = 코일중량 − (실적 × 소요g ÷ 1000). 설비에서 계산한 현장 값입니다.<br>'
+      +'· <b>원장 잔량</b>은 이 앱의 수불전표 기준이며, 차이가 크면 원단위·실적·투입전표를 확인하세요.<br>'
+      +'· <b>미등록</b>은 설비에 물려 있으나 코일대장에 없는 LOT입니다.';
+    $('tRaw').innerHTML=`<thead><tr><th>No</th><th>설비</th><th>상태</th><th>금형</th><th>품번</th><th>품명</th>
+      <th>장착 LOT</th><th>코일kg(MES)</th><th>소요 g/EA</th><th>실적(EA)</th><th>사용(kg)</th>
+      <th>MES 예상잔량</th><th>원장 잔량</th><th>차이</th><th>원장</th></tr></thead><tbody>`
+     +(all.length?all.map((e,i)=>{
+        const x=C.find(y=>y.e===e)||{c:S.coils.find(c=>c.cno===e.lot)||null,mesRem:null,ledRem:null,gap:null};
+        const used=e.aq*e.ug/1000;
+        const run=/^R/i.test(e.st)||e.st==='가동';
+        return `<tr>
+         <td class="c">${i+1}</td>
+         <td class="l" style="font-family:var(--sans);font-weight:700">${esc(e.nm||e.mc)}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10px;color:${run?'#0B6B3A':'#93A0AB'}">${run?'● 가동':'■ 정지'}</td>
+         <td class="l">${esc(e.mold||'')}</td>
+         <td class="l" style="font-weight:700">${esc(e.pn||'')}</td>
+         <td class="l" style="font-family:var(--sans)">${esc(e.inm||'')}</td>
+         <td class="l">${esc(e.lot||'-')}</td>
+         <td>${e.ckg?kg(e.ckg):'-'}</td>
+         <td>${e.ug?e.ug.toFixed(1):'-'}</td>
+         <td>${e.aq?nf(e.aq):'-'}</td>
+         <td class="${used?'neg':''}">${used?kg(used):'-'}</td>
+         <td style="font-weight:700" class="${x.mesRem!=null&&x.mesRem<50?'wn':''}">${x.mesRem!=null?kg(x.mesRem):'-'}</td>
+         <td>${x.ledRem!=null?kg(x.ledRem):'-'}</td>
+         <td class="${x.gap!=null&&Math.abs(x.gap)>30?'neg':''}">${x.gap!=null?(x.gap>0?'+':'')+kg(x.gap):'-'}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10px">${e.lot?(x.c
+            ?'<span style="color:#0B6B3A;font-weight:700">등록</span>'
+            :'<span style="color:#B3261E;font-weight:700">미등록</span>'):'-'}</td></tr>`;
+       }).join(''):`<tr><td colspan="15" class="c" style="padding:30px;color:#93A0AB">[⚙ MES 설비 연동]을 눌러 설비 현황을 가져오세요.</td></tr>`)
+     +`</tbody>`;
+  }
+
   else{ /* bom */
     const R=S.bom.map((b2,i)=>({b:b2,i})).filter(({b:b2})=>!q||nz(b2.pn+' '+b2.mt).includes(q));
     $('gt-raw').innerHTML='제품별 원단위 · 총 <b>'+R.length+'</b>품목'
       +(S.diag&&S.diag.noBom.length?' · <b style="color:#B3261E">미등록 '+S.diag.noBom.length+'종</b>':'');
     $('rawHint').innerHTML='· 원단위(kg/EA)가 등록된 품번만 <b>생산입고 시 자동차감</b>됩니다.<br>· 폭(W)을 비워두면 재질·두께만 맞으면 어떤 폭의 코일이든 사용합니다.';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>제품 품번</th><th>품명</th><th>재질</th><th>두께 t</th><th>폭 W</th>
-      <th>제품중량(g)</th><th>수율(%)</th><th>원단위(kg/EA)</th><th>당월 생산(EA)</th><th>당월 소요(kg)</th>
+      <th>소요(g/EA)</th><th>원단위(kg/EA)</th><th>출처</th><th>당월 생산(EA)</th><th>당월 소요(kg)</th>
       <th>해당규격 재고(kg)</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({b:b2,i},n)=>{
         let pq=0; S.led.forEach(r=>{if(r.pn===b2.pn&&r.k==='생산입고'&&r.d>=a&&r.d<=b)pq+=r.q;});
@@ -6443,12 +6516,14 @@ function rRaw(){
          <td class="l" style="font-family:var(--sans)">${esc(it?it.nm:'')}</td>
          <td class="c" style="font-family:var(--sans)">${esc(b2.mt)}</td>
          <td>${(+b2.t||0).toFixed(2)}</td><td>${b2.w?nf(b2.w):'<span style="color:#93A0AB">무관</span>'}</td>
-         <td>${b2.net?(+b2.net).toFixed(1):'-'}</td><td>${b2.y?(+b2.y).toFixed(1):'-'}</td>
+         <td>${(+b2.uw*1000).toFixed(1)}</td>
          <td style="font-weight:700">${(+b2.uw||0).toFixed(4)}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10px">${b2.src==='MES'
+            ?'<span style="background:#E3EDF7;color:#1F5FA8;padding:1px 6px;border-radius:8px">MES</span>':'수기'}</td>
          <td>${pq?nf(pq):'-'}</td><td class="${need?'neg':''}">${need?kg(need):'-'}</td>
          <td class="${av<need?'neg':'pos'}" style="font-weight:700">${kg(av)}</td>
          <td class="l" style="font-family:var(--sans)">${esc(b2.n||'')}</td></tr>`;
-       }).join(''):`<tr><td colspan="13" class="c" style="padding:30px;color:#93A0AB">등록된 원단위가 없습니다. [＋ 원단위 등록]으로 추가하세요.</td></tr>`)
+       }).join(''):`<tr><td colspan="13" class="c" style="padding:30px;color:#93A0AB">등록된 원단위가 없습니다. [⚙ MES 설비 연동]을 누르거나 [＋ 원단위 등록]으로 추가하세요.</td></tr>`)
      +`</tbody>`;
   }
   fillRawLists();
@@ -6705,6 +6780,76 @@ async function syncIqc(silent){
   }finally{ iqcBusy=false; }
 }
 
+
+
+/* ═══════ MES 가동설비 모니터링 연동 ═══════
+   machine_status 1행 = 설비 1대의 현재 상태.
+   · current_item_code + unit_per_qty(g/EA) → 원단위(BOM) 자동 등록
+   · lot_no = 현재 물려 있는 코일 → 자동차감 시 그 코일을 최우선 배정
+   · coil_weight, actual_qty 로 현장 예상잔량을 대조한다.                */
+const MEQ_TABLE='machine_status';
+const MEQ_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tbmd0eWV3ZGFxcHBobnplYXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODk4ODksImV4cCI6MjA5MDQ2NTg4OX0.Zxur3t02JHtOcXforCMSwO3i2mMaf5sViE0tXXUC0-s';
+let eqBusy=false;
+/* 코일이 현재 물려 있는 설비 */
+function mountOf(cno){ return (S.eq||[]).find(e=>e.lot&&e.lot===cno); }
+
+async function syncEq(silent){
+  if(eqBusy)return; eqBusy=true;
+  try{
+    const rows=await fetchAll(IQC_URL+'/rest/v1/'+MEQ_TABLE+'?select=*&order=machine_code.asc',
+      {apikey:MEQ_KEY,Authorization:'Bearer '+MEQ_KEY});
+    S.eq=rows.map(d=>({
+      mc:d.machine_code||'', nm:d.machine_name||'', mold:d.current_mold||'',
+      pn:canonPn(d.current_item_code||''), inm:d.item_name||'',
+      lot:String(d.lot_no||'').trim(), ckg:fnum(d.coil_weight), ug:fnum(d.unit_per_qty),
+      aq:fnum(d.actual_qty), st:d.machine_status||''
+    })).filter(e=>e.pn||e.lot);
+
+    /* 품번별 소요g → 원단위 자동 반영 (수기 등록분은 건드리지 않음) */
+    let bAdd=0,bUpd=0; const noSpec=new Set();
+    S.eq.forEach(e=>{
+      if(!e.pn||!(e.ug>0))return;
+      const uw=Math.round(e.ug/1000*10000)/10000;
+      const coil=e.lot?S.coils.find(c=>c.cno===e.lot):null;
+      let b=S.bom.find(x=>x.pn===e.pn);
+      if(!b){
+        b={pn:e.pn,mt:'',t:0,w:0,net:0,y:0,uw,n:'MES 자동 · 소요 '+e.ug+'g/EA',src:'MES',lot:e.lot||''};
+        S.bom.push(b); bAdd++;
+      }else if(b.src==='MES'){
+        if(b.uw!==uw){b.uw=uw;b.n='MES 자동 · 소요 '+e.ug+'g/EA';bUpd++;}
+      }
+      /* 규격은 물려 있는 코일에서 가져온다 (수기 등록 규격은 보존) */
+      if(coil&&(b.src==='MES'||!b.mt)){
+        if(b.mt!==coil.mt||b.t!==+coil.t||b.w!==+coil.w){
+          b.mt=coil.mt;b.t=+coil.t;b.w=+coil.w;bUpd++;}
+      }
+      if(e.lot)b.lot=e.lot;
+      if(!b.mt)noSpec.add(e.pn);
+    });
+    if(bAdd||bUpd){
+      S.bom.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
+      save(); autoBom(false);
+    }
+    S.eqLast=new Date().toISOString();
+    render();
+    /* 현장 코일 중 원장에 없는 LOT */
+    const miss=[...new Set(S.eq.filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot)).map(e=>e.lot))];
+    if(!silent)toast('MES 설비 '+S.eq.length+'대 · 원단위 신규 '+bAdd+(bUpd?' / 갱신 '+bUpd:'')
+      +(noSpec.size?' · 규격미상 '+noSpec.size+'종':'')+(miss.length?' · 미등록LOT '+miss.length+'건':''));
+    return {eq:S.eq.length,bAdd,bUpd,noSpec:[...noSpec],miss};
+  }catch(e){
+    if(!silent)toast('MES 설비 연동 실패: '+e.message);
+    console.warn('MES 설비 연동:',e.message);
+  }finally{ eqBusy=false; }
+}
+/* 현장 장착 코일 대조: MES 예상잔량 vs 원장 잔량 */
+function eqCompare(){
+  return (S.eq||[]).filter(e=>e.lot&&e.ckg>0).map(e=>{
+    const c=S.coils.find(x=>x.cno===e.lot);
+    const mesRem=Math.round((e.ckg-e.aq*e.ug/1000)*10)/10;
+    return {e,c,mesRem,ledRem:c?remOf(c):null,gap:c?Math.round((remOf(c)-mesRem)*10)/10:null};
+  });
+}
 
 /* ═══════ 코일 CSV 일괄등록 ═══════
    형식: 입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고
@@ -7329,6 +7474,7 @@ async function syncMes(silent){
   try{ await pullItems(true); }catch(e){ console.warn('품목 공유:',e.message); }
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{ await syncIqc(true); }catch(e){ console.warn('수입검사 연동:',e.message); }
+  try{ await syncEq(true); }catch(e){ console.warn('MES 설비 연동:',e.message); }
   try{
     /* 전체 누적: 기초일자 이후 전 기간 */
     const sinceIso=syncSince();
@@ -7548,7 +7694,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
