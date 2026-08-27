@@ -5053,13 +5053,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="pt"><h2>원소재 재고 (코일)</h2><span class="sub">RAW COIL STOCK · 코일 단위 수불 및 원단위 자동차감</span>
     <div class="pa"><button class="btn" onclick="rRaw()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportRaw()">엑셀</button></div></div>
 
-  <div class="sum" style="grid-template-columns:repeat(7,1fr)">
+  <div class="sum" style="grid-template-columns:repeat(8,1fr)">
     <div><span>보유 코일</span><b id="r1">0</b><em>코일</em></div>
     <div><span>현재고 중량</span><b id="r2">0</b><em>kg</em></div>
     <div class="g"><span>당월 입고</span><b id="r3">0</b><em>kg</em></div>
     <div class="d"><span>당월 생산투입</span><b id="r4">0</b><em>kg</em></div>
     <div class="d"><span>안전재고 미달</span><b id="r5">0</b><em>규격</em></div>
     <div><span>설비 장착중</span><b id="r6">0</b><em>코일</em></div>
+    <div class="w"><span>수입검사 미등록</span><b id="r8">0</b><em>코일</em></div>
     <div class="w"><span>장기체화(90일)</span><b id="r7">0</b><em>코일</em></div>
   </div>
 
@@ -5074,7 +5075,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input type="date" id="iqcFrom" style="width:140px" title="이 날짜 이후 수입검사 합격분만 코일로 가져옵니다">
     <select id="rawSt" class="fsel" style="min-width:110px">
       <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
-      <option value="__hold">⛔ 검사대기·불합격(보류)</option></select>
+      <option value="__hold">⛔ 검사대기·불합격(보류)</option>
+      <option value="__miss">🩹 수입검사 미등록</option></select>
     <div class="rt">
       <button class="btn k" onclick="openCoil(-1)">＋ 코일 입고</button>
       <button class="btn" onclick="openMio()">＋ 수불 등록</button>
@@ -5226,6 +5228,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           직접 등록한 원단위는 덮어쓰지 않습니다(출처 열에 [MES]/[수기] 표시).<br>
         · 설비에 현재 물려 있는 코일은 코일대장 <b>장착설비</b> 열에 표시되고, 자동차감 때 <b>그 코일이 최우선</b>으로
           배정됩니다(선입선출보다 우선). 실제 투입 코일과 원장이 어긋나지 않습니다.<br>
+        · <b>🩹 미등록 LOT 보완</b>: 수입검사 앱 도입 초기에 누락됐거나 성적서가 HEAT 단위로만 등록되어
+          슬릿 LOT(예: SP38425-1)이 없는 경우, 설비에 물려 있는 LOT을 코일로 보완 등록합니다.
+          중량은 MES 코일중량을 쓰고, 규격은 <b>같은 HEAT 코일에서 재질·두께를 유추</b>합니다(폭은 미상이므로 무관 처리).
+          같은 HEAT 코일이 원장에 이미 있으면 그 코일에서 <b>재고조정(-) 전표로 분할 차감</b>하여 이중계상을 막습니다.
+          이렇게 만든 코일은 검사 칸에 <b>미등록 🩹</b>으로 남아 정상 입고분과 구분되며, 상태 필터로 따로 볼 수 있습니다.
+          나중에 검사앱에 성적서가 정식 등록되면 그 코일로 교체하고 보완분은 삭제하세요.<br>
         · <b>설비 장착현황</b> 화면에서 설비별 <b>MES 예상잔량(코일중량 − 실적×소요g)</b>과 <b>원장 잔량</b>을 나란히 대조합니다.
           차이가 크면 원단위나 투입전표를 점검하세요.<br>
         · <b>📥 코일 CSV 등록</b>: 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
@@ -5263,7 +5271,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>MILL SHEET / 성적서 No.</label><input id="cMs"></div>
       <div class="fld"><label>수입검사</label><select id="cIq" style="font-family:var(--sans)">
-        <option value="합격">합격</option><option value="특채">특채</option><option value="대기">검사대기 (투입 보류)</option><option value="불합격">불합격 (격리)</option></select></div></div>
+        <option value="합격">합격</option><option value="특채">특채</option><option value="미등록">수입검사 미등록 (보완분)</option><option value="대기">검사대기 (투입 보류)</option><option value="불합격">불합격 (격리)</option></select></div></div>
     <div class="g2">
       <div class="fld"><label>보관위치</label><input id="cLc" style="font-family:var(--sans)" placeholder="예: 코일장 A-3"></div>
       <div class="fld"><label>상태</label><select id="cSt" style="font-family:var(--sans)">
@@ -6314,6 +6322,7 @@ function rRaw(){
   anim('r1',nC);anim('r2',Math.round(rem));anim('r3',Math.round(iq));anim('r4',Math.round(oq));
   const mounted=S.coils.filter(c=>mountOf(c.cno)).length;
   anim('r5',nShort);anim('r6',mounted);anim('r7',dead);
+  anim('r8',S.coils.filter(c=>c.iq==='미등록'&&remOf(c)>0.5).length);
   $('r_ym').textContent=ym; $('r_by').textContent=S.user||'-';
   $('r_dt').textContent=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
 
@@ -6339,7 +6348,7 @@ function rRaw(){
   const noSpecB=S.bom.filter(b=>+b.uw>0&&!b.mt);
   if(noSpecB.length){
     msgs.push('⚠ <b>규격 미상 원단위 '+noSpecB.length+'종</b> — MES에서 소요g은 받았으나 재질·두께·폭을 모릅니다. '
-      +'해당 품번의 코일이 수입검사에서 들어오면 자동으로 채워지고, 급하면 품번을 눌러 직접 입력하세요 &nbsp;'
+      +'같은 HEAT 코일이 원장에 있으면 <b>[🩹 미등록 LOT 보완]</b>으로 자동 유추됩니다. 품번을 눌러 직접 입력해도 됩니다 &nbsp;'
       +noSpecB.slice(0,10).map((b,i)=>'<span onclick="openBom('+S.bom.indexOf(b)+')" style="display:inline-block;'
       +'background:#fff;border:1px solid #E0A9A2;border-radius:10px;padding:1px 8px;margin:2px 3px 0 0;cursor:pointer;'
       +'font-weight:700">'+esc(b.pn)+(b.lot?' <em style="font-weight:400;color:#8A6D1F">LOT '+esc(b.lot)+'</em>':'')+'</span>').join('')
@@ -6348,8 +6357,10 @@ function rRaw(){
   const missLot=[...new Set((S.eq||[]).filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot)).map(e=>e.lot))];
   if(missLot.length){
     msgs.push('⚠ <b>원장에 없는 장착 LOT '+missLot.length+'건</b> — 설비에 물려 있으나 코일대장에 없습니다. '
-      +'수입검사 앱에 입고 등록이 안 됐거나 연동 시작일 이전 코일입니다. &nbsp;<b>'
-      +missLot.slice(0,8).map(esc).join(', ')+(missLot.length>8?' 외 '+(missLot.length-8)+'건':'')+'</b>');
+      +'수입검사 앱 도입 초기 누락분이거나 성적서가 HEAT 단위로만 등록된 경우입니다. &nbsp;'
+      +'<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixMesLots()">🩹 미등록 LOT 보완 등록</button>'
+      +'<div style="margin-top:5px"><b>'+missLot.slice(0,8).map(esc).join(', ')
+      +(missLot.length>8?' 외 '+(missLot.length-8)+'건':'')+'</b></div>');
   }
   if(D.noCoil.length){
     msgs.push('⚠ <b>규격 불일치 '+D.noCoil.length+'종</b> — 원단위는 있으나 맞는 코일이 없습니다. '
@@ -6374,6 +6385,7 @@ function rRaw(){
   if(RV==='coil'){
     const R=S.coils.map((c,i)=>({c,i})).filter(({c})=>{
       if(fst==='__hold'){ if(usable(c))return false; }
+      else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
       else if(fst&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
     $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'+kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg';
@@ -6393,7 +6405,7 @@ function rRaw(){
          <td style="font-weight:700" class="${r<=0.5?'':'pos'}">${kg(r)}</td>
          <td>${pct.toFixed(0)}%</td>
          <td class="c" style="font-family:var(--sans);color:${sc};font-weight:700">${st}</td>
-         <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(usable(c)?'#0B6B3A':'#9A6400')}">${esc(c.iq||'')}${usable(c)?'':' ⛔'}</td>
+         <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(c.iq==='미등록'?'#8A6D1F':(usable(c)?'#0B6B3A':'#9A6400'))}">${esc(c.iq||'')}${usable(c)?(c.iq==='미등록'?' 🩹':''):' ⛔'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
          <td class="l">${esc(c.ms||'')}</td>
          <td class="l" style="font-family:var(--sans)">${(m2=>m2?'<b style="color:#0B4F9E">'+esc(m2.nm||m2.mc)+'</b>'
@@ -6708,7 +6720,7 @@ const iqcJudge=j=>{const v=String(j||'').trim().toUpperCase();
   if(v==='특채')return '특채';
   return '대기';};
 /* 자동차감·가용재고에 쓸 수 있는 코일인가 (불합격·검사대기는 제외) */
-const usable=c=>c.st!=='반품'&&(c.iq==='합격'||c.iq==='특채'||!c.iq);
+const usable=c=>c.st!=='반품'&&(c.iq==='합격'||c.iq==='특채'||c.iq==='미등록'||!c.iq);
 
 let iqcBusy=false;
 async function syncIqc(silent){
@@ -6810,7 +6822,7 @@ async function syncEq(silent){
     S.eq.forEach(e=>{
       if(!e.pn||!(e.ug>0))return;
       const uw=Math.round(e.ug/1000*10000)/10000;
-      const coil=e.lot?S.coils.find(c=>c.cno===e.lot):null;
+      const coil=e.lot?S.coils.find(c=>c.cno===String(e.lot).trim()):null;
       let b=S.bom.find(x=>x.pn===e.pn);
       if(!b){
         b={pn:e.pn,mt:'',t:0,w:0,net:0,y:0,uw,n:'MES 자동 · 소요 '+e.ug+'g/EA',src:'MES',lot:e.lot||''};
@@ -6822,6 +6834,11 @@ async function syncEq(silent){
       if(coil&&(b.src==='MES'||!b.mt)){
         if(b.mt!==coil.mt||b.t!==+coil.t||b.w!==+coil.w){
           b.mt=coil.mt;b.t=+coil.t;b.w=+coil.w;bUpd++;}
+      }
+      if(!b.mt&&e.lot){   /* 정확일치 코일이 없으면 같은 HEAT 코일에서 재질·두께만 유추 */
+        const g=coilByLot(e.lot);
+        if(g&&g.mt){b.mt=g.mt;b.t=+g.t||0;b.w=0;
+          b.n=(b.n||'')+' · 규격 HEAT '+lotBase(e.lot)+' 유추(폭 무관)';bUpd++;}
       }
       if(e.lot)b.lot=e.lot;
       if(!b.mt)noSpec.add(e.pn);
@@ -6849,6 +6866,82 @@ function eqCompare(){
     const mesRem=Math.round((e.ckg-e.aq*e.ug/1000)*10)/10;
     return {e,c,mesRem,ledRem:c?remOf(c):null,gap:c?Math.round((remOf(c)-mesRem)*10)/10:null};
   });
+}
+
+
+/* ═══════ LOT 베이스 매칭 · 누락 보완 ═══════
+   수입검사 앱 도입 초기 누락분 대응.
+   · 검사증명서에 HEAT 단위(SP38425)로만 남고 슬릿번호(-1,-5)가 없는 건이 있다.
+   · MES 장착 LOT 을 기준으로 코일을 보완 생성하고, 규격은 같은 HEAT 코일에서 유추한다.  */
+
+/* LOT → 코일 찾기. 정확일치 우선, 없으면 같은 HEAT(LOT 베이스) 코일 */
+function coilByLot(lot){
+  if(!lot)return null;
+  const k=String(lot).trim();
+  let c=S.coils.find(x=>x.cno===k);
+  if(c)return c;
+  const b=lotBase(k);
+  if(!b)return null;
+  return S.coils.find(x=>x.cno===b||lotBase(x.cno)===b||x.ms===b||lotBase(x.ms||'')===b)||null;
+}
+/* 원단위 규격 보완: 정확일치면 재질·두께·폭, HEAT 유추면 재질·두께만(폭 무관) */
+function fillBomSpec(){
+  let n=0;
+  S.bom.forEach(b=>{
+    if(b.mt&&+b.t)return;
+    if(!b.lot)return;
+    const exact=S.coils.find(x=>x.cno===String(b.lot).trim());
+    const c=exact||coilByLot(b.lot);
+    if(!c||!c.mt)return;
+    b.mt=c.mt; b.t=+c.t||0; b.w=exact?(+c.w||0):0;   /* HEAT 유추 시 폭 무관 */
+    if(!exact)b.n=(b.n||'')+' · 규격은 HEAT '+lotBase(b.lot)+' 유추(폭 무관)';
+    n++;
+  });
+  if(n)save();
+  return n;
+}
+/* 설비에 물려 있으나 원장에 없는 LOT 을 코일로 보완 생성 */
+function fixMesLots(){
+  const miss=(S.eq||[]).filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot));
+  if(!miss.length){toast('보완할 미등록 LOT 이 없습니다');return {add:0};}
+  const uniq=new Map();
+  miss.forEach(e=>{ if(!uniq.has(e.lot))uniq.set(e.lot,e); });
+  const list=[...uniq.values()];
+  const guess=list.filter(e=>coilByLot(e.lot));
+  if(!confirm('설비에 물려 있으나 코일대장에 없는 LOT '+list.length+'건을 코일로 등록합니다.\n\n'
+    +'· 중량은 MES 코일중량을 씁니다\n'
+    +'· 규격은 같은 HEAT 코일에서 유추합니다 (유추 가능 '+guess.length+'건 / 미상 '+(list.length-guess.length)+'건)\n'
+    +'· 검사 칸은 [미등록]으로 표시되어 나중에 구분할 수 있습니다\n'
+    +'· 같은 HEAT 코일이 원장에 있으면 그만큼 빼서 이중계상을 막습니다\n\n진행할까요?'))return {add:0};
+  let add=0,nospec=0,split=0,splitKg=0;
+  list.forEach(e=>{
+    const c=coilByLot(e.lot);
+    if(!c)nospec++;
+    const wt=e.ckg||0;
+    const nid=S.cseq++;
+    S.coils.push({id:nid, d:(c&&c.d)||today(), cno:e.lot,
+      mt:(c&&c.mt)||'', t:(c&&+c.t)||0, w:0,          /* 폭은 미상 → 무관 처리 */
+      wt, sup:(c&&c.sup)||'', ms:lotBase(e.lot),
+      iq:'미등록', st:'사용중', lc:'', src:'MESLOT|'+e.lot,
+      n:'MES 장착분 보완 · 수입검사 미등록'+(c?' · 규격 HEAT '+lotBase(e.lot)+' 유추':' · 규격 미상')});
+    add++;
+    /* HEAT 단위로 등록된 모(母)코일이 따로 있으면 그만큼 빼서 이중계상을 막는다 */
+    if(c&&c.cno!==e.lot&&wt>0){
+      const av=remOf(c);
+      const q=Math.round(Math.min(av,wt)*100)/100;
+      if(q>0){
+        S.mled.push({id:S.mseq++,d:today(),cid:c.id,cno:c.cno,k:'재고조정(-)',q,
+          pn:'',n:'슬릿 분할 → '+e.lot+' (이중계상 방지)',by:'AUTO',split:1});
+        split++; splitKg+=q;
+      }
+    }
+  });
+  S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
+  const bf=fillBomSpec();
+  save(); autoBom(false); render();
+  toast('미등록 LOT '+add+'건 보완'+(nospec?' · 규격미상 '+nospec+'건':'')
+    +(split?' · 모코일 분할차감 '+split+'건('+kg(splitKg)+'kg)':'')+(bf?' · 원단위 '+bf+'종 규격 채움':''));
+  return {add,nospec,bf,split,splitKg};
 }
 
 /* ═══════ 코일 CSV 일괄등록 ═══════
@@ -7694,7 +7787,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
