@@ -5319,8 +5319,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
       <option value="__hold">⛔ 검사 안 끝난 것</option>
       <option value="__miss">🩹 보완 등록분</option>
-      <option value="__free">🏷 사급(관리 제외)</option>
-      <option value="__own">자사 소재만</option></select>
+      <option value="__free">🏷 사급·관리제외만 보기</option>
+      <option value="__all">＋ 관리제외 포함 전체</option></select>
   </div>
 
   <div class="fbar" id="cntBar" style="display:none;padding:7px 10px;background:#F7FAFD">
@@ -5521,6 +5521,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           코일번호·HEAT·공급업체·제품품번 어느 것으로도 지정할 수 있고 <b>*</b> 로 앞자리만 맞춰도 됩니다.
           코일 목록에는 <b>사급</b> 표시로 남아 이력은 그대로 확인됩니다.
           기본값으로 <b>CUG0606A · CPF3246A · 01S6129373 · AT59721A · 45631-* · 54610-*</b> 가 들어 있습니다.<br>
+        · 사급 코일은 <b>코일 목록·입출고 내역·실사에서도 감춰집니다</b>. 확인이 필요하면 상태 필터에서
+          <b>[사급·관리제외만 보기]</b> 또는 <b>[＋ 관리제외 포함 전체]</b>를 고르세요.<br>
         · <b>공급업체명 통합</b>: 같은 소재를 대는 업체가 이름만 다르게 들어오면(예: 동국산업 → 정민스틸)
           [관리 도구 → 공급업체명 통합]에서 묶습니다. ㈜·(주)·_SUS 같은 표기 차이는 자동으로 합쳐집니다.
           코일에 저장된 원래 업체명은 그대로 두고 <b>집계에서만</b> 묶이므로 성적서 추적성은 유지됩니다.<br>
@@ -6682,7 +6684,7 @@ function autoBom(verbose){
    · 미개봉 코일은 입고중량 그대로, 사용중 코일만 실측한다.
    · 전산 잔량과 다르면 재고조정(+/−) 전표를 발행해 원장을 맞춘다.          */
 function cntTargets(){
-  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isFree(c)&&(remOf(c)>0.5||c.ct!=null));
+  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isOff(c)&&(remOf(c)>0.5||c.ct!=null));
 }
 function cntAllOk(){
   const T=cntTargets().filter(({c})=>c.ct==null);
@@ -6779,6 +6781,21 @@ function isFree(c){
   if(!c)return false;
   if(c.cs)return true;
   return isFreeKey(c.cno)||isFreeKey(c.ms)||isFreeKey(c.sup);
+}
+/* 코일번호가 '*' 처럼 의미 없는 것 — MES 에서 LOT 이 비어 넘어온 행 */
+const isJunk=c=>!/[A-Za-z0-9]/.test(String((c&&c.cno)||''));
+/* 관리 대상에서 빼는 코일 (사급 + 무의미) */
+const isOff=c=>isFree(c)||isJunk(c);
+function delJunk(){
+  const jk=S.coils.filter(isJunk);
+  if(!jk.length){toast('지울 항목이 없습니다');return;}
+  if(!confirm('코일번호가 없는 행 '+jk.length+'건을 지웁니다.\n(이미 재고 계산에서 빠져 있는 항목입니다)'))return;
+  const ids=new Set(jk.map(c=>c.id));
+  markDel(jk.map(c=>c.cno).filter(Boolean));
+  S.mled=S.mled.filter(m=>!ids.has(m.cid));
+  S.coils=S.coils.filter(c=>!ids.has(c.id));
+  save(); autoBom(false); render(); pushRaw(true);
+  toast(jk.length+'건을 지웠습니다');
 }
 /* 제품(소요량)이 사급 소재를 쓰는가 */
 function isFreeBom(b){
@@ -6881,7 +6898,7 @@ function supAgg(){
   const blank=(k,nm)=>({k,nm,n:0,inKg:0,remN:0,remKg:0,outN:0,useN:0,waitN:0,holdN:0,mountN:0,
                         mIn:0,mInN:0,mOut:0,last:'',spec:new Map()});
   S.coils.forEach(c=>{
-    if(isFree(c))return;                                  /* 사급 제외 */
+    if(isOff(c))return;                                   /* 사급·무의미 제외 */
     const nm=supNm(c.sup);
     if(!M.has(nm))M.set(nm,blank(nm,nm));
     const o=M.get(nm), r=remOf(c), wt=+c.wt||0;
@@ -6919,7 +6936,7 @@ function supAgg(){
 function specAgg(){
   const M=new Map();
   S.coils.forEach(c=>{
-    if(c.st==='반품'||isFree(c))return;
+    if(c.st==='반품'||isOff(c))return;
     const k=specKey(c);
     if(!M.has(k))M.set(k,{k,mt:c.mt,t:+c.t||0,w:+c.w||0,n:0,live:0,rem:0,hold:0,iq:0,oq:0,old:''});
     const o=M.get(k), r=remOf(c);
@@ -6958,15 +6975,15 @@ function rRaw(){
   let nC=0,rem=0,iq=0,oq=0,dead=0;
   let freeN=0;
   S.coils.forEach(c=>{const r=remOf(c);
-    if(isFree(c)){ if(r>0.5)freeN++; return; }          /* 사급은 재고에서 뺀다 */
+    if(isOff(c)){ if(r>0.5&&isFree(c))freeN++; return; }   /* 사급·무의미 코일은 재고에서 뺀다 */
     if(usable(c)&&r>0.5){nC++;rem+=r;} if(isDeadCoil(c))dead++;});
-  S.coils.forEach(c=>{if(!isFree(c)&&c.st!=='반품'&&c.d>=a&&c.d<=b)iq+=(+c.wt||0);});
+  S.coils.forEach(c=>{if(!isOff(c)&&c.st!=='반품'&&c.d>=a&&c.d<=b)iq+=(+c.wt||0);});
   S.mled.forEach(m=>{if(m.d<a||m.d>b)return; if(mKindIO(m.k)==='I')iq+=m.q; else if(m.k==='생산투입')oq+=m.q;});
   const SP=specAgg(), nShort=SP.filter(o=>o.sf>0&&o.gap<0).length;
   anim('r1',nC);anim('r2',Math.round(rem));anim('r3',Math.round(iq));anim('r4',Math.round(oq));
   const mounted=S.coils.filter(c=>mountOf(c.cno)).length;
   anim('r5',nShort);anim('r6',mounted);anim('r7',dead);
-  anim('r8',S.coils.filter(c=>c.iq==='미등록'&&remOf(c)>0.5&&!isFree(c)).length);
+  anim('r8',S.coils.filter(c=>c.iq==='미등록'&&remOf(c)>0.5&&!isOff(c)).length);
   {const el=$('freeInfo');
    if(el)el.innerHTML=freeN?'🏷 사급 '+freeN+'코일은 재고에서 제외 <a href="#" onclick="openFree();return false" style="color:#5B4B8A">관리</a>':'';}
   $('r_ym').textContent=ym; $('r_by').textContent=S.user||'-';
@@ -7018,7 +7035,7 @@ function rRaw(){
       +(D.noCoil.length>4?' 외 '+(D.noCoil.length-4)+'종':''));
   }
   /* 검사 보류로 자동차감에서 빠진 코일 */
-  const held=S.coils.filter(c=>!isFree(c)&&!usable(c)&&remOf(c)>0.5);
+  const held=S.coils.filter(c=>!isOff(c)&&!usable(c)&&remOf(c)>0.5);
   if(held.length){
     const t2=held.reduce((a,c)=>a+remOf(c),0);
     const ng=held.filter(c=>c.iq==='불합격'), wt2=held.filter(c=>c.iq!=='불합격');
@@ -7040,15 +7057,22 @@ function rRaw(){
   }
   /* 성적서 HEAT 와 코일번호가 다른 것 — 묶음 성적서를 잘못 펼친 흔적 */
   {
-    const bad=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0&&c.ms&&!isFree(c)&&
+    const bad=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0&&c.ms&&!isOff(c)&&
       lotBase(c.cno)!==lotBase(c.ms)&&remOf(c)>0.5);
     if(bad.length)msgs.push('⚠ <b>성적서와 LOT이 어긋난 코일 '+bad.length+'본 / '+kg(bad.reduce((a2,c)=>a2+remOf(c),0))+' kg</b>'
       +' — 수입검사 앱의 묶음 성적서를 잘못 펼쳐 만들어진 코일입니다. 재고가 실제보다 부풀려집니다. &nbsp;'
       +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="rebuildIqc()">🔁 코일 다시 만들기</button>');
   }
+  /* 코일번호가 비어 있는 행 */
+  {
+    const jk=S.coils.filter(isJunk);
+    if(jk.length)msgs.push('ℹ <b>코일번호가 없는 행 '+jk.length+'건</b> — MES 에서 LOT 이 비어 있어 만들어진 것으로 '
+      +'재고에서 이미 빠져 있습니다. 지워도 됩니다. &nbsp;'
+      +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="delJunk()">🗑 지우기</button>');
+  }
   /* 폭을 모르는 코일 */
   {
-    const nw=S.coils.filter(c=>!+c.w&&remOf(c)>0.5&&!isFree(c));
+    const nw=S.coils.filter(c=>!+c.w&&remOf(c)>0.5&&!isOff(c));
     if(nw.length)msgs.push('ℹ <b>폭을 모르는 코일 '+nw.length+'본</b> — 수입검사 자료에 폭이 없어 <b>무관</b>으로 두었습니다. '
       +'재고 계산에는 문제없지만, 같은 재질·두께의 다른 폭 코일과 섞여 배정될 수 있습니다. '
       +'코일 목록의 <b>W</b> 칸에 직접 넣으면 정확해집니다. &nbsp;<b>'
@@ -7131,14 +7155,17 @@ function rRaw(){
     const R=S.coils.map((c,i)=>({c,i})).filter(({c})=>{
       if(fst==='__hold'){ if(usable(c))return false; }
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
-      else if(fst==='__free'){ if(!isFree(c))return false; }
-      else if(fst==='__own'){ if(isFree(c))return false; }
+      else if(fst==='__free'){ if(!isOff(c))return false; }
+      else if(fst==='__all'){ /* 전부 표시 */ }
+      else if(isOff(c))return false;                       /* 평소에는 사급·무의미 코일을 감춘다 */
       else if(fst&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
     $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'
       +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
       +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
-      +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>';
+      +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>'
+      +((()=>{const off=S.coils.filter(isOff).length;
+        return off?' <span style="color:#5B4B8A">· 사급·관리제외 '+off+'본 숨김</span>':'';})());
     $('rawHint').innerHTML='· <b>노란 칸은 표에서 바로 고칠 수 있습니다</b>. 칸을 클릭해 값을 바꾸고 다른 곳을 누르면 저장됩니다.<br>'
       +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
       +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
@@ -7226,6 +7253,7 @@ function rRaw(){
 
   else if(RV==='led'){
     const R=S.mled.filter(m=>m.d>=a&&m.d<=b)
+      .filter(m=>{const c=S.coils.find(x=>x.id===m.cid); return !c||!isOff(c);})
       .filter(m=>!q||nz((m.cno||'')+' '+(m.pn||'')+' '+m.k).includes(q))
       .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
     $('gt-raw').innerHTML='원소재 수불 · 총 <b>'+R.length+'</b>건 · '+a+' ~ '+b;
@@ -7261,9 +7289,7 @@ function rRaw(){
     const R=cntTargets().filter(({c})=>{
       if(fst==='__hold'){ if(usable(c))return false; }
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
-      else if(fst==='__free'){ if(!isFree(c))return false; }
-      else if(fst==='__own'){ if(isFree(c))return false; }
-      else if(fst&&coilSt(c)!==fst)return false;
+      else if(fst&&fst!=='__all'&&fst!=='__free'&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.lc).includes(q);});
     const done=R.filter(({c})=>c.ct!=null).length;
     let gPlus=0,gMinus=0,nGap=0;
@@ -7656,7 +7682,7 @@ const iqcJudge=j=>{const v=String(j||'').trim().toUpperCase();
   if(v==='특채')return '특채';
   return '대기';};
 /* 자동차감·가용재고에 쓸 수 있는 코일인가 (불합격·검사대기는 제외) */
-const usable=c=>!isFree(c)&&c.st!=='반품'&&(c.iq==='합격'||c.iq==='특채'||c.iq==='미등록'||!c.iq);
+const usable=c=>!isOff(c)&&c.st!=='반품'&&(c.iq==='합격'||c.iq==='특채'||c.iq==='미등록'||!c.iq);
 
 let iqcBusy=false;
 async function syncIqc(silent){
