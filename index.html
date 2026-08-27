@@ -5220,6 +5220,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>🧪 수입검사 연동</b>: 소재 수입검사 앱(v3.7)의 <b>소재입고(inspection_certs)</b>를 읽어 코일을 자동 생성합니다.
           <b>LOT 1개 = 코일 1본</b>이며, 한 입고건에 LOT이 여러 개면 그 수만큼 코일로 나누고 중량을 균등 배분합니다.
           코일번호는 <b>LOT No.</b>를 그대로 씁니다. 같은 LOT을 다시 읽어도 중복 생성되지 않고, MES 동기화 때마다 함께 실행됩니다.<br>
+        · <b>판정 근거</b>는 수요자 검사 발행분(<b>iqc_inspections</b>)의 판정이 정본입니다.
+          성적서(inspection_certs)의 final_judge 는 공급자 판정이 저장돼 있을 수 있어 단독으로는 쓰지 않습니다.
+          검사앱에서 성적서를 발행하면 그 판정·성적서번호·검사일이 코일대장에 함께 표시됩니다.<br>
         · 판정이 <b>검사대기·불합격</b>인 코일은 가용재고와 자동차감에서 <b>보류</b>되고, 규격별 집계의 [보류] 열에 따로 표시됩니다.
           검사앱에서 판정이 확정되면 다음 연동 때 자동으로 풀립니다.<br>
         · <b>연동 시작일</b> 이후 성적서만 가져옵니다. 이미 생산투입된 코일은 검사앱에서 성적서가 지워져도 남습니다.<br>
@@ -6398,6 +6401,14 @@ function rRaw(){
       +D.noCoil.slice(0,4).map(x=>'<b>'+esc(x.pn)+'</b>: '+esc(x.why)).join(' / ')
       +(D.noCoil.length>4?' 외 '+(D.noCoil.length-4)+'종':''));
   }
+  /* 검사 보류로 자동차감에서 빠진 코일 */
+  const held=S.coils.filter(c=>!usable(c)&&remOf(c)>0.5);
+  if(held.length){
+    const t2=held.reduce((a,c)=>a+remOf(c),0);
+    msgs.push('⛔ <b>검사 보류 코일 '+held.length+'본 / '+kg(t2)+' kg</b> — 수요자 검사가 발행되지 않았거나 불합격이라 '
+      +'가용재고·자동차감에서 제외됩니다. 검사앱에서 성적서를 발행한 뒤 <b>[🧪 수입검사 연동]</b>을 다시 누르면 풀립니다. &nbsp;<b>'
+      +[...new Set(held.map(c=>c.mt+' '+(+c.t).toFixed(2)+'t'))].slice(0,6).join(', ')+'</b>');
+  }
   /* 구버전 연동 잔존분 */
   const legacy=S.coils.filter(c=>c.src&&c.src.indexOf('IQC|')===0);
   if(legacy.length){
@@ -6442,7 +6453,7 @@ function rRaw(){
     $('rawHint').innerHTML='· 코일번호를 클릭하면 수정·삭제할 수 있습니다. 잔량은 수불전표로 자동 계산되며 직접 수정하지 않습니다.<br>· 수입검사 <b>불합격</b> 코일은 자동차감 대상에서 제외됩니다.';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
-      <th>MILL SHEET</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
+      <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
         const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
         const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
@@ -6458,16 +6469,18 @@ function rRaw(){
          <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(c.iq==='미등록'?'#8A6D1F':(usable(c)?'#0B6B3A':'#9A6400'))}">${esc(c.iq||'')}${usable(c)?(c.iq==='미등록'?' 🩹':''):' ⛔'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
          <td class="l">${esc(c.ms||'')}</td>
+         <td class="l" style="font-size:10px">${c.cert?esc(c.cert)+(c.ins?'<div style="color:#888">'+esc(c.ins)+'</div>':'')
+            :'<span style="color:#9A6400">검사 미발행</span>'}</td>
          <td class="l" style="font-family:var(--sans)">${(m2=>m2?'<b style="color:#0B4F9E">'+esc(m2.nm||m2.mc)+'</b>'
             +(m2.pn?'<div style="font-size:9px;color:#888">'+esc(m2.pn)+'</div>':''):'')(mountOf(c.cno))}</td>
          <td class="l" style="font-family:var(--sans)">${esc(c.lc||'')}</td>
          <td class="${isDeadCoil(c)?'wn':''}">${coilAge(c)}</td>
          <td class="l" style="font-family:var(--sans)">${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span> ':''}${esc(c.n||'')}${isDeadCoil(c)?' <b style="color:#9A6400">장기체화</b>':''}</td></tr>`;
-       }).join(''):`<tr><td colspan="18" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
+       }).join(''):`<tr><td colspan="19" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
        <td>${kg(R.reduce((s2,{c})=>s2+(+c.wt||0),0))}</td>
        <td>${kg(R.reduce((s2,{c})=>s2+((+c.wt||0)-remOf(c)),0))}</td>
-       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="9"></td></tr></tfoot>`;
+       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="10"></td></tr></tfoot>`;
   }
 
   else if(RV==='spec'){
@@ -6778,6 +6791,45 @@ async function syncIqc(silent){
   const from=($('iqcFrom')&&$('iqcFrom').value)||S.iqcFrom||IQC_FROM_DEF;
   S.iqcFrom=from;
   try{
+    /* ① 수요자 검사 발행분을 먼저 읽는다.
+       inspection_certs.final_judge 는 공급자 판정일 수 있어 판정 근거로 쓸 수 없다.
+       수입검사 판정은 iqc_inspections.final_judge 가 정본이다. */
+    const JG={}, SP=S.spec||{};
+    let insN=0;
+    try{
+      const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc',
+        {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
+      insN=ins.length;
+      const putS=(k,v)=>{const key=String(k||'').trim(); if(key&&!SP[key])SP[key]=v;};
+      const putJ=(k,v)=>{const key=String(k||'').trim(); if(!key)return;
+        const p0=JG[key];
+        if(!p0||String(v.at||'')>String(p0.at||''))JG[key]=v;};   /* 최신 발행분 우선 */
+      ins.forEach(x=>{
+        const sp={mt:String(x.material_type||'').toUpperCase().trim(),
+                  t:fnum(x.thickness), w:fnum(x.width_mm||x.width), sup:x.supplier||''};
+        const jv={jg:iqcJudge(x.final_judge), cert:x.cert_no||'', ins:x.insp_date||'',
+                  by:x.inspector||'', at:x.updated_at||x.insp_date||'', rd:x.receipt_date||'',
+                  gk:x.group_key||''};
+        const keys=[];
+        String(x.lots_detail||'').split(',').map(z=>z.trim()).filter(Boolean).forEach(l=>keys.push(l));
+        if(x.lot_base)keys.push(x.lot_base);
+        if(x.heat_no)keys.push(x.heat_no);
+        keys.forEach(k=>{ putJ(k,jv); putJ(lotBase(k),jv); if(sp.mt&&sp.t){putS(k,sp);putS(lotBase(k),sp);} });
+        if(jv.gk)putJ('GK|'+jv.gk+'@'+jv.rd,jv);
+      });
+      S.spec=SP;
+    }catch(e){ console.warn('iqc_inspections:',e.message); }
+    /* 검사 발행분에서 LOT 판정 찾기 (정확 LOT → LOT베이스 → 그룹키+입고일) */
+    const judgeOf=(lot,r)=>{
+      const k=String(lot||'').trim();
+      let v=JG[k]||JG[lotBase(k)];
+      if(v)return v;
+      const gk=[String(r.supplier||''),String(r.material_type||r.spec||''),
+                fnum(r.thickness)||'',fnum(r.width_mm||r.width)||''].join('|');
+      return JG['GK|'+gk+'@'+(r.__rd||r.receipt_date||'')]||null;
+    };
+
+    /* ② 소재입고(코일별 원본) */
     const rows=await fetchAll(IQC_URL+'/rest/v1/'+IQC_TABLE+'?select=*&order=created_at.desc',
       {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
     /* 최신 행 우선 + LOT@입고일 커버리지로 이중 적재 차단 (검사앱 v3.5 로직과 동일) */
@@ -6807,16 +6859,20 @@ async function syncIqc(silent){
       }else DG.dup++;
     });
     S.iqcDiag=DG;
-    let add=0,upd=0,hold=0;
+    let add=0,upd=0,hold=0,insHit=0,noIns=0;
     const seen=new Set();
     picks.forEach(({r,lots,rd})=>{
       const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
       const t=fnum(r.thickness), w=fnum(r.width_mm||r.width);
       const tot=fnum(r.weight), n=lots.length;
       const each=n?Math.round(tot/n*10)/10:tot;
-      const jg=iqcJudge(r.final_judge);
-      if(jg!=='합격'&&jg!=='특채')hold+=n;
+      const certJg=iqcJudge(r.final_judge);
       lots.forEach((lot,i)=>{
+        const jv=judgeOf(lot,r);
+        /* 수요자 검사 발행분이 있으면 그 판정이 정본, 없으면 성적서 판정(공급자일 수 있음) */
+        const jg=jv?jv.jg:certJg;
+        if(jg!=='합격'&&jg!=='특채')hold++;
+        if(jv)insHit++; else noIns++;
         const isNo=lot.indexOf('(noLot#')===0;
         const src='IQC2|'+lot+'@'+rd;
         seen.add(src);
@@ -6824,11 +6880,16 @@ async function syncIqc(silent){
         const ex=S.coils.find(c=>c.src===src);
         if(!ex&&S.coils.some(c=>c.cno===cno))cno+='#'+String(rd).slice(5).replace('-','');
         const o={d:rd,cno,mt,t,w,wt:each,sup:r.supplier||'',ms:r.heat_no||lotBase(lot),iq:jg,
-                 n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':''].filter(Boolean).join(' · '),
+                 cert:jv?jv.cert:'', ins:jv?jv.ins:'',
+                 n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':'',
+                    jv?('검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:'')):'검사 미발행']
+                    .filter(Boolean).join(' · '),
                  src};
         if(ex){
-          if(ex.wt!==o.wt||ex.mt!==o.mt||ex.t!==o.t||ex.w!==o.w||ex.iq!==o.iq||ex.d!==o.d){
-            Object.assign(ex,{d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms});upd++;}
+          if(ex.wt!==o.wt||ex.mt!==o.mt||ex.t!==o.t||ex.w!==o.w||ex.iq!==o.iq||ex.d!==o.d
+             ||ex.cert!==o.cert||ex.ins!==o.ins){
+            Object.assign(ex,{d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms,
+              cert:o.cert,ins:o.ins,n:o.n});upd++;}
         }else{
           S.coils.push(Object.assign({id:S.cseq++,st:'대기',lc:''},o));add++;
         }
@@ -6844,22 +6905,6 @@ async function syncIqc(silent){
       S.coils.splice(i,1);del++;
     }
     S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
-    /* 검사 발행분에서 LOT베이스 → 규격 사전을 만든다 (성적서가 HEAT 단위로만 남은 건 보완용) */
-    try{
-      const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc',
-        {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
-      const D=S.spec||{};
-      const put=(k,v)=>{const key=String(k||'').trim(); if(key&&!D[key])D[key]=v;};
-      ins.forEach(x=>{
-        const v={mt:String(x.material_type||'').toUpperCase().trim(),
-                 t:fnum(x.thickness), w:fnum(x.width_mm||x.width), sup:x.supplier||''};
-        if(!v.mt||!v.t)return;
-        put(x.lot_base,v); put(lotBase(x.lot_base||''),v); put(x.heat_no,v); put(lotBase(x.heat_no||''),v);
-        String(x.lots_detail||'').split(',').map(z=>z.trim()).filter(Boolean)
-          .forEach(l=>{put(l,v); put(lotBase(l),v);});
-      });
-      S.spec=D;
-    }catch(e){ console.warn('iqc_inspections:',e.message); }
     /* 성적서만으로 만든 코일도 규격이 비어 있으면 사전으로 채운다 */
     S.coils.forEach(c=>{ if(c.mt&&+c.t)return;
       const v=specByLot(c.cno)||specByLot(c.ms);
@@ -6873,7 +6918,9 @@ async function syncIqc(silent){
       L.push('  · 데이터 기간: '+(DG.minD||'-')+' ~ '+(DG.maxD||'-'));
       L.push('  · 연동 시작일 '+from+' 이후 '+DG.used+'건 채택 → 코일 '+DG.coils+'본');
       L.push('  · 신규 '+add+(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:''));
-      if(hold)L.push('  · 검사대기·불합격 '+hold+'본 보류');
+      L.push('  · 수요자 검사 발행분(iqc_inspections) '+insN+'건 조회');
+      L.push('  · 판정 근거: 검사발행 '+insHit+'본 / 성적서판정만 '+noIns+'본');
+      if(hold)L.push('  · 검사대기·불합격 '+hold+'본 보류(자동차감 제외)');
       L.push('');
       L.push('■ 원천 데이터 월별 분포 (입고일 기준, 없으면 등록일)');
       const yms=Object.keys(DG.byYm).sort();
