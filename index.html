@@ -6579,6 +6579,15 @@ function rRaw(){
     if(bn)msgs.push('ℹ <b>재고 시작일 '+BD+'</b> — 그 이전 생산분('+nf(bq)+' EA)은 계산에서 빠집니다. '
       +'그때 쓴 소재는 지금 목록에 없는 옛 재고이기 때문입니다.');
   }
+  /* 폭을 모르는 코일 */
+  {
+    const nw=S.coils.filter(c=>!+c.w&&remOf(c)>0.5);
+    if(nw.length)msgs.push('ℹ <b>폭을 모르는 코일 '+nw.length+'본</b> — 수입검사 자료에 폭이 없어 <b>무관</b>으로 두었습니다. '
+      +'재고 계산에는 문제없지만, 같은 재질·두께의 다른 폭 코일과 섞여 배정될 수 있습니다. '
+      +'코일 목록의 <b>W</b> 칸에 직접 넣으면 정확해집니다. &nbsp;<b>'
+      +[...new Set(nw.map(c=>c.ms||lotBase(c.cno)))].slice(0,8).map(esc).join(', ')
+      +(nw.length>8?' 외':'')+'</b>');
+  }
   /* 입고일이 등록일로 대체된 코일 */
   {
     const LD=S.lotDate||{};
@@ -7215,10 +7224,17 @@ async function syncIqc(silent){
       S.coils.splice(i,1);del++;
     }
     S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
-    /* 성적서만으로 만든 코일도 규격이 비어 있으면 사전으로 채운다 */
-    S.coils.forEach(c=>{ if(c.mt&&+c.t)return;
-      const v=specByLot(c.cno)||specByLot(c.ms);
-      if(v){c.mt=v.mt;c.t=v.t; if(!+c.w)c.w=0; if(!c.sup)c.sup=v.sup; upd++;} });
+    /* 성적서에 없는 규격은 검사 발행분 사전에서 채운다 (폭 포함) */
+    let wFill=0;
+    S.coils.forEach(c=>{
+      const v=specByLot(c.cno)||specByLot(c.ms); if(!v)return;
+      let ch=false;
+      if(!c.mt&&v.mt&&!isLocked(c,'mt')){c.mt=v.mt;ch=true;}
+      if(!+c.t&&v.t&&!isLocked(c,'t')){c.t=v.t;ch=true;}
+      if(!+c.w&&v.w&&!isLocked(c,'w')){c.w=v.w;ch=true;wFill++;}
+      if(!c.sup&&v.sup)c.sup=v.sup;
+      if(ch)upd++;
+    });
     /* 보완(미등록) 코일도 검사가 발행됐으면 판정을 올려 준다 */
     S.coils.forEach(c=>{
       if(c.iq!=='미등록')return;
@@ -7243,6 +7259,7 @@ async function syncIqc(silent){
       L.push('  · 판정 근거: 검사발행 '+insHit+'본 / 성적서판정만 '+noIns+'본');
       if(takeover)L.push('  · 보완 코일 '+takeover+'본을 정식 입고분으로 승격(중복 생성 없음)');
       if(jgFix)L.push('  · 미등록 코일 '+jgFix+'본에 검사 판정 반영');
+      if(wFill)L.push('  · 폭을 몰랐던 코일 '+wFill+'본에 검사 발행분의 폭 반영');
       if(DH.n)L.push('  · HEAT↔슬릿 이중계상 정리 '+DH.n+'건 ('+kg(DH.kgs)+'kg)');
       if(hold)L.push('  · 검사대기·불합격 '+hold+'본 보류(자동차감 제외)');
       L.push('');
@@ -7651,13 +7668,19 @@ function fillBomSpec(){
     const exact=S.coils.find(x=>x.cno===String(b.lot).trim());
     const c=(exact&&exact.mt)?exact:coilByLot(b.lot);
     if(c&&c.mt){
-      b.mt=c.mt; b.t=+c.t||0; b.w=(exact&&exact.mt&&+exact.w)?+exact.w:0;
+      b.mt=c.mt; b.t=+c.t||0;
+      /* 정확일치 코일이면 그 폭, HEAT 유추면 같은 HEAT 코일들의 폭이 하나뿐일 때만 채택 */
+      if(exact&&exact.mt&&+exact.w)b.w=+exact.w;
+      else{
+        const ws=[...new Set(S.coils.filter(x=>lotBase(x.cno)===lotBase(b.lot)&&+x.w>0).map(x=>+x.w))];
+        b.w=ws.length===1?ws[0]:0;
+      }
       if(!(exact&&exact.mt))b.n=(b.n||'')+' · 규격 HEAT '+lotBase(b.lot)+' 유추(폭 무관)';
       n++; return;
     }
     const v=specByLot(b.lot);          /* 검사 발행분 사전에서 보완 */
-    if(v){ b.mt=v.mt; b.t=v.t; b.w=0;
-      b.n=(b.n||'')+' · 규격 검사발행분 '+lotBase(b.lot)+' 참조(폭 무관)'; n++; }
+    if(v){ b.mt=v.mt; b.t=v.t; b.w=+v.w||0;
+      b.n=(b.n||'')+' · 규격 검사발행분 '+lotBase(b.lot)+' 참조'+(+v.w?'':'(폭 무관)'); n++; }
   });
   if(n)save();
   return n;
@@ -7698,13 +7721,13 @@ function fixMesLots(){
   let add=0,nospec=0,split=0,splitKg=0;
   list.forEach(e=>{
     let c=coilByLot(e.lot);
-    if(!c||!c.mt){ const v=specByLot(e.lot); if(v)c={mt:v.mt,t:v.t,w:0,sup:v.sup,d:'',cno:'',id:0}; }
+    if(!c||!c.mt){ const v=specByLot(e.lot); if(v)c={mt:v.mt,t:v.t,w:+v.w||0,sup:v.sup,d:'',cno:'',id:0}; }
     if(!c||!c.mt)nospec++;
     const wt=e.ckg||0;
     const nid=S.cseq++;
     const dd=(S.lotDate||{})[e.lot]||(S.lotDate||{})[lotBase(e.lot)]||(c&&c.d)||today();
     S.coils.push({id:nid, d:dd, cno:e.lot,
-      mt:(c&&c.mt)||'', t:(c&&+c.t)||0, w:0,          /* 폭은 미상 → 무관 처리 */
+      mt:(c&&c.mt)||'', t:(c&&+c.t)||0, w:(c&&+c.w)||0,   /* 알면 폭까지, 모르면 무관 */
       wt, sup:(c&&c.sup)||'', ms:lotBase(e.lot),
       iq:'미등록', st:'사용중', lc:'', src:'MESLOT|'+e.lot,
       n:'MES 장착분 보완 · 수입검사 미등록'+(c?' · 규격 HEAT '+lotBase(e.lot)+' 유추':' · 규격 미상')});
