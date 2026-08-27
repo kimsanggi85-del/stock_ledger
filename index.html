@@ -152,7 +152,15 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .guide b{color:var(--hd)}
 .guide .step{display:inline-block;background:var(--hd);color:#fff;border-radius:50%;width:16px;height:16px;
   text-align:center;line-height:16px;font-size:10px;font-weight:800;margin-right:4px}
-.btn.big{padding:9px 18px;font-size:13px;font-weight:800}
+.btn.big{padding:9px 18px;font-size:13px;font-weight:800;height:36px;line-height:1}
+/* 최신화 줄: 버튼·안내문·오른쪽 도구가 같은 높이로 정렬되게 */
+#p-raw .fbar{align-items:center;min-height:52px;row-gap:6px}
+#p-raw .fbar .rt{align-items:center}
+#p-raw .fbar .btn,#p-raw .fbar input,#p-raw .fbar select{height:32px}
+#p-raw .fbar .btn.big{height:36px}
+#p-raw .fbar label{display:inline-flex;align-items:center;height:32px;margin:0 2px 0 4px}
+#refreshInfo{display:inline-flex;align-items:center;height:36px;white-space:nowrap}
+#p-raw .guide{margin-bottom:8px}
 .tools-wrap{position:relative;display:inline-block}
 .tools-pop{position:absolute;top:100%;left:0;margin-top:5px;z-index:60;background:#fff;border:1px solid #8494a4;
   border-radius:5px;box-shadow:0 6px 22px rgba(0,0,0,.18);min-width:290px;display:none;overflow:hidden}
@@ -203,6 +211,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .modal h3{margin:0;background:var(--hd);color:#fff;padding:10px 14px;font-size:14px;display:flex}
 .modal h3 span{margin-left:auto;cursor:pointer;font-size:18px;line-height:1}
 .mb{padding:14px}
+/* 모달 하단 버튼: 저장은 넓게, 삭제는 좁게 한 줄로 */
+.mb .act{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line2)}
+.mb .act .btn{padding:11px 14px;font-size:13px;font-weight:700}
+.mb .act .btn.k{flex:1}
+.mb .act .btn.r{flex:0 0 108px}
 .fld{margin-bottom:9px}
 .fld label{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:3px}
 .fld input,.fld select{width:100%;border:1px solid var(--line);border-radius:3px;padding:9px;font-size:14px;font-family:var(--mono)}
@@ -5414,8 +5427,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       🔒 <b id="cLockList"></b> 칸을 직접 고쳐 두었습니다. 최신화해도 이 값이 유지됩니다.
       <button class="btn" style="padding:2px 9px;font-size:11px;margin-left:6px" onclick="unlockCoil()">연동값으로 되돌리기</button>
     </div>
-    <button class="btn k" style="width:100%;padding:11px" onclick="saveCoil()">저장</button>
-    <button class="btn r" id="cDel" style="width:100%;padding:11px;margin-top:6px" onclick="delCoil()">삭제</button>
+    <div class="act">
+      <button class="btn k" onclick="saveCoil()">저장</button>
+      <button class="btn r" id="cDel" onclick="delCoil()">삭제</button>
+    </div>
   </div>
 </div></div>
 
@@ -5437,8 +5452,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       padding:8px 10px;font-size:11.5px;color:#7A5200;margin-bottom:8px">
       ⚠ 원단위 자동차감으로 생성된 전표입니다. 수정·삭제해도 [자동차감 실행] 시 다시 생성됩니다.
       정정은 <b>재고조정(+/−)</b> 전표를 별도 등록하세요.</div>
-    <button class="btn k" style="width:100%;padding:11px" onclick="saveMio()">저장</button>
-    <button class="btn r" id="mDel" style="width:100%;padding:11px;margin-top:6px" onclick="delMio()">삭제</button>
+    <div class="act">
+      <button class="btn k" onclick="saveMio()">저장</button>
+      <button class="btn r" id="mDel" onclick="delMio()">삭제</button>
+    </div>
   </div>
 </div></div>
 
@@ -5463,8 +5480,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         두께 ±0.03mm / 폭 ±1mm 오차는 허용합니다. <b>폭을 비우면 폭 무관</b>으로 배정합니다.</div>
     <div class="hint" id="bMatch" style="margin-bottom:8px"></div>
     <div class="fld"><label>비고 (금형/피치/열수)</label><input id="bN" style="font-family:var(--sans)"></div>
-    <button class="btn k" style="width:100%;padding:11px" onclick="saveBom()">저장</button>
-    <button class="btn r" id="bDel" style="width:100%;padding:11px;margin-top:6px" onclick="delBom()">삭제</button>
+    <div class="act">
+      <button class="btn k" onclick="saveBom()">저장</button>
+      <button class="btn r" id="bDel" onclick="delBom()">삭제</button>
+    </div>
   </div>
 </div></div>
 
@@ -6888,7 +6907,7 @@ function openCoil(i){
    ['cMs','ms'],['cIq','iq'],['cLc','lc'],['cSt','st'],['cN','n']].forEach(([f,k])=>$(f).value=c[k]==null?'':c[k]);
   $('cInfo').innerHTML=n?'코일 1본 단위로 등록합니다. 잔량은 수불전표로 자동 계산됩니다.'
     :`잔량 <b>${kg(remOf(c))}</b> kg · 상태 <b>${coilSt(c)}</b> · 경과 ${coilAge(c)}일`;
-  $('cDel').style.display=n?'none':'block';
+  $('cDel').style.display=n?'none':'';
   const LN={mt:'재질',t:'두께',w:'폭',wt:'입고중량',iq:'검사',sup:'공급업체'};
   const lks=String(c.lk||'').split(',').filter(Boolean);
   $('cLockBox').style.display=lks.length?'block':'none';
@@ -6939,7 +6958,7 @@ function openMio(id){
   $('mK').value=m?m.k:'구매입고';
   $('mCno').value=m?(m.cno||''):''; $('mQ').value=m?m.q:'';
   $('mPn').value=m?(m.pn||''):''; $('mN').value=m?(m.n||''):'';
-  $('mDel').style.display=m?'block':'none';
+  $('mDel').style.display=m?'':'none';
   mInfo(); fillRawLists(); $('mMio').classList.add('on');
   if(!m)setTimeout(()=>$('mCno').focus(),80);
 }
@@ -6973,7 +6992,7 @@ function openBom(i,pre){
   $('bIdx').value=i;
   [['bPn','pn'],['bMt','mt'],['bT','t'],['bW','w'],['bNet','net'],['bY','y'],['bUw','uw'],['bN','n']]
     .forEach(([f,k])=>$(f).value=b[k]==null?'':b[k]);
-  bInfo(); $('bDel').style.display=n?'none':'block';
+  bInfo(); $('bDel').style.display=n?'none':'';
   fillRawLists(); $('mBom').classList.add('on');
   if(n)setTimeout(()=>$('bPn').focus(),80);
 }
