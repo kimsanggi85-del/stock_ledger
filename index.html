@@ -5086,6 +5086,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <button class="btn g" onclick="syncEq(false).then(()=>setRV('eq'))" title="MES 가동설비 모니터링에서 품번별 소요g(원단위)과 설비 장착 코일을 가져옵니다">⚙ MES 설비 연동</button>
       <button class="btn" onclick="pick('fCoil')" title="엑셀에서 코일 입고내역을 한 번에 등록합니다">📥 코일 CSV 등록</button>
       <button class="btn" onclick="coilTpl()" title="CSV 양식을 내려받습니다">📄 양식</button>
+      <button class="btn" onclick="openSpecBulk()" title="재질·두께를 모르는 원단위를 한 화면에서 채웁니다">🔧 규격 일괄 입력</button>
       <input type="file" id="fCoil" accept=".csv,.txt,.tsv" style="display:none">
     </div>
   </div>
@@ -5228,6 +5229,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           직접 등록한 원단위는 덮어쓰지 않습니다(출처 열에 [MES]/[수기] 표시).<br>
         · 설비에 현재 물려 있는 코일은 코일대장 <b>장착설비</b> 열에 표시되고, 자동차감 때 <b>그 코일이 최우선</b>으로
           배정됩니다(선입선출보다 우선). 실제 투입 코일과 원장이 어긋나지 않습니다.<br>
+        · <b>🔧 규격 일괄 입력</b>: 소요g은 있으나 재질·두께를 모르는 품번을 한 화면에서 채웁니다.
+          <b>폭은 비워두면 폭 무관</b>이라 슬릿 폭을 몰라도 되고, 같은 HEAT끼리는 한 줄만 채운 뒤
+          <b>[같은 HEAT 일괄적용]</b>으로 나머지를 복사할 수 있습니다.<br>
+        · 규격 유추 순서는 ① 그 LOT의 코일 → ② 같은 HEAT 코일 → ③ 수입검사 <b>검사 발행분(iqc_inspections)</b>의
+          LOT베이스 규격 → ④ 수기 입력 입니다. 연동을 누를 때마다 ①~③이 자동으로 재시도됩니다.<br>
         · <b>🩹 미등록 LOT 보완</b>: 수입검사 앱 도입 초기에 누락됐거나 성적서가 HEAT 단위로만 등록되어
           슬릿 LOT(예: SP38425-1)이 없는 경우, 설비에 물려 있는 LOT을 코일로 보완 등록합니다.
           중량은 MES 코일중량을 쓰고, 규격은 <b>같은 HEAT 코일에서 재질·두께를 유추</b>합니다(폭은 미상이므로 무관 처리).
@@ -5252,6 +5258,25 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
   </div>
 </div>
+
+<!-- 규격 미상 일괄 입력 -->
+<div class="mask" id="mSpec"><div class="modal" style="max-width:820px">
+  <h3>규격 미상 일괄 입력<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:8px">
+      · 아래는 <b>소요g은 있으나 재질·두께를 모르는 품번</b>입니다. 재질과 두께만 넣으면 자동차감이 동작합니다.<br>
+      · <b>폭은 비워두면 폭 무관</b>으로 배정되므로 슬릿 폭을 몰라도 됩니다.<br>
+      · 같은 LOT 베이스끼리는 한 줄만 채우고 <b>[같은 HEAT 일괄적용]</b>을 누르면 나머지가 함께 채워집니다.
+    </div>
+    <div class="gw" style="max-height:52vh;overflow:auto">
+      <table class="t" id="tSpec"></table>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn" onclick="specSpread()">↔ 같은 HEAT 일괄적용</button>
+      <button class="btn k" style="flex:1;padding:11px" onclick="saveSpecBulk()">저장</button>
+    </div>
+  </div>
+</div></div>
 
 <!-- 코일 입고/수정 -->
 <div class="mask" id="mCoil"><div class="modal">
@@ -5696,6 +5721,7 @@ function load(){
   if(!Array.isArray(S.bom))S.bom=[];
   if(!S.msf||typeof S.msf!=='object')S.msf={};
   if(!Array.isArray(S.eq))S.eq=[];
+  if(!S.spec||typeof S.spec!=='object')S.spec={};
   S.diag={noBom:[],noCoil:[]};
   if(!S.cseq)S.cseq=Math.max(1,...S.coils.map(c=>+c.id||0))+1;
   if(!S.mseq)S.mseq=Math.max(1,...S.mled.map(m=>+m.id||0))+1;
@@ -6348,7 +6374,8 @@ function rRaw(){
   const noSpecB=S.bom.filter(b=>+b.uw>0&&!b.mt);
   if(noSpecB.length){
     msgs.push('⚠ <b>규격 미상 원단위 '+noSpecB.length+'종</b> — MES에서 소요g은 받았으나 재질·두께·폭을 모릅니다. '
-      +'같은 HEAT 코일이 원장에 있으면 <b>[🩹 미등록 LOT 보완]</b>으로 자동 유추됩니다. 품번을 눌러 직접 입력해도 됩니다 &nbsp;'
+      +'<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="openSpecBulk()">🔧 규격 일괄 입력</button>'
+      +' 재질·두께만 넣으면 됩니다(폭은 비우면 무관). 품번을 눌러 개별 입력해도 됩니다<div style="margin-top:5px"></div>'
       +noSpecB.slice(0,10).map((b,i)=>'<span onclick="openBom('+S.bom.indexOf(b)+')" style="display:inline-block;'
       +'background:#fff;border:1px solid #E0A9A2;border-radius:10px;padding:1px 8px;margin:2px 3px 0 0;cursor:pointer;'
       +'font-weight:700">'+esc(b.pn)+(b.lot?' <em style="font-weight:400;color:#8A6D1F">LOT '+esc(b.lot)+'</em>':'')+'</span>').join('')
@@ -6781,7 +6808,27 @@ async function syncIqc(silent){
       S.coils.splice(i,1);del++;
     }
     S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
-    if(add||upd||del){save();autoBom(false);render();}
+    /* 검사 발행분에서 LOT베이스 → 규격 사전을 만든다 (성적서가 HEAT 단위로만 남은 건 보완용) */
+    try{
+      const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc',
+        {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
+      const D=S.spec||{};
+      const put=(k,v)=>{const key=String(k||'').trim(); if(key&&!D[key])D[key]=v;};
+      ins.forEach(x=>{
+        const v={mt:String(x.material_type||'').toUpperCase().trim(),
+                 t:fnum(x.thickness), w:fnum(x.width_mm||x.width), sup:x.supplier||''};
+        if(!v.mt||!v.t)return;
+        put(x.lot_base,v); put(lotBase(x.lot_base||''),v); put(x.heat_no,v); put(lotBase(x.heat_no||''),v);
+        String(x.lots_detail||'').split(',').map(z=>z.trim()).filter(Boolean)
+          .forEach(l=>{put(l,v); put(lotBase(l),v);});
+      });
+      S.spec=D;
+    }catch(e){ console.warn('iqc_inspections:',e.message); }
+    /* 성적서만으로 만든 코일도 규격이 비어 있으면 사전으로 채운다 */
+    S.coils.forEach(c=>{ if(c.mt&&+c.t)return;
+      const v=specByLot(c.cno)||specByLot(c.ms);
+      if(v){c.mt=v.mt;c.t=v.t; if(!+c.w)c.w=0; if(!c.sup)c.sup=v.sup; upd++;} });
+    if(add||upd||del){save();fillBomSpec();autoBom(false);render();}
     S.iqcLast=new Date().toISOString();
     if(!silent)toast('수입검사 연동 · 입고 '+picks.length+'건 → 코일 신규 '+add
       +(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:'')+(hold?' · 검사대기·불합격 '+hold+'본 보류':''));
@@ -6869,6 +6916,63 @@ function eqCompare(){
 }
 
 
+
+/* ═══════ 규격 미상 일괄 입력 ═══════ */
+function openSpecBulk(){
+  const R=S.bom.map((b,i)=>({b,i})).filter(({b})=>+b.uw>0&&(!b.mt||!+b.t));
+  if(!R.length){toast('규격 미상 원단위가 없습니다');return;}
+  $('tSpec').innerHTML=`<thead><tr><th>No</th><th>품번</th><th>품명</th><th>LOT(설비 장착)</th><th>HEAT</th>
+    <th>소요 g/EA</th><th>재질</th><th>두께 t</th><th>폭 W(선택)</th></tr></thead><tbody>`
+   +R.map(({b,i},n)=>{
+      const it=S.items.find(x=>x.pn===b.pn)||{nm:''};
+      return `<tr data-bi="${i}">
+       <td class="c">${n+1}</td>
+       <td class="l" style="font-weight:700">${esc(b.pn)}</td>
+       <td class="l" style="font-family:var(--sans);font-size:10.5px">${esc(it.nm)}</td>
+       <td class="l" style="font-size:10.5px">${esc(b.lot||'')}</td>
+       <td class="l" style="font-size:10.5px">${esc(lotBase(b.lot||''))}</td>
+       <td>${(+b.uw*1000).toFixed(1)}</td>
+       <td class="l"><input class="l sp-mt" list="dlMt" value="${esc(b.mt||'')}" style="font-family:var(--sans)"></td>
+       <td><input type="number" step="0.01" class="sp-t" value="${b.t||''}"></td>
+       <td><input type="number" step="1" class="sp-w" value="${b.w||''}" placeholder="무관"></td></tr>`;
+    }).join('')+`</tbody>`;
+  fillRawLists(); $('mSpec').classList.add('on');
+}
+/* 같은 HEAT 인 행에 첫 입력값을 퍼뜨린다 */
+function specSpread(){
+  const rows=[...$('tSpec').querySelectorAll('tbody tr')];
+  const M=new Map();
+  rows.forEach(tr=>{
+    const heat=tr.children[4].textContent.trim();
+    const mt=tr.querySelector('.sp-mt').value.trim();
+    const t=tr.querySelector('.sp-t').value.trim();
+    if(heat&&mt&&t&&!M.has(heat))M.set(heat,{mt,t,w:tr.querySelector('.sp-w').value.trim()});
+  });
+  let n=0;
+  rows.forEach(tr=>{
+    const heat=tr.children[4].textContent.trim(); const v=M.get(heat); if(!v)return;
+    const mi=tr.querySelector('.sp-mt'), ti=tr.querySelector('.sp-t');
+    if(!mi.value.trim()||!ti.value.trim()){mi.value=v.mt;ti.value=v.t;n++;}
+  });
+  toast(n?n+'행에 일괄 적용했습니다':'적용할 행이 없습니다 (기준 행을 먼저 채우세요)');
+}
+function saveSpecBulk(){
+  let n=0;
+  $('tSpec').querySelectorAll('tbody tr').forEach(tr=>{
+    const b=S.bom[+tr.dataset.bi]; if(!b)return;
+    const mt=tr.querySelector('.sp-mt').value.trim().toUpperCase();
+    const t=+tr.querySelector('.sp-t').value||0, w=+tr.querySelector('.sp-w').value||0;
+    if(!mt||!t)return;
+    b.mt=mt; b.t=t; b.w=w; b.n=(b.n||'').replace(/ · 규격.*$/,'')+' · 규격 수기입력';
+    /* 장착 코일에도 같은 규격을 채워 준다 */
+    const c=b.lot?S.coils.find(x=>x.cno===String(b.lot).trim()):null;
+    if(c&&!c.mt){c.mt=mt;c.t=t;}
+    n++;
+  });
+  if(!n){toast('재질과 두께를 입력한 행이 없습니다');return;}
+  save(); autoBom(false); render(); closeAll(); toast(n+'종 규격을 저장했습니다');
+}
+
 /* ═══════ LOT 베이스 매칭 · 누락 보완 ═══════
    수입검사 앱 도입 초기 누락분 대응.
    · 검사증명서에 HEAT 단위(SP38425)로만 남고 슬릿번호(-1,-5)가 없는 건이 있다.
@@ -6878,11 +6982,18 @@ function eqCompare(){
 function coilByLot(lot){
   if(!lot)return null;
   const k=String(lot).trim();
-  let c=S.coils.find(x=>x.cno===k);
-  if(c)return c;
+  const exact=S.coils.find(x=>x.cno===k);
+  if(exact&&exact.mt)return exact;
   const b=lotBase(k);
-  if(!b)return null;
-  return S.coils.find(x=>x.cno===b||lotBase(x.cno)===b||x.ms===b||lotBase(x.ms||'')===b)||null;
+  if(!b)return exact||null;
+  const cand=S.coils.filter(x=>x.cno===b||lotBase(x.cno)===b||x.ms===b||lotBase(x.ms||'')===b);
+  return cand.find(x=>x.mt&&+x.t)||exact||cand[0]||null;   /* 규격 있는 코일 우선 */
+}
+/* 수입검사 발행분(iqc_inspections)에서 만든 LOT베이스 → 규격 사전 */
+function specByLot(lot){
+  const d=S.spec||{}; if(!lot)return null;
+  const k=String(lot).trim();
+  return d[k]||d[lotBase(k)]||null;
 }
 /* 원단위 규격 보완: 정확일치면 재질·두께·폭, HEAT 유추면 재질·두께만(폭 무관) */
 function fillBomSpec(){
@@ -6891,11 +7002,15 @@ function fillBomSpec(){
     if(b.mt&&+b.t)return;
     if(!b.lot)return;
     const exact=S.coils.find(x=>x.cno===String(b.lot).trim());
-    const c=exact||coilByLot(b.lot);
-    if(!c||!c.mt)return;
-    b.mt=c.mt; b.t=+c.t||0; b.w=exact?(+c.w||0):0;   /* HEAT 유추 시 폭 무관 */
-    if(!exact)b.n=(b.n||'')+' · 규격은 HEAT '+lotBase(b.lot)+' 유추(폭 무관)';
-    n++;
+    const c=(exact&&exact.mt)?exact:coilByLot(b.lot);
+    if(c&&c.mt){
+      b.mt=c.mt; b.t=+c.t||0; b.w=(exact&&exact.mt&&+exact.w)?+exact.w:0;
+      if(!(exact&&exact.mt))b.n=(b.n||'')+' · 규격 HEAT '+lotBase(b.lot)+' 유추(폭 무관)';
+      n++; return;
+    }
+    const v=specByLot(b.lot);          /* 검사 발행분 사전에서 보완 */
+    if(v){ b.mt=v.mt; b.t=v.t; b.w=0;
+      b.n=(b.n||'')+' · 규격 검사발행분 '+lotBase(b.lot)+' 참조(폭 무관)'; n++; }
   });
   if(n)save();
   return n;
@@ -6915,8 +7030,9 @@ function fixMesLots(){
     +'· 같은 HEAT 코일이 원장에 있으면 그만큼 빼서 이중계상을 막습니다\n\n진행할까요?'))return {add:0};
   let add=0,nospec=0,split=0,splitKg=0;
   list.forEach(e=>{
-    const c=coilByLot(e.lot);
-    if(!c)nospec++;
+    let c=coilByLot(e.lot);
+    if(!c||!c.mt){ const v=specByLot(e.lot); if(v)c={mt:v.mt,t:v.t,w:0,sup:v.sup,d:'',cno:'',id:0}; }
+    if(!c||!c.mt)nospec++;
     const wt=e.ckg||0;
     const nid=S.cseq++;
     S.coils.push({id:nid, d:(c&&c.d)||today(), cno:e.lot,
@@ -6926,7 +7042,7 @@ function fixMesLots(){
       n:'MES 장착분 보완 · 수입검사 미등록'+(c?' · 규격 HEAT '+lotBase(e.lot)+' 유추':' · 규격 미상')});
     add++;
     /* HEAT 단위로 등록된 모(母)코일이 따로 있으면 그만큼 빼서 이중계상을 막는다 */
-    if(c&&c.cno!==e.lot&&wt>0){
+    if(c&&c.id&&c.cno&&c.cno!==e.lot&&wt>0){
       const av=remOf(c);
       const q=Math.round(Math.min(av,wt)*100)/100;
       if(q>0){
@@ -7787,7 +7903,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['🔧','규격일괄','openSpecBulk()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
