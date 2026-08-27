@@ -80,6 +80,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .t input{width:100%;border:none;background:transparent;font-family:var(--mono);font-size:11.5px;
   text-align:right;padding:1px 2px}
 .t input:focus{outline:1.5px solid var(--hd);background:#FFFDE7;color:var(--ink)}
+/* 표에서 바로 고치는 칸 */
+.t input.ce,.t select.ce{width:100%;border:0;background:#FFFEF2;font-family:var(--mono);font-size:11.5px;
+  text-align:right;padding:4px 4px;border-radius:2px}
+.t select.ce{font-family:var(--sans);font-size:10.5px;text-align:center;padding:4px 1px}
+.t input.ce:hover,.t select.ce:hover{background:#FFF8C4;cursor:text}
+.t input.ce:focus,.t select.ce:focus{outline:1.5px solid var(--hd);background:#fff}
+.t input.ce.l{text-align:left;font-family:var(--sans)}
+.t tbody tr.sel input.ce,.t tbody tr.sel select.ce{background:#EAF1FA;color:var(--ink)}
 .t input.l{text-align:left;font-family:var(--sans)}
 .t select.whs{width:100%;border:none;background:transparent;font-family:var(--sans);
   font-size:10.5px;font-weight:700;text-align:center;padding:3px 1px;color:var(--hd)}
@@ -5304,6 +5312,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           같은 HEAT 코일이 원장에 이미 있으면 그 코일에서 <b>재고조정(-) 전표로 분할 차감</b>하여 이중계상을 막습니다.
           이렇게 만든 코일은 검사 칸에 <b>미등록 🩹</b>으로 남아 정상 입고분과 구분되며, 상태 필터로 따로 볼 수 있습니다.
           나중에 검사앱에 성적서가 정식 등록되면 그 코일로 교체하고 보완분은 삭제하세요.<br>
+        · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
+          직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
+        · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
         · <b>업체별 현황</b> 화면에서 공급업체별로 <b>입고 코일수 · 반출(소진) · 재고 코일수 · 잔량 kg</b>을
           한눈에 봅니다. 소진율 막대가 90% 이상이면 붉게 표시되어 재발주 시점을 잡을 수 있고,
           업체 행 아래에 규격별 소계가 붙습니다. 엑셀에도 첫 시트로 들어갑니다.<br>
@@ -5370,6 +5381,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <option>대기</option><option>사용중</option><option>소진</option><option>반품</option></select></div></div>
     <div class="fld"><label>비고</label><input id="cN" style="font-family:var(--sans)"></div>
     <div class="hint" id="cInfo" style="margin-bottom:8px"></div>
+    <div id="cLockBox" style="display:none;background:#FFFDE7;border:1px solid #E0C070;border-radius:3px;
+      padding:8px 10px;font-size:11.5px;color:#7A5200;margin-bottom:8px">
+      🔒 <b id="cLockList"></b> 칸을 직접 고쳐 두었습니다. 최신화해도 이 값이 유지됩니다.
+      <button class="btn" style="padding:2px 9px;font-size:11px;margin-left:6px" onclick="unlockCoil()">연동값으로 되돌리기</button>
+    </div>
     <button class="btn k" style="width:100%;padding:11px" onclick="saveCoil()">저장</button>
     <button class="btn r" id="cDel" style="width:100%;padding:11px;margin-top:6px" onclick="delCoil()">삭제</button>
   </div>
@@ -6583,33 +6599,47 @@ function rRaw(){
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
       else if(fst&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
-    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'+kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg';
-    $('rawHint').innerHTML='· 코일번호를 클릭하면 수정·삭제할 수 있습니다. 잔량은 수불전표로 자동 계산되며 직접 수정하지 않습니다.<br>· 수입검사 <b>불합격</b> 코일은 자동차감 대상에서 제외됩니다.';
+    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'
+      +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
+      +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>';
+    $('rawHint').innerHTML='· <b>노란 칸은 표에서 바로 고칠 수 있습니다</b>. 칸을 클릭해 값을 바꾸고 다른 곳을 누르면 저장됩니다.<br>'
+      +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
+      +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
+      +'· 코일번호를 누르면 전체 수정·삭제 창이 열립니다.';
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
       <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
         const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
         const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
+        const lk=f=>String(c.lk||'').split(',').includes(f)?'🔒':'';
+        const E=(f,v,extra)=>`<input class="ce" data-ci="${i}" data-f="${f}" value="${esc(v==null?'':v)}" ${extra||''}>`;
         return `<tr>
-         <td class="c">${n+1}</td><td class="c">${esc(c.d||'')}</td>
+         <td class="c">${n+1}</td>
+         <td class="c" style="padding:0">${E('d',c.d,'type="date" style="text-align:center;font-family:var(--sans);font-size:10.5px"')}</td>
          <td class="l" style="font-weight:700;cursor:pointer" onclick="openCoil(${i})">${esc(c.cno)}</td>
-         <td class="c" style="font-family:var(--sans)">${esc(c.mt)}</td>
-         <td>${tmm(c.t)}</td><td>${nf(c.w)}</td>
-         <td>${kg(c.wt)}</td><td class="${used?'neg':''}">${used?kg(used):'-'}</td>
+         <td class="c" style="padding:0">${E('mt',c.mt,'list="dlMt" style="text-align:center;font-family:var(--sans)"')}${lk('mt')}</td>
+         <td style="padding:0">${E('t',c.t||'','type="number" step="0.01" inputmode="decimal"')}${lk('t')}</td>
+         <td style="padding:0">${E('w',c.w||'','type="number" step="1" inputmode="numeric" placeholder="무관"')}${lk('w')}</td>
+         <td style="padding:0">${E('wt',c.wt||'','type="number" step="0.1" inputmode="decimal"')}${lk('wt')}</td>
+         <td class="${used?'neg':''}">${used?kg(used):'-'}</td>
          <td style="font-weight:700" class="${r<=0.5?'':'pos'}">${kg(r)}</td>
          <td>${pct.toFixed(0)}%</td>
          <td class="c" style="font-family:var(--sans);color:${sc};font-weight:700">${st}</td>
-         <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':(c.iq==='미등록'?'#8A6D1F':(usable(c)?'#0B6B3A':'#9A6400'))}">${esc(c.iq||'')}${usable(c)?(c.iq==='미등록'?' 🩹':''):' ⛔'}</td>
-         <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
+         <td class="c" style="padding:0"><select class="ce cs" data-ci="${i}" data-f="iq"
+            style="color:${c.iq==='불합격'?'#B3261E':(c.iq==='미등록'?'#8A6D1F':(usable(c)?'#0B6B3A':'#9A6400'))};font-weight:700">
+            ${['합격','특채','미등록','대기','불합격'].map(v=>`<option ${c.iq===v?'selected':''}>${v}</option>`).join('')}
+            </select>${lk('iq')}</td>
+         <td class="l" style="padding:0">${E('sup',c.sup,'list="dlSup" class="ce l" style="font-family:var(--sans)"')}${lk('sup')}</td>
          <td class="l">${esc(c.ms||'')}</td>
          <td class="l" style="font-size:10px">${c.cert?esc(c.cert)+(c.ins?'<div style="color:#888">'+esc(c.ins)+'</div>':'')
             :'<span style="color:#9A6400">검사 미발행</span>'}</td>
          <td class="l" style="font-family:var(--sans)">${(m2=>m2?'<b style="color:#0B4F9E">'+esc(m2.nm||m2.mc)+'</b>'
             +(m2.pn?'<div style="font-size:9px;color:#888">'+esc(m2.pn)+'</div>':''):'')(mountOf(c.cno))}</td>
-         <td class="l" style="font-family:var(--sans)">${esc(c.lc||'')}</td>
+         <td class="l" style="padding:0">${E('lc',c.lc,'class="ce l" style="font-family:var(--sans)" placeholder="보관위치"')}</td>
          <td class="${isDeadCoil(c)?'wn':''}">${coilAge(c)}</td>
-         <td class="l" style="font-family:var(--sans)">${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span> ':''}${esc(c.n||'')}${isDeadCoil(c)?' <b style="color:#9A6400">장기체화</b>':''}</td></tr>`;
+         <td class="l" style="padding:0">${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span>':''}
+           ${E('n',c.n,'class="ce l" style="font-family:var(--sans);font-size:10.5px"')}</td></tr>`;
        }).join(''):`<tr><td colspan="19" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
        <td>${kg(R.reduce((s2,{c})=>s2+(+c.wt||0),0))}</td>
@@ -6803,8 +6833,18 @@ function openCoil(i){
   $('cInfo').innerHTML=n?'코일 1본 단위로 등록합니다. 잔량은 수불전표로 자동 계산됩니다.'
     :`잔량 <b>${kg(remOf(c))}</b> kg · 상태 <b>${coilSt(c)}</b> · 경과 ${coilAge(c)}일`;
   $('cDel').style.display=n?'none':'block';
+  const LN={mt:'재질',t:'두께',w:'폭',wt:'입고중량',iq:'검사',sup:'공급업체'};
+  const lks=String(c.lk||'').split(',').filter(Boolean);
+  $('cLockBox').style.display=lks.length?'block':'none';
+  $('cLockList').textContent=lks.map(f=>LN[f]||f).join(' · ');
   fillRawLists(); $('mCoil').classList.add('on');
   if(n)setTimeout(()=>$('cNo').focus(),80);
+}
+function unlockCoil(){
+  const i=+$('cIdx').value, c=S.coils[i]; if(!c)return;
+  if(!confirm('직접 고친 값을 지우고 다음 최신화 때 연동값으로 되돌립니다.\n진행할까요?'))return;
+  unlockAll(c); save(); closeAll(); render();
+  toast('되돌렸습니다 · [🔄 최신화]를 누르면 연동값으로 채워집니다');
 }
 function saveCoil(){
   const i=+$('cIdx').value, cno=$('cNo').value.trim();
@@ -6817,7 +6857,11 @@ function saveCoil(){
     t:+$('cT').value||0,w:+$('cW').value||0,wt:+$('cWt').value||0,sup:$('cSup').value.trim(),
     ms:$('cMs').value.trim(),iq:$('cIq').value,lc:$('cLc').value.trim(),st:$('cSt').value,n:$('cN').value.trim()};
   if(i<0)S.coils.push(Object.assign({id:S.cseq++},o));
-  else Object.assign(S.coils[i],o);
+  else{
+    const ex=S.coils[i];
+    LOCKABLE.forEach(f=>{ if(String(ex[f]==null?'':ex[f])!==String(o[f]==null?'':o[f]))lockField(ex,f); });
+    Object.assign(ex,o);
+  }
   save(); autoBom(false); render(); closeAll();
   toast('코일 '+cno+' 저장되었습니다');
 }
@@ -7091,10 +7135,10 @@ async function syncIqc(silent){
                     .filter(Boolean).join(' · '),
                  src};
         if(ex){
-          if(ex.wt!==o.wt||ex.mt!==o.mt||ex.t!==o.t||ex.w!==o.w||ex.iq!==o.iq||ex.d!==o.d
-             ||ex.cert!==o.cert||ex.ins!==o.ins){
-            Object.assign(ex,{d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms,
-              cert:o.cert,ins:o.ins,n:o.n});upd++;}
+          const put={d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms,
+                     cert:o.cert,ins:o.ins,n:o.n};
+          LOCKABLE.forEach(f=>{ if(isLocked(ex,f))delete put[f]; });   /* 손으로 고친 칸은 유지 */
+          if(Object.keys(put).some(k=>ex[k]!==put[k])){ Object.assign(ex,put); upd++; }
         }else{
           S.coils.push(Object.assign({id:S.cseq++,st:'대기',lc:''},o));add++;
         }
@@ -7352,9 +7396,9 @@ async function syncEq(silent){
     S.eq.forEach(e=>{
       if(!e.lot)return;
       const c=S.coils.find(x=>x.cno===e.lot); if(!c)return;
-      if(!c.mt&&e.mt){c.mt=e.mt;cFix++;}
-      if(!+c.t&&e.t){c.t=e.t;cFix++;}
-      if(!+c.w&&e.w){c.w=e.w;cFix++;}
+      if(!c.mt&&e.mt&&!isLocked(c,'mt')){c.mt=e.mt;cFix++;}
+      if(!+c.t&&e.t&&!isLocked(c,'t')){c.t=e.t;cFix++;}
+      if(!+c.w&&e.w&&!isLocked(c,'w')){c.w=e.w;cFix++;}
     });
     if(bAdd||bUpd||cFix){
       S.bom.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
@@ -7404,6 +7448,37 @@ function purgeLegacy(){
   save(); autoBom(false); render();
   toast('구버전 코일 '+old.length+'본 / 잔량 '+kg(kgTot)+'kg 을 정리했습니다');
 }
+
+
+/* ═══════ 코일 목록 직접 수정 ═══════
+   연동으로 받아오는 항목(재질·두께·폭·중량·판정·업체)을 손으로 고치면
+   그 칸에 잠금을 걸어 다음 최신화 때 덮어쓰지 않는다. */
+const LOCKABLE=['mt','t','w','wt','iq','sup'];
+function lockField(c,f){
+  if(!LOCKABLE.includes(f))return;
+  const set=new Set(String(c.lk||'').split(',').filter(Boolean));
+  set.add(f); c.lk=[...set].join(',');
+}
+function unlockAll(c){ delete c.lk; }
+function isLocked(c,f){ return String(c.lk||'').split(',').includes(f); }
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(!el.classList||!el.classList.contains('ce'))return;
+  if(!el.closest('#tRaw'))return;
+  const c=S.coils[+el.dataset.ci], f=el.dataset.f;
+  if(!c)return;
+  const v=el.value;
+  if(f==='t'||f==='w'||f==='wt'){
+    const num=+v||0;
+    if(f==='wt'&&num<0){toast('중량은 0보다 커야 합니다');rRaw();return;}
+    c[f]=num;
+  }else if(f==='mt'){ c.mt=String(v).trim().toUpperCase(); }
+  else if(f==='d'){ c.d=v||today(); }
+  else { c[f]=String(v).trim(); }
+  lockField(c,f);
+  save(); autoBom(false); render();
+  toast('저장되었습니다'+(LOCKABLE.includes(f)?' · 이 칸은 최신화해도 유지됩니다 🔒':''));
+});
 
 /* ═══════ 규격 미상 일괄 입력 ═══════ */
 function openSpecBulk(){
