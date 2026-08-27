@@ -550,10 +550,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <!-- ══ 총괄표 ══ -->
 <div class="page" id="p-sum">
   <div class="pt"><h2>재고수불 총괄표</h2><span class="sub">STOCK SUMMARY · 품목별 월간 수불 집계</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
-  <div class="sum">
+  <div class="sum" style="grid-template-columns:repeat(7,1fr)">
     <div><span>관리품목</span><b id="q1">165</b><em>품목</em></div>
     <div class="g"><span>당월 입고</span><b id="q2">298,930</b><em>EA</em></div>
     <div class="d"><span>당월 납품(출하)</span><b id="q3">0</b><em>EA</em></div>
+    <div class="d"><span>오늘 출하</span><b id="q7">0</b><em>EA</em></div>
     <div><span>현재고</span><b id="q4">4,218,592</b><em>EA</em></div>
     <div class="d"><span>안전재고 미달</span><b id="q5">35</b><em>품목</em></div>
     <div class="w"><span>장기 미불출</span><b id="q6">27</b><em>품목</em></div>
@@ -5948,7 +5949,11 @@ function rSum(){
     if(F==='dead')return isDead(it);
     return true;
   });
+  const td0=today();
+  const tShip=S.led.filter(r=>r.k==='출하'&&r.d===td0&&(!WH||whOf(r.pn)===WH))
+    .reduce((a2,r)=>a2+r.q,0);
   anim('q1',rows.length);anim('q2',T.i);anim('q3',T.u);anim('q4',T.c);anim('q5',nShort);anim('q6',nDead);
+  anim('q7',tShip);
 
   if(isMob()&&CARD){
     $('tSum').outerHTML='<div id="tSum"></div>';
@@ -7496,11 +7501,36 @@ async function refreshAll(){
   try{
     /* ① 제품 수불(MES·출하의뢰서·검사실) — 출하·생산입고가 여기서 들어온다 */
     if(info)info.textContent='생산·출하 실적을 가져오는 중…';
-    await syncMes(true);
-    const dShip=cntK('출하')-ship0, dProd=cntK('생산입고')-prod0;
-    L.push('· 생산·출하 실적 '+(S.led.length-led0>0?(S.led.length-led0)+'건 새로 반영':'변동 없음')
-      +(dShip?' · 이번 달 출하 +'+nf(dShip)+' EA':'')+(dProd?' · 생산입고 +'+nf(dProd)+' EA':''));
-    L.push('   (이번 달 누적 — 출하 '+nf(cntK('출하'))+' EA / 생산입고 '+nf(cntK('생산입고'))+' EA)');
+    let mr=await syncMes(true);
+    for(let k=0;k<10&&mr&&mr.skip;k++){          /* 자동 동기화와 겹치면 끝날 때까지 기다린다 */
+      await new Promise(r2=>setTimeout(r2,1200));
+      mr=await syncMes(true);
+    }
+    if(!mr||!mr.ok){
+      L.push('· ⚠ 생산·출하 실적을 가져오지 못했습니다'+((mr&&mr.err)?' ('+mr.err+')':'')
+        +' — 인터넷 연결이나 MES 서버를 확인하세요. 출하가 반영되지 않습니다.');
+    }else{
+      const dShip=cntK('출하')-ship0, dProd=cntK('생산입고')-prod0;
+      L.push('· 생산·출하 실적 조회 '+nf(mr.rows)+'건'
+        +' · 신규 '+mr.add+(mr.upd?' / 갱신 '+mr.upd:'')+(mr.del?' / 정리 '+mr.del:''));
+      if(dShip||dProd)L.push('   이번 달 출하 +'+nf(dShip)+' EA · 생산입고 +'+nf(dProd)+' EA');
+      L.push('   이번 달 누적 — 출하 '+nf(cntK('출하'))+' EA / 생산입고 '+nf(cntK('생산입고'))+' EA');
+    }
+    /* 오늘 출하가 실제로 원장에 들어왔는지 품번별로 확인 */
+    const td=today();
+    const ts=S.led.filter(r=>r.k==='출하'&&r.d===td);
+    if(ts.length){
+      L.push('');
+      L.push('■ 오늘('+td+') 출하 '+ts.length+'건 / '+nf(ts.reduce((a2,r)=>a2+r.q,0))+' EA — 재고에서 차감됨');
+      ts.slice(0,10).forEach(r=>{
+        const it=S.items.find(x=>x.pn===r.pn);
+        L.push('   · '+r.pn+' '+nf(r.q)+' EA'+(it?' → 현재고 '+nf(calc(it).cur)+' EA':' (품목대장에 없음)'));
+      });
+      if(ts.length>10)L.push('   … 외 '+(ts.length-10)+'건');
+    }else{
+      L.push('');
+      L.push('■ 오늘('+td+') 출하 전표가 없습니다 — 출하의뢰서 앱에 아직 등록되지 않았거나 동기화 전입니다.');
+    }
 
     if(info)info.textContent='수입검사 자료를 가져오는 중…';
     const a=await syncIqc(true);
@@ -8564,8 +8594,9 @@ async function fetchAll(url,hd,cap){
   return out;
 }
 async function syncMes(silent){
-  if(mesBusy)return; mesBusy=true;
-  const btn=$('mesBtn'); btn.disabled=true;
+  if(mesBusy)return {ok:false,skip:true};
+  mesBusy=true;
+  const btn=$('mesBtn'); if(btn)btn.disabled=true;
   let inspInfo=null;
   try{ await pullItems(true); }catch(e){ console.warn('품목 공유:',e.message); }
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
@@ -8608,11 +8639,14 @@ async function syncMes(silent){
       +(inspInfo?' / 출하검사 '+inspInfo.n+'건'+(inspInfo.skip.length?' (미등록기종 '+inspInfo.skip.length+')':''):'')
       +(unk.size?' / 신규품번 '+unk.size+'종(박스단위 입력 필요)':''));
     else if(add||upd||del)toast('자동전표 '+(add+upd)+'건 반영'+(del?' · '+del+'건 정리':''));
+    if(btn)btn.disabled=false; mesBusy=false;
+    return {ok:true,add,upd,del,rows:rows.length};
   }catch(e){
     mesStat('MES 연결 안됨','#FF9E9E');
     if(!silent)toast('MES 동기화 실패: '+e.message);
+    if(btn)btn.disabled=false; mesBusy=false;
+    return {ok:false,err:e.message};
   }
-  btn.disabled=false; mesBusy=false;
 }
 setInterval(()=>syncMes(true),SYNC_MIN*60*1000);
 
