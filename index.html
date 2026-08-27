@@ -115,6 +115,26 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:11.5px;
   font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap}
 .chip.on{background:var(--hd);color:#fff;border-color:var(--hd)}
+/* 원소재 탭 — 안내 배너 / 도구 팝오버 */
+.guide{max-width:1400px;margin:0 auto 10px;background:#F3F6FA;border:1px solid #C9D4E2;border-left:4px solid var(--hd);
+  border-radius:3px;padding:9px 13px;font-size:12px;color:#33475e;line-height:1.65}
+.guide b{color:var(--hd)}
+.guide .step{display:inline-block;background:var(--hd);color:#fff;border-radius:50%;width:16px;height:16px;
+  text-align:center;line-height:16px;font-size:10px;font-weight:800;margin-right:4px}
+.btn.big{padding:9px 18px;font-size:13px;font-weight:800}
+.tools-wrap{position:relative;display:inline-block}
+.tools-pop{position:absolute;top:100%;left:0;margin-top:5px;z-index:60;background:#fff;border:1px solid #8494a4;
+  border-radius:5px;box-shadow:0 6px 22px rgba(0,0,0,.18);min-width:290px;display:none;overflow:hidden}
+.tools-pop.on{display:block}
+.tools-pop .grp{background:#F0F3F7;color:#5b6b7c;font-size:10.5px;font-weight:800;padding:5px 12px;
+  border-bottom:1px solid #dde3ea;border-top:1px solid #dde3ea}
+.tools-pop .grp:first-child{border-top:0}
+.tools-pop button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:9px 12px;
+  font-size:12px;font-family:var(--sans);cursor:pointer;border-bottom:1px solid #f0f2f5}
+.tools-pop button:hover{background:#EDF3F9}
+.tools-pop button b{display:block;font-weight:700;color:var(--ink)}
+.tools-pop button em{display:block;font-style:normal;font-size:10.5px;color:#7d8b99;margin-top:1px}
+.chip .ic{margin-right:3px}
 
 /* 요약 */
 .sum{display:grid;grid-template-columns:repeat(6,1fr);gap:0;max-width:1400px;margin:0 auto 10px;
@@ -5054,42 +5074,68 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="pa"><button class="btn" onclick="rRaw()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportRaw()">엑셀</button></div></div>
 
   <div class="sum" style="grid-template-columns:repeat(8,1fr)">
-    <div><span>보유 코일</span><b id="r1">0</b><em>코일</em></div>
+    <div><span>남은 코일</span><b id="r1">0</b><em>코일</em></div>
     <div><span>현재고 중량</span><b id="r2">0</b><em>kg</em></div>
-    <div class="g"><span>당월 입고</span><b id="r3">0</b><em>kg</em></div>
-    <div class="d"><span>당월 생산투입</span><b id="r4">0</b><em>kg</em></div>
-    <div class="d"><span>안전재고 미달</span><b id="r5">0</b><em>규격</em></div>
-    <div><span>설비 장착중</span><b id="r6">0</b><em>코일</em></div>
-    <div class="w"><span>수입검사 미등록</span><b id="r8">0</b><em>코일</em></div>
-    <div class="w"><span>장기체화(90일)</span><b id="r7">0</b><em>코일</em></div>
+    <div class="g"><span>이번 달 입고</span><b id="r3">0</b><em>kg</em></div>
+    <div class="d"><span>이번 달 사용</span><b id="r4">0</b><em>kg</em></div>
+    <div class="d"><span>재고 부족 규격</span><b id="r5">0</b><em>규격</em></div>
+    <div><span>프레스에 물린</span><b id="r6">0</b><em>코일</em></div>
+    <div class="w"><span>검사 등록 빠짐</span><b id="r8">0</b><em>코일</em></div>
+    <div class="w"><span>90일 넘은 코일</span><b id="r7">0</b><em>코일</em></div>
+  </div>
+
+  <div class="guide">
+    <span class="step">1</span><b>최신화</b> 버튼만 누르면 됩니다 — 수입검사에서 들어온 코일, 프레스에 물린 소재, 사용량이 한 번에 반영됩니다.
+    &nbsp;·&nbsp; <span class="step">2</span>아래 <b>붉은 안내</b>가 뜨면 그 안의 버튼을 눌러 처리하세요.
+    &nbsp;·&nbsp; <span class="step">3</span>평소에는 <b>업체별 재고</b>와 <b>설비 현황</b>만 보시면 됩니다.
   </div>
 
   <div class="fbar">
-    <span class="chip on" data-rv="coil" onclick="setRV('coil')">코일 재고</span>
-    <span class="chip" data-rv="spec" onclick="setRV('spec')">규격별 집계</span>
-    <span class="chip" data-rv="led" onclick="setRV('led')">원소재 수불</span>
-    <span class="chip" data-rv="bom" onclick="setRV('bom')">원단위(BOM)</span>
-    <span class="chip" data-rv="eq" onclick="setRV('eq')">설비 장착현황</span>
-    <input id="rawQ" placeholder="코일No / 재질 / 품번 검색" class="kbi" style="width:170px;margin-left:8px">
-    <label style="margin-left:6px">원소재 기초일자</label>
-    <input type="date" id="iqcFrom" style="width:140px" title="코일 연동 시작일이자 자동차감 대상 전표의 시작일입니다. 이 날짜 이전 생산분은 차감하지 않습니다">
-    <select id="rawSt" class="fsel" style="min-width:110px">
-      <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
-      <option value="__hold">⛔ 검사대기·불합격(보류)</option>
-      <option value="__miss">🩹 수입검사 미등록</option></select>
+    <button class="btn k big" id="btnRefresh" onclick="refreshAll()"
+      title="수입검사 연동 → MES 설비 연동 → 사용량 자동차감 을 순서대로 실행합니다">🔄 최신화</button>
+    <span style="font-size:11px;color:#7d8b99" id="refreshInfo">아직 최신화하지 않았습니다</span>
+
     <div class="rt">
-      <button class="btn k" onclick="openCoil(-1)">＋ 코일 입고</button>
-      <button class="btn" onclick="openMio()">＋ 수불 등록</button>
-      <button class="btn" onclick="openBom(-1)">＋ 원단위 등록</button>
-      <button class="btn" onclick="autoBom(true)" title="생산입고 전표를 읽어 원소재를 FIFO로 자동 차감합니다">🔄 자동차감 실행</button>
-      <button class="btn g" onclick="syncIqc(false)" title="소재 수입검사 앱(v3.7)에서 입고 코일을 가져옵니다">🧪 수입검사 연동</button>
-      <button class="btn g" onclick="syncEq(false).then(()=>setRV('eq'))" title="MES 가동설비 모니터링에서 품번별 소요g(원단위)과 설비 장착 코일을 가져옵니다">⚙ MES 설비 연동</button>
-      <button class="btn" onclick="pick('fCoil')" title="엑셀에서 코일 입고내역을 한 번에 등록합니다">📥 코일 CSV 등록</button>
-      <button class="btn" onclick="coilTpl()" title="CSV 양식을 내려받습니다">📄 양식</button>
-      <button class="btn" onclick="openSpecBulk()" title="재질·두께를 모르는 원단위를 한 화면에서 채웁니다">🔧 규격 일괄 입력</button>
-      <button class="btn" onclick="eqFields()" title="MES machine_status 에 실제로 어떤 컬럼이 있는지 확인합니다">🔍 MES 필드 확인</button>
+      <label style="font-size:11px">재고 시작일</label>
+      <input type="date" id="iqcFrom" style="width:136px"
+        title="이 날짜부터의 코일과 생산실적만 계산합니다. 코일 자료가 실제로 있는 시점에 맞추세요">
+      <button class="btn" onclick="openCoil(-1)">＋ 코일 직접 등록</button>
+      <div class="tools-wrap">
+        <button class="btn" onclick="tglTools(event)">⚙ 관리 도구 ▾</button>
+        <div class="tools-pop" id="toolsPop">
+          <div class="grp">자료 넣기</div>
+          <button onclick="tglTools(0);openMio()"><b>소재 입출고 직접 입력</b><em>잔재 반납, 스크랩 폐기, 수량 정정</em></button>
+          <button onclick="tglTools(0);pick('fCoil')"><b>코일 여러 건 한번에 등록</b><em>엑셀(CSV) 파일로 불러오기</em></button>
+          <button onclick="tglTools(0);coilTpl()"><b>엑셀 양식 내려받기</b><em>위 기능에 쓸 빈 양식</em></button>
+          <div class="grp">빠진 자료 채우기</div>
+          <button onclick="tglTools(0);fixMesLots()"><b>프레스에 물렸는데 목록에 없는 코일 등록</b><em>수입검사 누락분을 MES 정보로 보완</em></button>
+          <button onclick="tglTools(0);openSpecBulk()"><b>소재 규격(재질·두께) 채우기</b><em>여러 품번을 한 화면에서 입력</em></button>
+          <button onclick="tglTools(0);openBom(-1)"><b>제품 소요량 직접 등록</b><em>1개 만드는 데 필요한 소재 무게</em></button>
+          <div class="grp">점검 · 정리</div>
+          <button onclick="tglTools(0);autoBom(true)"><b>사용량 다시 계산</b><em>생산실적으로 코일을 다시 차감</em></button>
+          <button onclick="tglTools(0);purgeLegacy()"><b>예전 연동 자료 지우기</b><em>4월 이전 옛 시스템에서 넘어온 코일</em></button>
+          <button onclick="tglTools(0);eqFields()"><b>MES 연결 상태 확인</b><em>어떤 정보가 넘어오는지 점검</em></button>
+          <div class="grp">내보내기</div>
+          <button onclick="tglTools(0);exportRaw()"><b>엑셀로 저장</b><em>업체별·규격별·코일별 전체</em></button>
+          <button onclick="tglTools(0);window.print()"><b>인쇄</b><em>지금 보고 있는 화면</em></button>
+        </div>
+      </div>
       <input type="file" id="fCoil" accept=".csv,.txt,.tsv" style="display:none">
     </div>
+  </div>
+
+  <div class="fbar" style="padding:6px 10px">
+    <span class="chip on" data-rv="sup" onclick="setRV('sup')"><span class="ic">🏢</span>업체별 재고</span>
+    <span class="chip" data-rv="eq" onclick="setRV('eq')"><span class="ic">🏭</span>설비 현황</span>
+    <span class="chip" data-rv="coil" onclick="setRV('coil')"><span class="ic">🧱</span>코일 목록</span>
+    <span class="chip" data-rv="spec" onclick="setRV('spec')"><span class="ic">📐</span>규격별 재고</span>
+    <span class="chip" data-rv="led" onclick="setRV('led')"><span class="ic">↔</span>입출고 내역</span>
+    <span class="chip" data-rv="bom" onclick="setRV('bom')"><span class="ic">⚖</span>제품 소요량</span>
+    <input id="rawQ" placeholder="코일번호 · 업체 · 품번 검색" class="kbi" style="width:180px;margin-left:10px">
+    <select id="rawSt" class="fsel" style="min-width:112px">
+      <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
+      <option value="__hold">⛔ 검사 안 끝난 것</option>
+      <option value="__miss">🩹 보완 등록분</option></select>
   </div>
 
   <div id="rawWarn" style="display:none;max-width:1400px;margin:0 auto 10px;background:#FBE9E7;border:1px solid #E0A9A2;
@@ -5258,6 +5304,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           같은 HEAT 코일이 원장에 이미 있으면 그 코일에서 <b>재고조정(-) 전표로 분할 차감</b>하여 이중계상을 막습니다.
           이렇게 만든 코일은 검사 칸에 <b>미등록 🩹</b>으로 남아 정상 입고분과 구분되며, 상태 필터로 따로 볼 수 있습니다.
           나중에 검사앱에 성적서가 정식 등록되면 그 코일로 교체하고 보완분은 삭제하세요.<br>
+        · <b>업체별 현황</b> 화면에서 공급업체별로 <b>입고 코일수 · 반출(소진) · 재고 코일수 · 잔량 kg</b>을
+          한눈에 봅니다. 소진율 막대가 90% 이상이면 붉게 표시되어 재발주 시점을 잡을 수 있고,
+          업체 행 아래에 규격별 소계가 붙습니다. 엑셀에도 첫 시트로 들어갑니다.<br>
         · <b>설비 장착현황</b> 화면에서 설비별 <b>MES 예상잔량(코일중량 − 실적×소요g)</b>과 <b>원장 잔량</b>을 나란히 대조합니다.
           차이가 크면 원단위나 투입전표를 점검하세요.<br>
         · <b>📥 코일 CSV 등록</b>: 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
@@ -6196,11 +6245,12 @@ const MKINDS=[['구매입고','I'],['반품입고','I'],['잔재반납','I'],['�
 const mKindIO=k=>(MKINDS.find(x=>x[0]===k)||['','O'])[1];
 const MT_DEF='SPCC,SPHC,SPHD,SAPH440,SPFH590,SPFC590,SGARC,STS304,STS430,STS316,C67S,S55CM,S45C,SK5';
 const SUP_DEF='태경스틸,정민스틸,㈜동일스테인레스,포스코,현대제철,동국제강,세아제강,KG스틸';
-let RV='coil';   /* 원소재 탭 하위화면: coil / spec / led / bom */
+let RV='sup';    /* 원소재 탭 첫 화면: 업체별 재고 */
 
 const kg=n=>(Math.round((+n||0)*10)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const specKey=o=>[String(o.mt||'').toUpperCase().trim(),(+o.t||0).toFixed(2),(+o.w||0)].join('|');
-const specNm=o=>`${o.mt||'-'} ${(+o.t||0).toFixed(1)}t × ${nf(o.w)}W`;
+const tmm=v=>String(Math.round((+v||0)*100)/100);            /* 1.25 → "1.25", 0.60 → "0.6" */
+const specNm=o=>`${o.mt||'-'} ${tmm(o.t)}t × ${o.w?nf(o.w)+'W':'폭무관'}`;
 /* 재질 표기 정규화: SUS304 = STS304 = SUS-304 = sus 304 */
 function normMt(v){
   let k=String(v||'').toUpperCase().replace(/[\s\-_().]/g,'');
@@ -6329,6 +6379,49 @@ function autoBom(verbose){
   return {add,del,shN,shKg};
 }
 
+
+/* ═══════ 공급업체별 코일 수불 집계 ═══════
+   입고 = 등록된 코일, 반출 = 소진(잔량 0.5kg 이하), 재고 = 잔량이 남은 코일 */
+function supAgg(){
+  const a=mStart(), b=mEnd();
+  const M=new Map();
+  const blank=(k,nm)=>({k,nm,n:0,inKg:0,remN:0,remKg:0,outN:0,useN:0,waitN:0,holdN:0,mountN:0,
+                        mIn:0,mInN:0,mOut:0,last:'',spec:new Map()});
+  S.coils.forEach(c=>{
+    const nm=String(c.sup||'').trim()||'(공급업체 미상)';
+    if(!M.has(nm))M.set(nm,blank(nm,nm));
+    const o=M.get(nm), r=remOf(c), wt=+c.wt||0;
+    o.n++; o.inKg+=wt;
+    if(r>0.5){ o.remN++; o.remKg+=r; if(S.mled.some(m=>m.cid===c.id&&mKindIO(m.k)==='O'))o.useN++; else o.waitN++; }
+    else o.outN++;
+    if(!usable(c)&&r>0.5)o.holdN++;
+    if(mountOf(c.cno))o.mountN++;
+    if(c.d>(o.last||''))o.last=c.d;
+    if(c.d>=a&&c.d<=b){o.mIn+=wt;o.mInN++;}
+    /* 규격 소계 */
+    const sk=specKey(c);
+    if(!o.spec.has(sk))o.spec.set(sk,{sk,mt:c.mt,t:+c.t||0,w:+c.w||0,n:0,inKg:0,remN:0,remKg:0,outN:0,holdN:0,last:''});
+    const sp=o.spec.get(sk);
+    sp.n++; sp.inKg+=wt;
+    if(r>0.5){sp.remN++;sp.remKg+=r;} else sp.outN++;
+    if(!usable(c)&&r>0.5)sp.holdN++;
+    if(c.d>(sp.last||''))sp.last=c.d;
+  });
+  /* 당월 투입량 */
+  S.mled.forEach(m=>{
+    if(m.d<a||m.d>b||mKindIO(m.k)!=='O')return;
+    const c=S.coils.find(x=>x.id===m.cid); if(!c)return;
+    const nm=String(c.sup||'').trim()||'(공급업체 미상)';
+    const o=M.get(nm); if(o)o.mOut+=m.q;
+  });
+  return [...M.values()].map(o=>{
+    o.outKg=Math.max(0,o.inKg-o.remKg);
+    o.pct=o.inKg>0?o.outKg/o.inKg*100:0;
+    o.specs=[...o.spec.values()].sort((x,y)=>y.remKg-x.remKg);
+    return o;
+  }).sort((x,y)=>y.remKg-x.remKg);
+}
+
 /* ── 규격별 집계 ──────────────────────────────────────────── */
 function specAgg(){
   const M=new Map();
@@ -6388,8 +6481,9 @@ function rRaw(){
       +[...new Set(sh.map(m=>m.pn))].slice(0,6).join(', ')+')');
   }
   if(D.noBom.length){
-    msgs.push('⚠ <b>원단위 미등록 '+D.noBom.length+'종</b> — 당월 생산입고가 있으나 원단위가 없어 <b>차감되지 않습니다</b>. '
-      +'품번을 눌러 바로 등록하세요 &nbsp;'
+    msgs.push('⚠ <b>소요량을 모르는 제품 '+D.noBom.length+'종</b> — 이번 달 생산은 했는데 '
+      +'<b>1개당 소재를 얼마나 쓰는지</b> 모릅니다. 그래서 재고에서 빠지지 않습니다. '
+      +'품번을 눌러 등록하세요 &nbsp;'
       +D.noBom.slice(0,10).map(([pn,q])=>'<span onclick="openBom(-1,\''+esc(pn)+'\')" style="display:inline-block;'
       +'background:#fff;border:1px solid #E0A9A2;border-radius:10px;padding:1px 8px;margin:2px 3px 0 0;cursor:pointer;'
       +'font-weight:700">'+esc(pn)+' <em style="font-weight:400;color:#8A6D1F">'+nf(q)+'EA</em></span>').join('')
@@ -6397,7 +6491,8 @@ function rRaw(){
   }
   const noSpecB=S.bom.filter(b=>+b.uw>0&&!b.mt);
   if(noSpecB.length){
-    msgs.push('⚠ <b>규격 미상 원단위 '+noSpecB.length+'종</b> — MES에서 소요g은 받았으나 재질·두께·폭을 모릅니다. '
+    msgs.push('⚠ <b>소재 규격을 모르는 제품 '+noSpecB.length+'종</b> — 1개당 사용량은 아는데 '
+      +'<b>어떤 소재(재질·두께)를 쓰는지</b> 몰라 어느 코일에서 뺄지 정할 수 없습니다. '
       +'<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="openSpecBulk()">🔧 규격 일괄 입력</button>'
       +' 재질·두께만 넣으면 됩니다(폭은 비우면 무관). 품번을 눌러 개별 입력해도 됩니다<div style="margin-top:5px"></div>'
       +noSpecB.slice(0,10).map((b,i)=>'<span onclick="openBom('+S.bom.indexOf(b)+')" style="display:inline-block;'
@@ -6407,14 +6502,14 @@ function rRaw(){
   }
   const missLot=[...new Set((S.eq||[]).filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot)).map(e=>e.lot))];
   if(missLot.length){
-    msgs.push('⚠ <b>원장에 없는 장착 LOT '+missLot.length+'건</b> — 설비에 물려 있으나 코일대장에 없습니다. '
-      +'수입검사 앱 도입 초기 누락분이거나 성적서가 HEAT 단위로만 등록된 경우입니다. &nbsp;'
+    msgs.push('⚠ <b>프레스에 물려 있는데 목록에 없는 코일 '+missLot.length+'건</b> — 현장에서는 쓰고 있는데 '
+      +'수입검사 등록이 빠진 코일입니다. 아래 버튼을 누르면 MES 정보로 자동 등록됩니다. &nbsp;'
       +'<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixMesLots()">🩹 미등록 LOT 보완 등록</button>'
       +'<div style="margin-top:5px"><b>'+missLot.slice(0,8).map(esc).join(', ')
       +(missLot.length>8?' 외 '+(missLot.length-8)+'건':'')+'</b></div>');
   }
   if(D.noCoil.length){
-    msgs.push('⚠ <b>규격 불일치 '+D.noCoil.length+'종</b> — 원단위는 있으나 맞는 코일이 없습니다. '
+    msgs.push('⚠ <b>쓸 코일이 없는 제품 '+D.noCoil.length+'종</b> — 소요량은 등록돼 있는데 맞는 코일이 재고에 없습니다. '
       +D.noCoil.slice(0,4).map(x=>'<b>'+esc(x.pn)+'</b>: '+esc(x.why)).join(' / ')
       +(D.noCoil.length>4?' 외 '+(D.noCoil.length-4)+'종':''));
   }
@@ -6426,7 +6521,8 @@ function rRaw(){
     msgs.push('⛔ <b>검사 보류 코일 '+held.length+'본 / '+kg(t2)+' kg</b>'
       +(ng.length?' · 불합격 '+ng.length+'본(격리)':'')
       +(wt2.length?' · 검사 미발행 '+wt2.length+'본':'')
-      +' — 가용재고·자동차감에서 제외됩니다. 검사앱에서 성적서를 발행한 뒤 <b>[🧪 수입검사 연동]</b>을 다시 누르면 풀립니다.'
+      +' — 아직 <b>쓸 수 없는 소재</b>로 잡혀 있습니다. 수입검사 앱에서 성적서를 발행한 뒤 '
+      +'<b>[🔄 최신화]</b>를 누르면 풀립니다.'
       +'<div style="margin-top:5px">해당 LOT: <b>'+held.slice(0,8).map(c=>esc(c.cno)).join(', ')
       +(held.length>8?' 외 '+(held.length-8)+'본':'')+'</b></div>');
   }
@@ -6435,24 +6531,23 @@ function rRaw(){
     const BD=rawBd();
     let bq=0,bn=0;
     S.led.forEach(r=>{ if(r.k==='생산입고'&&r.q>0&&r.d<BD){bq+=r.q;bn++;} });
-    if(bn)msgs.push('ℹ <b>원소재 기초일자 '+BD+'</b> — 그 이전 생산입고 '+bn+'건 / '+nf(bq)+' EA 는 '
-      +'<b>차감 대상이 아닙니다</b>. 그때 쓴 소재는 이 원장에 없는 별개 재고이기 때문입니다. '
-      +'기초일자를 앞당기면 그 기간 코일과 생산분이 함께 들어옵니다.');
+    if(bn)msgs.push('ℹ <b>재고 시작일 '+BD+'</b> — 그 이전 생산분('+nf(bq)+' EA)은 계산에서 빠집니다. '
+      +'그때 쓴 소재는 지금 목록에 없는 옛 재고이기 때문입니다.');
   }
   /* 같은 LOT 이 두 번 등록된 경우 */
   const cnt={}; S.coils.forEach(c=>{const k=String(c.cno||'').replace(/#\d+$/,''); cnt[k]=(cnt[k]||0)+1;});
   const dupL=Object.keys(cnt).filter(k=>k&&cnt[k]>1);
   if(dupL.length){
-    msgs.push('⚠ <b>같은 LOT 중복 등록 '+dupL.length+'건</b> — 보완분과 정식 입고분이 함께 남아 재고가 부풀려집니다. '
-      +'<b>[🧪 수입검사 연동]</b>을 한 번 더 누르면 자동으로 합쳐집니다. 그래도 남으면 코일번호를 눌러 보완분(🩹)을 삭제하세요.'
+    msgs.push('⚠ <b>같은 코일이 두 번 등록됨 '+dupL.length+'건</b> — 재고가 실제보다 많게 잡힙니다. '
+      +'<b>[🔄 최신화]</b>를 한 번 더 누르면 자동으로 합쳐집니다.'
       +'<div style="margin-top:5px"><b>'+dupL.slice(0,8).map(esc).join(', ')
       +(dupL.length>8?' 외 '+(dupL.length-8)+'건':'')+'</b></div>');
   }
   /* 구버전 연동 잔존분 */
   const legacy=S.coils.filter(c=>c.src&&c.src.indexOf('IQC|')===0);
   if(legacy.length){
-    msgs.push('ℹ <b>구버전 연동 코일 '+legacy.length+'본</b> — 예전 수입검사 앱(material_cert, 2026-04-23에서 멈춤)에서 '
-      +'가져온 데이터가 남아 있습니다. 현재 앱(v3.7)과 무관해 재고가 부풀려집니다. &nbsp;'
+    msgs.push('ℹ <b>예전 시스템 자료 '+legacy.length+'본</b> — 4월 이전 옛 수입검사 앱에서 넘어온 코일이 남아 있습니다. '
+      +'지금 쓰는 시스템과 무관해 재고가 실제보다 많게 잡힙니다. &nbsp;'
       +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="purgeLegacy()">🗑 구버전 코일 정리</button>');
   }
   /* 원천 데이터에 빠진 달이 있으면 알린다 */
@@ -6463,23 +6558,23 @@ function rRaw(){
     const [y1,m1]=yms[yms.length-1].split('-').map(Number);
     for(let y=y0,m=m0;y<y1||(y===y1&&m<=m1);m++){ if(m>12){m=1;y++;}
       const k=y+'-'+p2(m); if(!DGx.byYm[k])gap.push(k); }
-    if(gap.length)msgs.push('⚠ <b>원천 데이터 공백: '+gap.join(', ')+'</b> — 수입검사 앱에 이 기간 소재입고 등록이 없습니다. '
-      +'(원천 기간 '+DGx.minD+' ~ '+DGx.maxD+' · 전체 '+DGx.total+'행) '
-      +'검사앱에 소급 입력하거나 <b>[📥 코일 CSV 등록]</b>으로 직접 넣으세요.');
+    if(gap.length)msgs.push('⚠ <b>자료가 아예 없는 달: '+gap.join(', ')+'</b> — 수입검사 앱에 이 기간 소재 입고 등록이 없습니다. '
+      +'(자료 기간 '+DGx.minD+' ~ '+DGx.maxD+') '
+      +'검사앱에 뒤늦게라도 입력하시거나, [관리 도구 → 코일 여러 건 한번에 등록]으로 넣으세요.');
   }
   /* 수입검사 연동 데이터가 기준월보다 오래됐으면 알린다 */
   const iqc=S.coils.filter(c=>c.src&&c.src.indexOf('IQC2|')===0);
   if(iqc.length){
     const last=iqc.reduce((m2,c)=>String(c.d||'')>m2?c.d:m2,'');
-    if(last&&last<a)msgs.push('ℹ <b>수입검사 연동 최신 입고일: '+last+'</b> — 기준월('+ym+')에 해당하는 소재 입고분이 '
-      +'수입검사 앱에 아직 등록되지 않았습니다. 그 기간 코일은 <b>📥 코일 CSV 등록</b>으로 직접 넣거나, '
-      +'검사앱에 성적서를 입력한 뒤 다시 연동하세요.');
+    if(last&&last<a)msgs.push('ℹ <b>가장 최근 소재 입고일이 '+last+'</b> 입니다 — 이번 달('+ym+') 입고분이 '
+      +'수입검사 앱에 아직 등록되지 않았습니다.');
   }
   if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
   else W.style.display='none';
 
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
-            bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황'};
+            bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황',
+            sup:'공 급 업 체 별 코 일 수 불 현 황'};
   $('rawTtl').textContent=TT[RV];
 
   if(RV==='coil'){
@@ -6500,7 +6595,7 @@ function rRaw(){
          <td class="c">${n+1}</td><td class="c">${esc(c.d||'')}</td>
          <td class="l" style="font-weight:700;cursor:pointer" onclick="openCoil(${i})">${esc(c.cno)}</td>
          <td class="c" style="font-family:var(--sans)">${esc(c.mt)}</td>
-         <td>${(+c.t||0).toFixed(2)}</td><td>${nf(c.w)}</td>
+         <td>${tmm(c.t)}</td><td>${nf(c.w)}</td>
          <td>${kg(c.wt)}</td><td class="${used?'neg':''}">${used?kg(used):'-'}</td>
          <td style="font-weight:700" class="${r<=0.5?'':'pos'}">${kg(r)}</td>
          <td>${pct.toFixed(0)}%</td>
@@ -6530,7 +6625,7 @@ function rRaw(){
       <th>가용재고(kg)</th><th>보류(대기/불합격)</th><th>당월입고</th><th>당월투입</th><th>안전재고(kg)</th><th>과부족</th><th>재고일수</th><th>최고참 입고일</th></tr></thead><tbody>`
      +(R.length?R.map((o,i)=>`<tr>
         <td class="c">${i+1}</td><td class="c" style="font-family:var(--sans);font-weight:700">${esc(o.mt)}</td>
-        <td>${o.t.toFixed(2)}</td><td>${nf(o.w)}</td><td>${o.n}</td><td>${o.live}</td>
+        <td>${tmm(o.t)}</td><td>${nf(o.w)}</td><td>${o.n}</td><td>${o.live}</td>
         <td style="font-weight:700">${kg(o.rem)}</td>
         <td class="${o.hold?'neg':''}">${o.hold?kg(o.hold):'-'}</td>
         <td class="${o.iq?'pos':''}">${o.iq?kg(o.iq):'-'}</td>
@@ -6574,6 +6669,59 @@ function rRaw(){
        <td>${kg(ti)}</td><td>${kg(to)}</td><td colspan="4"></td></tr></tfoot>`;
   }
 
+  else if(RV==='sup'){
+    const A=supAgg().filter(o=>!q||nz(o.nm).includes(q)||o.specs.some(x=>nz(specNm(x)).includes(q)));
+    const T={n:0,inKg:0,remN:0,remKg:0,outN:0,mIn:0,mOut:0,holdN:0,mountN:0};
+    A.forEach(o=>{T.n+=o.n;T.inKg+=o.inKg;T.remN+=o.remN;T.remKg+=o.remKg;T.outN+=o.outN;
+      T.mIn+=o.mIn;T.mOut+=o.mOut;T.holdN+=o.holdN;T.mountN+=o.mountN;});
+    $('gt-raw').innerHTML='공급업체별 코일 수불 · <b>'+A.length+'</b>개사 · 보유 <b>'+T.remN+'</b>코일 / '+kg(T.remKg)+' kg · 기준월 '+ym;
+    $('rawHint').innerHTML='· <b>입고</b>는 원소재 기초일자 이후 등록된 코일, <b>반출(소진)</b>은 잔량 0.5kg 이하가 된 코일입니다.<br>'
+      +'· <b>재고</b>는 잔량이 남은 코일이며, 그 중 <b>사용중</b>은 일부 투입된 코일, <b>미개봉</b>은 아직 투입 이력이 없는 코일입니다.<br>'
+      +'· 업체 행 아래는 규격별 소계입니다. 보류는 검사대기·불합격으로 투입이 막힌 코일입니다.';
+    const bar=p2v=>{const c2=p2v>=90?'#B3261E':(p2v>=70?'#9A6400':'#2f6e49');
+      return `<div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:${Math.min(100,p2v).toFixed(0)}%;height:100%;background:${c2}"></div></div>
+        <span style="font-size:10px;color:${c2};font-weight:700;width:30px;text-align:right">${p2v.toFixed(0)}%</span></div>`;};
+    $('tRaw').innerHTML=`<thead><tr><th>공급업체 / 규격</th><th>입고<br>코일</th><th>입고(kg)</th>
+      <th>반출<br>(소진)</th><th>투입(kg)</th><th>소진율</th>
+      <th>재고<br>코일</th><th>재고(kg)</th><th>사용중</th><th>미개봉</th><th>보류</th><th>설비<br>장착</th>
+      <th>당월입고<br>코일/kg</th><th>당월투입<br>(kg)</th><th>최근입고</th></tr></thead><tbody>`
+     +(A.length?A.map(o=>{
+        let h=`<tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">${esc(o.nm)}</td>
+         <td style="font-weight:700">${o.n}</td><td>${kg(o.inKg)}</td>
+         <td class="${o.outN?'neg':''}">${o.outN||'-'}</td><td class="${o.outKg?'neg':''}">${o.outKg?kg(o.outKg):'-'}</td>
+         <td style="padding:0 6px">${bar(o.pct)}</td>
+         <td style="font-weight:800;font-size:12.5px" class="${o.remN?'pos':''}">${o.remN}</td>
+         <td style="font-weight:700">${kg(o.remKg)}</td>
+         <td>${o.useN||'-'}</td><td>${o.waitN||'-'}</td>
+         <td class="${o.holdN?'wn':''}">${o.holdN||'-'}</td>
+         <td class="${o.mountN?'zebra-in':''}" style="font-weight:${o.mountN?'700':'400'}">${o.mountN||'-'}</td>
+         <td class="${o.mInN?'pos':''}">${o.mInN?o.mInN+' / '+kg(o.mIn):'-'}</td>
+         <td class="${o.mOut?'neg':''}">${o.mOut?kg(o.mOut):'-'}</td>
+         <td class="c">${esc(o.last||'-')}</td></tr>`;
+        o.specs.forEach(sp=>{
+          const pc=sp.inKg>0?Math.max(0,sp.inKg-sp.remKg)/sp.inKg*100:0;
+          h+=`<tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ ${esc(specNm(sp))}</td>
+           <td>${sp.n}</td><td>${kg(sp.inKg)}</td>
+           <td class="${sp.outN?'neg':''}">${sp.outN||'-'}</td>
+           <td class="${sp.inKg-sp.remKg>0.5?'neg':''}">${sp.inKg-sp.remKg>0.5?kg(sp.inKg-sp.remKg):'-'}</td>
+           <td style="padding:0 6px">${bar(pc)}</td>
+           <td style="font-weight:700">${sp.remN}</td><td>${kg(sp.remKg)}</td>
+           <td colspan="2"></td>
+           <td class="${sp.holdN?'wn':''}">${sp.holdN||'-'}</td>
+           <td colspan="3"></td><td class="c">${esc(sp.last||'-')}</td></tr>`;
+        });
+        return h;
+      }).join(''):`<tr><td colspan="15" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다.</td></tr>`)
+     +`</tbody><tfoot><tr><td class="c">합　계 (${A.length}개사)</td>
+       <td>${T.n}</td><td>${kg(T.inKg)}</td><td>${T.outN}</td><td>${kg(Math.max(0,T.inKg-T.remKg))}</td><td></td>
+       <td>${T.remN}</td><td>${kg(T.remKg)}</td><td colspan="2"></td>
+       <td>${T.holdN||''}</td><td>${T.mountN||''}</td><td>${kg(T.mIn)}</td><td>${kg(T.mOut)}</td><td></td></tr></tfoot>`;
+  }
+
   else if(RV==='eq'){
     const C=eqCompare().filter(x=>!q||nz((x.e.lot||'')+' '+(x.e.pn||'')+' '+(x.e.nm||'')).includes(q));
     const all=(S.eq||[]).filter(e=>!q||nz((e.lot||'')+' '+(e.pn||'')+' '+(e.nm||'')).includes(q));
@@ -6596,7 +6744,7 @@ function rRaw(){
          <td class="l">${esc(e.mold||'')}</td>
          <td class="l" style="font-weight:700">${esc(e.pn||'')}</td>
          <td class="l" style="font-family:var(--sans)">${esc(e.inm||'')}</td>
-         <td class="l" style="font-family:var(--sans)">${e.mt?esc(e.mt)+' '+(e.t?(+e.t).toFixed(2)+'t':'')+(e.w?' × '+nf(e.w)+'W':'<span style="color:#9A6400"> 폭없음</span>')
+         <td class="l" style="font-family:var(--sans)">${e.mt?esc(e.mt)+' '+(e.t?tmm(e.t)+'t':'')+(e.w?' × '+nf(e.w)+'W':'<span style="color:#9A6400"> 폭없음</span>')
             :'<span style="color:#93A0AB">-</span>'}${e.rc?'<div style="font-size:9px;color:#888">'+esc(e.rc)+'</div>':''}</td>
          <td class="l">${esc(e.lot||'-')}</td>
          <td>${e.ckg?kg(e.ckg):'-'}</td>
@@ -6631,7 +6779,7 @@ function rRaw(){
          <td class="l" style="font-weight:700;cursor:pointer" onclick="openBom(${i})">${esc(b2.pn)}</td>
          <td class="l" style="font-family:var(--sans)">${esc(it?it.nm:'')}</td>
          <td class="c" style="font-family:var(--sans)">${esc(b2.mt)}</td>
-         <td>${(+b2.t||0).toFixed(2)}</td><td>${b2.w?nf(b2.w):'<span style="color:#93A0AB">무관</span>'}</td>
+         <td>${tmm(b2.t)}</td><td>${b2.w?nf(b2.w):'<span style="color:#93A0AB">무관</span>'}</td>
          <td>${(+b2.uw*1000).toFixed(1)}</td>
          <td style="font-weight:700">${(+b2.uw||0).toFixed(4)}</td>
          <td class="c" style="font-family:var(--sans);font-size:10px">${b2.src==='MES'
@@ -6799,9 +6947,16 @@ function exportRaw(){
   const c4=T('제품별 원단위',['제품품번','품명','재질','두께t','폭W','제품중량g','수율%','원단위kg/EA','비고'],
     S.bom.map(b2=>{const it=S.items.find(x=>x.pn===b2.pn)||{nm:''};
       return [b2.pn,it.nm,b2.mt,+b2.t,+b2.w,+b2.net||'',+b2.y||'',+b2.uw,b2.n||''];}));
+  const c5=T('공급업체별 코일 수불',['공급업체','규격','입고코일','입고kg','반출(소진)','투입kg','소진율%',
+      '재고코일','재고kg','사용중','미개봉','보류','설비장착','최근입고'],
+    supAgg().flatMap(o=>[[o.nm,'— 합계 —',o.n,+o.inKg.toFixed(1),o.outN,+o.outKg.toFixed(1),+o.pct.toFixed(0),
+        o.remN,+o.remKg.toFixed(1),o.useN,o.waitN,o.holdN,o.mountN,o.last||'']]
+      .concat(o.specs.map(sp=>[o.nm,specNm(sp),sp.n,+sp.inKg.toFixed(1),sp.outN,
+        +Math.max(0,sp.inKg-sp.remKg).toFixed(1),sp.inKg>0?+((sp.inKg-sp.remKg)/sp.inKg*100).toFixed(0):0,
+        sp.remN,+sp.remKg.toFixed(1),'','',sp.holdN,'',sp.last||'']))));
   const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;margin-bottom:18px}'
     +'td,th{border:1px solid #999;padding:3px 6px;font-size:11px;font-family:맑은 고딕}'
-    +'th{background:#DCE3EF;font-weight:700}</style></head><body>'+c1+c2+c3+c4+'</body></html>';
+    +'th{background:#DCE3EF;font-weight:700}</style></head><body>'+c5+c1+c2+c3+c4+'</body></html>';
   dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),'원소재재고_'+ym.replace('-','')+'.xls');
   toast('원소재 재고 엑셀을 내려받았습니다');
 }
@@ -7015,6 +7170,65 @@ async function syncIqc(silent){
 
 
 
+
+
+/* ═══════ 한 번에 최신화 ═══════ */
+function tglTools(e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  const p2=$('toolsPop'); if(!p2)return;
+  p2.classList.toggle('on', e===0?false:!p2.classList.contains('on'));
+}
+document.addEventListener('click',e=>{
+  const p2=$('toolsPop');
+  if(p2&&p2.classList.contains('on')&&!e.target.closest('.tools-wrap'))p2.classList.remove('on');
+});
+let refBusy=false;
+async function refreshAll(){
+  if(refBusy)return; refBusy=true;
+  const btn=$('btnRefresh'), info=$('refreshInfo');
+  const t0=btn.textContent; btn.disabled=true; btn.textContent='⏳ 가져오는 중…';
+  const L=[];
+  try{
+    if(info)info.textContent='수입검사 자료를 가져오는 중…';
+    const a=await syncIqc(true);
+    if(a)L.push('· 수입검사에서 코일 '+(a.add||0)+'본 새로 등록'
+      +((a.upd)?', '+a.upd+'본 정보 갱신':'')+((a.hold)?' (검사 안 끝난 '+a.hold+'본은 사용 보류)':''));
+    else L.push('· 수입검사 자료를 가져오지 못했습니다 (인터넷·서버 확인)');
+
+    if(info)info.textContent='프레스 설비 정보를 가져오는 중…';
+    const b=await syncEq(true);
+    if(b)L.push('· 프레스 설비 '+b.eq+'대 확인 · 제품 소요량 '+(b.bAdd||0)+'건 새로 등록'
+      +((b.bUpd)?', '+b.bUpd+'건 갱신':''));
+    else L.push('· 설비 정보를 가져오지 못했습니다');
+
+    if(info)info.textContent='사용량을 계산하는 중…';
+    const c=autoBom(false);
+    L.push('· 생산실적으로 소재 사용량 '+(c?c.add:0)+'건 차감'
+      +((c&&c.shN)?' (코일이 모자란 '+c.shN+'건 있음)':''));
+  }catch(e){ L.push('· 오류: '+e.message); }
+  render();
+  const now=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
+  S.refAt=now; save();
+  if(info)info.textContent='마지막 최신화 '+now;
+  btn.disabled=false; btn.textContent=t0; refBusy=false;
+
+  /* 남은 할 일 */
+  const todo=[];
+  const D=S.diag||{noBom:[],noCoil:[]};
+  if(D.noBom.length)todo.push('제품 '+D.noBom.length+'종의 <소요량>이 없어 차감되지 않았습니다');
+  const noSpecB=S.bom.filter(x=>+x.uw>0&&!x.mt);
+  if(noSpecB.length)todo.push('제품 '+noSpecB.length+'종의 <소재 규격>을 모릅니다');
+  const missLot=[...new Set((S.eq||[]).filter(e=>e.lot&&!S.coils.some(x=>x.cno===e.lot)).map(e=>e.lot))];
+  if(missLot.length)todo.push('프레스에 물려 있는데 목록에 없는 코일 '+missLot.length+'건');
+  const held=S.coils.filter(x=>!usable(x)&&remOf(x)>0.5);
+  if(held.length)todo.push('검사가 끝나지 않아 쓸 수 없는 코일 '+held.length+'본');
+
+  alert('최신화 완료\n\n'+L.join('\n')
+    +(todo.length?'\n\n■ 아직 남은 일 ('+todo.length+'건)\n'
+      +todo.map((x,i)=>'  '+(i+1)+'. '+x).join('\n')
+      +'\n\n→ 화면 위쪽 붉은 안내 상자에 처리 버튼이 있습니다.'
+      :'\n\n모두 정상입니다. 처리할 일이 없습니다.'));
+}
 
 /* ═══════ MES 소재 규격 필드 추출 ═══════
    machine_status 의 컬럼명이 환경마다 다를 수 있어 후보를 폭넓게 훑는다. */
@@ -8188,7 +8402,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  raw:[['➕','코일입고','openCoil(-1)','pri'],['↔','수불등록','openMio()'],['⚖','원단위등록','openBom(-1)'],['🔄','자동차감','autoBom(true)'],['🧪','수입검사연동','syncIqc(false)'],['⚙','MES설비','syncEq(false)'],['🩹','미등록보완','fixMesLots()'],['🔧','규격일괄','openSpecBulk()'],['🔍','MES필드','eqFields()'],['🗑','구버전정리','purgeLegacy()'],['📥','코일CSV','pick(\'fCoil\')'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
+  raw:[['🔄','최신화','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
 };
@@ -8362,6 +8576,7 @@ function init(){
   $('dlPn').innerHTML=S.items.map(i=>`<option value="${esc(i.pn)}">`).join('');
   $('mK').innerHTML=MKINDS.map(([k,io])=>`<option value="${k}">${io==='I'?'▲ 입고':'▼ 출고'} · ${k}</option>`).join('');
   $('iqcFrom').value=S.iqcFrom||IQC_FROM_DEF;
+  if($('refreshInfo')&&S.refAt)$('refreshInfo').textContent='마지막 최신화 '+S.refAt;
   $('iqcFrom').onchange=()=>{S.iqcFrom=$('iqcFrom').value;save();};
   fillRawLists(); autoBom(false);
   $('dlP').innerHTML=S.party.map(p=>`<option value="${esc(p)}">`).join('');
