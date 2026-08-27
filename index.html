@@ -5241,6 +5241,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           <b>[같은 HEAT 일괄적용]</b>으로 나머지를 복사할 수 있습니다.<br>
         · 규격 유추 순서는 ① 그 LOT의 코일 → ② 같은 HEAT 코일 → ③ 수입검사 <b>검사 발행분(iqc_inspections)</b>의
           LOT베이스 규격 → ④ 수기 입력 입니다. 연동을 누를 때마다 ①~③이 자동으로 재시도됩니다.<br>
+        · 보완(🩹)해 둔 코일은 나중에 그 LOT의 성적서·검사가 정식으로 들어오면
+          <b>연동할 때 자동으로 정식 입고분으로 승격</b>됩니다. 새 코일이 따로 생기지 않고 투입 이력도 그대로 유지되며,
+          검사 판정·성적서번호·검사일이 채워지면서 <b>미등록 표시가 사라집니다</b>.<br>
         · <b>🩹 미등록 LOT 보완</b>: 수입검사 앱 도입 초기에 누락됐거나 성적서가 HEAT 단위로만 등록되어
           슬릿 LOT(예: SP38425-1)이 없는 경우, 설비에 물려 있는 LOT을 코일로 보완 등록합니다.
           중량은 MES 코일중량을 쓰고, 규격은 <b>같은 HEAT 코일에서 재질·두께를 유추</b>합니다(폭은 미상이므로 무관 처리).
@@ -6405,9 +6408,22 @@ function rRaw(){
   const held=S.coils.filter(c=>!usable(c)&&remOf(c)>0.5);
   if(held.length){
     const t2=held.reduce((a,c)=>a+remOf(c),0);
-    msgs.push('⛔ <b>검사 보류 코일 '+held.length+'본 / '+kg(t2)+' kg</b> — 수요자 검사가 발행되지 않았거나 불합격이라 '
-      +'가용재고·자동차감에서 제외됩니다. 검사앱에서 성적서를 발행한 뒤 <b>[🧪 수입검사 연동]</b>을 다시 누르면 풀립니다. &nbsp;<b>'
-      +[...new Set(held.map(c=>c.mt+' '+(+c.t).toFixed(2)+'t'))].slice(0,6).join(', ')+'</b>');
+    const ng=held.filter(c=>c.iq==='불합격'), wt2=held.filter(c=>c.iq!=='불합격');
+    msgs.push('⛔ <b>검사 보류 코일 '+held.length+'본 / '+kg(t2)+' kg</b>'
+      +(ng.length?' · 불합격 '+ng.length+'본(격리)':'')
+      +(wt2.length?' · 검사 미발행 '+wt2.length+'본':'')
+      +' — 가용재고·자동차감에서 제외됩니다. 검사앱에서 성적서를 발행한 뒤 <b>[🧪 수입검사 연동]</b>을 다시 누르면 풀립니다.'
+      +'<div style="margin-top:5px">해당 LOT: <b>'+held.slice(0,8).map(c=>esc(c.cno)).join(', ')
+      +(held.length>8?' 외 '+(held.length-8)+'본':'')+'</b></div>');
+  }
+  /* 같은 LOT 이 두 번 등록된 경우 */
+  const cnt={}; S.coils.forEach(c=>{const k=String(c.cno||'').replace(/#\d+$/,''); cnt[k]=(cnt[k]||0)+1;});
+  const dupL=Object.keys(cnt).filter(k=>k&&cnt[k]>1);
+  if(dupL.length){
+    msgs.push('⚠ <b>같은 LOT 중복 등록 '+dupL.length+'건</b> — 보완분과 정식 입고분이 함께 남아 재고가 부풀려집니다. '
+      +'<b>[🧪 수입검사 연동]</b>을 한 번 더 누르면 자동으로 합쳐집니다. 그래도 남으면 코일번호를 눌러 보완분(🩹)을 삭제하세요.'
+      +'<div style="margin-top:5px"><b>'+dupL.slice(0,8).map(esc).join(', ')
+      +(dupL.length>8?' 외 '+(dupL.length-8)+'건':'')+'</b></div>');
   }
   /* 구버전 연동 잔존분 */
   const legacy=S.coils.filter(c=>c.src&&c.src.indexOf('IQC|')===0);
@@ -6859,7 +6875,7 @@ async function syncIqc(silent){
       }else DG.dup++;
     });
     S.iqcDiag=DG;
-    let add=0,upd=0,hold=0,insHit=0,noIns=0;
+    let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0;
     const seen=new Set();
     picks.forEach(({r,lots,rd})=>{
       const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
@@ -6877,8 +6893,14 @@ async function syncIqc(silent){
         const src='IQC2|'+lot+'@'+rd;
         seen.add(src);
         let cno=isNo?((r.heat_no||mt||'IQC')+'-'+(w||0)+'W-'+p2(i+1)):lot;
-        const ex=S.coils.find(c=>c.src===src);
-        if(!ex&&S.coils.some(c=>c.cno===cno))cno+='#'+String(rd).slice(5).replace('-','');
+        let ex=S.coils.find(c=>c.src===src);
+        if(!ex){
+          /* 같은 LOT 으로 보완 등록해 둔 코일이 있으면 새로 만들지 않고 그 코일을 정식분으로 승격.
+             투입 이력이 그대로 유지되고 중복 코일이 생기지 않는다. */
+          const t0=S.coils.find(c=>c.cno===cno&&c.src&&c.src.indexOf('MESLOT|')===0);
+          if(t0){ ex=t0; ex.src=src; takeover++; }
+          else if(S.coils.some(c=>c.cno===cno))cno+='#'+String(rd).slice(5).replace('-','');
+        }
         const o={d:rd,cno,mt,t,w,wt:each,sup:r.supplier||'',ms:r.heat_no||lotBase(lot),iq:jg,
                  cert:jv?jv.cert:'', ins:jv?jv.ins:'',
                  n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':'',
@@ -6909,7 +6931,18 @@ async function syncIqc(silent){
     S.coils.forEach(c=>{ if(c.mt&&+c.t)return;
       const v=specByLot(c.cno)||specByLot(c.ms);
       if(v){c.mt=v.mt;c.t=v.t; if(!+c.w)c.w=0; if(!c.sup)c.sup=v.sup; upd++;} });
-    if(add||upd||del){save();fillBomSpec();autoBom(false);render();}
+    /* 보완(미등록) 코일도 검사가 발행됐으면 판정을 올려 준다 */
+    S.coils.forEach(c=>{
+      if(c.iq!=='미등록')return;
+      const jv=judgeOf(c.cno,{});
+      if(!jv)return;
+      c.iq=jv.jg; c.cert=jv.cert; c.ins=jv.ins;
+      c.n=String(c.n||'').replace('수입검사 미등록','검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:''));
+      jgFix++; upd++;
+    });
+    /* HEAT 코일과 슬릿 코일이 함께 있으면 모(母)코일에서 빼서 이중계상을 막는다 */
+    const DH=dedupHeat();
+    if(add||upd||del||DH.n){save();fillBomSpec();autoBom(false);render();}
     S.iqcLast=new Date().toISOString();
     if(!silent){
       const L=[];
@@ -6920,6 +6953,9 @@ async function syncIqc(silent){
       L.push('  · 신규 '+add+(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:''));
       L.push('  · 수요자 검사 발행분(iqc_inspections) '+insN+'건 조회');
       L.push('  · 판정 근거: 검사발행 '+insHit+'본 / 성적서판정만 '+noIns+'본');
+      if(takeover)L.push('  · 보완 코일 '+takeover+'본을 정식 입고분으로 승격(중복 생성 없음)');
+      if(jgFix)L.push('  · 미등록 코일 '+jgFix+'본에 검사 판정 반영');
+      if(DH.n)L.push('  · HEAT↔슬릿 이중계상 정리 '+DH.n+'건 ('+kg(DH.kgs)+'kg)');
       if(hold)L.push('  · 검사대기·불합격 '+hold+'본 보류(자동차감 제외)');
       L.push('');
       L.push('■ 원천 데이터 월별 분포 (입고일 기준, 없으면 등록일)');
@@ -7145,6 +7181,26 @@ function fillBomSpec(){
   if(n)save();
   return n;
 }
+/* HEAT 단위 모(母)코일 ↔ 슬릿 자(子)코일 이중계상 정리.
+   같은 마킹의 조정전표가 이미 있으면 다시 만들지 않는다(반복 실행 안전). */
+function dedupHeat(){
+  let n=0,kgs=0;
+  S.coils.forEach(P=>{
+    if(!P.cno)return;
+    const kids=S.coils.filter(C=>C.id!==P.id&&C.cno!==P.cno&&lotBase(C.cno)===P.cno);
+    kids.forEach(C=>{
+      const mark='SPLIT|'+P.id+'|'+C.cno;
+      if(S.mled.some(m=>m.mk===mark))return;
+      const av=remOf(P); if(av<=0.01)return;
+      const q=Math.round(Math.min(av,+C.wt||0)*100)/100; if(q<=0)return;
+      S.mled.push({id:S.mseq++,d:C.d||today(),cid:P.id,cno:P.cno,k:'재고조정(-)',q,pn:'',
+        n:'슬릿 분할 → '+C.cno+' (이중계상 방지)',by:'AUTO',split:1,mk:mark});
+      n++; kgs+=q;
+    });
+  });
+  return {n,kgs};
+}
+
 /* 설비에 물려 있으나 원장에 없는 LOT 을 코일로 보완 생성 */
 function fixMesLots(){
   const miss=(S.eq||[]).filter(e=>e.lot&&!S.coils.some(c=>c.cno===e.lot));
@@ -7171,17 +7227,8 @@ function fixMesLots(){
       iq:'미등록', st:'사용중', lc:'', src:'MESLOT|'+e.lot,
       n:'MES 장착분 보완 · 수입검사 미등록'+(c?' · 규격 HEAT '+lotBase(e.lot)+' 유추':' · 규격 미상')});
     add++;
-    /* HEAT 단위로 등록된 모(母)코일이 따로 있으면 그만큼 빼서 이중계상을 막는다 */
-    if(c&&c.id&&c.cno&&c.cno!==e.lot&&wt>0){
-      const av=remOf(c);
-      const q=Math.round(Math.min(av,wt)*100)/100;
-      if(q>0){
-        S.mled.push({id:S.mseq++,d:today(),cid:c.id,cno:c.cno,k:'재고조정(-)',q,
-          pn:'',n:'슬릿 분할 → '+e.lot+' (이중계상 방지)',by:'AUTO',split:1});
-        split++; splitKg+=q;
-      }
-    }
   });
+  const DH=dedupHeat(); split=DH.n; splitKg=DH.kgs;
   S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
   const bf=fillBomSpec();
   save(); autoBom(false); render();
