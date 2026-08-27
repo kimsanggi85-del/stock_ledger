@@ -107,6 +107,50 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   #tRaw.w-coil th:nth-child(3),#tRaw.w-coil td:nth-child(3){position:static;box-shadow:none}
   #tRaw.w-coil th:nth-child(1),#tRaw.w-coil td:nth-child(1){position:static}
 }
+/* ═══ 휴대폰 화면 ═══ */
+@media(max-width:760px){
+  #p-raw{padding:8px 6px}
+  #p-raw .guide{font-size:11.5px;padding:8px 10px;line-height:1.7}
+  #p-raw .guide .step{width:15px;height:15px;line-height:15px;font-size:9px}
+  #p-raw .sum{grid-template-columns:repeat(2,1fr)!important;gap:1px}
+  #p-raw .sum>div{padding:7px 9px}
+  #p-raw .sum b{font-size:15px}
+  #p-raw .fbar{padding:7px 8px;gap:6px}
+  #p-raw .fbar .rt{margin-left:0;width:100%;flex-wrap:wrap;gap:6px}
+  #p-raw .fbar .btn{flex:1 1 auto;min-width:0}
+  #p-raw .fbar .btn.big{flex:1 1 100%}
+  #p-raw #refreshInfo{flex:1 1 100%;height:auto;font-size:11px}
+  #p-raw #iqcFrom{flex:1 1 130px}
+  #p-raw #rawQ{flex:1 1 100%;width:auto!important}
+  #p-raw #rawSt{flex:1 1 100%;min-width:0!important}
+  .tools-pop{position:fixed;left:8px;right:8px;top:auto;bottom:8px;min-width:0;max-height:70vh;overflow:auto}
+  /* 화면 선택 칩: 가로 스크롤 한 줄 */
+  #p-raw .fbar.chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 8px}
+  #p-raw .fbar.chips::-webkit-scrollbar{height:0}
+  #p-raw .chip{white-space:nowrap;flex:0 0 auto;padding:7px 12px;font-size:12px}
+  #p-raw .sheet{padding:8px 6px}
+  #p-raw .doc-hd h1{font-size:15px;letter-spacing:2px;padding-top:4px}
+  #p-raw .doc-hd .appr,#p-raw .doc-no{display:none}
+  #p-raw .gw .scroll{max-height:none}
+  #rawWarn{font-size:11.5px;padding:8px 10px}
+  /* 카드형 목록 */
+  #tRaw.mcard{min-width:0!important;display:block;border:0;background:transparent}
+  #tRaw.mcard thead,#tRaw.mcard tfoot,#tRaw.mcard colgroup{display:none}
+  #tRaw.mcard tbody{display:block}
+  #tRaw.mcard tr{display:block;border:1px solid #c9d4e2;border-radius:6px;background:#fff;
+    margin-bottom:7px;padding:9px 11px}
+  #tRaw.mcard td{display:block;border:0;height:auto;white-space:normal;padding:0;text-align:left}
+  .mrow{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-top:4px}
+  .mrow span{font-size:11px;color:#6b7885;font-family:var(--sans)}
+  .mrow b{font-size:12px;font-family:var(--mono)}
+  .mtitle{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+  .mtitle .pn{font-weight:800;font-size:13.5px;font-family:var(--mono)}
+  .mtitle .tag{font-size:10px;font-family:var(--sans);padding:1px 7px;border-radius:9px}
+  .mbig{font-size:17px;font-weight:800;font-family:var(--mono)}
+  .mbar{height:7px;background:#E3E7EB;border-radius:4px;overflow:hidden;margin-top:6px}
+  .mbar i{display:block;height:100%}
+}
+@media(min-width:761px){ .m-only{display:none} }
 .t select.ce{font-family:var(--sans);font-size:10.5px;text-align:center;padding:4px 1px}
 .t input.ce:hover,.t select.ce:hover{background:#FFF8C4;cursor:text}
 .t input.ce:focus,.t select.ce:focus{outline:1.5px solid var(--hd);background:#fff}
@@ -5163,6 +5207,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           <button onclick="tglTools(0);autoBom(true)"><b>사용량 다시 계산</b><em>생산실적으로 코일을 다시 차감</em></button>
           <button onclick="tglTools(0);purgeLegacy()"><b>예전 연동 자료 지우기</b><em>4월 이전 옛 시스템에서 넘어온 코일</em></button>
           <button onclick="tglTools(0);eqFields()"><b>MES 연결 상태 확인</b><em>어떤 정보가 넘어오는지 점검</em></button>
+          <button onclick="tglTools(0);pushRaw(false)"><b>이 기기 자료 올리기</b><em>PC·휴대폰 값을 맞춥니다</em></button>
+          <button onclick="tglTools(0);pullRaw(false).then(()=>{autoBom(false);render();})"><b>다른 기기 자료 받기</b><em>서버에 저장된 최신 자료 가져오기</em></button>
           <div class="grp">내보내기</div>
           <button onclick="tglTools(0);exportRaw()"><b>엑셀로 저장</b><em>업체별·규격별·코일별 전체</em></button>
           <button onclick="tglTools(0);window.print()"><b>인쇄</b><em>지금 보고 있는 화면</em></button>
@@ -5172,7 +5218,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
   </div>
 
-  <div class="fbar" style="padding:6px 10px">
+  <div class="fbar chips" style="padding:6px 10px">
     <span class="chip on" data-rv="sup" onclick="setRV('sup')"><span class="ic">🏢</span>업체별 재고</span>
     <span class="chip" data-rv="eq" onclick="setRV('eq')"><span class="ic">🏭</span>설비 현황</span>
     <span class="chip" data-rv="coil" onclick="setRV('coil')"><span class="ic">🧱</span>코일 목록</span>
@@ -5373,6 +5419,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>코일 목록</b>의 노란 칸(입고일·재질·두께·폭·입고중량·검사·공급업체·위치·비고)은 <b>표에서 바로 수정</b>됩니다.
           직접 고친 칸에는 🔒 가 붙고 최신화해도 덮어쓰지 않습니다. 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 하면 잠금이 풀립니다.<br>
         · 잔량·투입·소진율은 수불전표로 자동 계산되므로 직접 고칠 수 없습니다. 수량 정정은 <b>재고조정(+/−)</b> 전표로 하세요.<br>
+        · <b>휴대폰</b>에서는 코일 목록·업체별 재고·설비 현황·재고 실사가 <b>카드 형태</b>로 바뀌어 표가 깨지지 않습니다.
+          카드를 누르면 수정 창이 열리고, 실사도 카드에서 바로 입력합니다.<br>
+        · 원소재 자료(코일·소요량·수기 전표)는 <b>서버에 공유 저장</b>되어 PC와 휴대폰이 같은 값을 봅니다.
+          최신화할 때마다 <b>다른 기기 자료를 받아 합치고 내 자료를 올립니다</b>.
+          수동으로 하려면 [관리 도구 → 이 기기 자료 올리기 / 다른 기기 자료 받기]를 쓰세요.<br>
         · <b>🔄 최신화</b>는 ① 생산·출하 실적(MES·출하의뢰서) → ② 수입검사 코일 → ③ MES 설비 정보 →
           ④ 소재 사용량 차감 순서로 한 번에 처리합니다. 출하가 빠진 것 같으면 이 버튼을 누르세요.
           (제품 탭 상단의 [MES 동기화] 버튼과 같은 자료를 가져옵니다)<br>
@@ -6547,12 +6598,13 @@ function applyCoilCount(){
     +diff.slice(0,8).map(o=>'  '+o.c.cno+' : 전산 '+kg(o.sys)+' → 실사 '+kg(o.real)+' ('+(o.gap>0?'+':'')+kg(o.gap)+')').join('\n')
     +(diff.length>8?'\n  … 외 '+(diff.length-8)+'본':'')+'\n\n발행할까요?'))return;
   diff.forEach(o=>{
-    S.mled.push({id:S.mseq++,d:d0,cid:o.c.id,cno:o.c.cno,
+    S.mled.push({id:S.mseq++,uid:'C'+d0.replace(/-/g,'')+'|'+o.c.cno,d:d0,cid:o.c.id,cno:o.c.cno,
       k:o.gap>0?'재고조정(+)':'재고조정(-)',q:Math.abs(o.gap),pn:'',
       n:'실사조정 (전산 '+kg(o.sys)+' → 실사 '+kg(o.real)+')',by,cnt:1});
+  rawDirty=true; schedRawPush();
   });
   S.coils.forEach(c=>{delete c.ct;});
-  save(); autoBom(false); render();
+  save(); autoBom(false); render(); pushRaw(true);
   toast('조정전표 '+diff.length+'건을 발행했습니다 · 원장이 실사값과 맞춰졌습니다');
 }
 
@@ -6770,8 +6822,9 @@ function rRaw(){
   if(msgs.length){W.style.display='block';W.innerHTML=msgs.join('<hr style="border:0;border-top:1px solid #E0A9A2;margin:7px 0">');}
   else W.style.display='none';
 
-  {const tb=$('tRaw'); if(tb){tb.className='t '+({coil:'w-coil',eq:'w-eq',sup:'w-sup',spec:'w-spec',
-    led:'w-led',bom:'w-bom',cnt:'w-cnt'}[RV]||'');}}
+  const MC=isMob()&&['coil','sup','eq','cnt'].includes(RV);   /* 휴대폰은 카드형 */
+  {const tb=$('tRaw'); if(tb){tb.className='t '+(MC?'mcard':({coil:'w-coil',eq:'w-eq',sup:'w-sup',
+    spec:'w-spec',led:'w-led',bom:'w-bom',cnt:'w-cnt'}[RV]||''));}}
   const TT={coil:'원 소 재 코 일 대 장',spec:'원 소 재 규 격 별 재 고',led:'원 소 재 수 불 부',
             bom:'제 품 별 원 단 위 표',eq:'설 비 별 소 재 사 용 현 황',cnt:'원 소 재 재 고 실 사 표',
             sup:'공 급 업 체 별 코 일 수 불 현 황'};
@@ -6791,6 +6844,11 @@ function rRaw(){
       +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
       +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
       +'· 코일번호를 누르면 전체 수정·삭제 창이 열립니다.';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({c,i},n)=>mcCoil(c,i,n)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">등록된 코일이 없습니다.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<colgroup>
       <col style="width:34px"><col style="width:112px"><col style="width:158px"><col style="width:82px">
       <col style="width:58px"><col style="width:60px"><col style="width:80px"><col style="width:70px">
@@ -6907,6 +6965,11 @@ function rRaw(){
       +'· 코일이 <b>없으면 0</b>을 넣으세요. 전량 재고조정(−)으로 처리됩니다.<br>'
       +'· 다 넣은 뒤 <b>[✅ 조정전표 발행]</b>을 누르면 전산과 다른 코일만 재고조정 전표가 만들어집니다.<br>'
       +'· 현장에 들고 나가려면 <b>[⬇ 실사표 받기]</b>로 받아 적어 온 뒤 <b>[📥 실사값 올리기]</b>로 올리세요.';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({c,i})=>mcRawCnt(c,i)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">실사할 코일이 없습니다.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>코일 No.</th><th>규격</th><th>공급업체</th><th>보관위치</th>
       <th>상태</th><th>전산 잔량(kg)</th><th>실사 잔량(kg)</th><th>있음</th><th>없음</th><th>차이(kg)</th><th>판정</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
@@ -6952,6 +7015,11 @@ function rRaw(){
         <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
           <div style="width:${Math.min(100,p2v).toFixed(0)}%;height:100%;background:${c2}"></div></div>
         <span style="font-size:10px;color:${c2};font-weight:700;width:30px;text-align:right">${p2v.toFixed(0)}%</span></div>`;};
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(A.length?A.map(o=>mcSup(o)).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">등록된 코일이 없습니다.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<thead><tr><th>공급업체 / 규격</th><th>입고<br>코일</th><th>입고(kg)</th>
       <th>반출<br>(소진)</th><th>투입(kg)</th><th>소진율</th>
       <th>재고<br>코일</th><th>재고(kg)</th><th>사용중</th><th>미개봉</th><th>보류</th><th>설비<br>장착</th>
@@ -6999,6 +7067,12 @@ function rRaw(){
     $('rawHint').innerHTML='· <b>MES 예상잔량</b> = 코일중량 − (실적 × 소요g ÷ 1000). 설비에서 계산한 현장 값입니다.<br>'
       +'· <b>원장 잔량</b>은 이 앱의 수불전표 기준이며, 차이가 크면 원단위·실적·투입전표를 확인하세요.<br>'
       +'· <b>미등록</b>은 설비에 물려 있으나 코일대장에 없는 LOT입니다.';
+    if(MC){
+      $('tRaw').innerHTML='<tbody>'+(all.length?all.map(e=>mcEq(e,
+        C.find(y=>y.e===e)||{c:S.coils.find(c2=>c2.cno===e.lot)||null,mesRem:null,ledRem:null,gap:null})).join('')
+        :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">[MES 설비 연동]을 눌러 현황을 가져오세요.</td></tr>')+'</tbody>';
+      fillRawLists(); return;
+    }
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>설비</th><th>상태</th><th>금형</th><th>품번</th><th>품명</th>
       <th>소재 규격</th><th>장착 LOT</th><th>코일kg(MES)</th><th>소요 g/EA</th><th>실적(EA)</th><th>사용(kg)</th>
       <th>MES 예상잔량</th><th>원장 잔량</th><th>차이</th><th>원장</th></tr></thead><tbody>`
@@ -7095,11 +7169,11 @@ function saveCoil(){
   const o={d:$('cD').value||today(),cno,mt:$('cMt').value.trim().toUpperCase(),
     t:+$('cT').value||0,w:+$('cW').value||0,wt:+$('cWt').value||0,sup:$('cSup').value.trim(),
     ms:$('cMs').value.trim(),iq:$('cIq').value,lc:$('cLc').value.trim(),st:$('cSt').value,n:$('cN').value.trim()};
-  if(i<0)S.coils.push(Object.assign({id:S.cseq++},o));
+  if(i<0){const nc=Object.assign({id:S.cseq++},o); S.coils.push(nc); touchRaw(nc);}
   else{
     const ex=S.coils[i];
     LOCKABLE.forEach(f=>{ if(String(ex[f]==null?'':ex[f])!==String(o[f]==null?'':o[f]))lockField(ex,f); });
-    Object.assign(ex,o);
+    Object.assign(ex,o); touchRaw(ex);
   }
   save(); autoBom(false); render(); closeAll();
   toast('코일 '+cno+' 저장되었습니다');
@@ -7139,8 +7213,9 @@ function saveMio(){
   const o={d:$('mD').value||today(),cid:c.id,cno,k:$('mK').value,q:Math.round(q*100)/100,
     pn:$('mPn').value.trim(),n:$('mN').value.trim(),by:S.user||'수기'};
   const id=+$('mId').value;
-  if(id){const t=S.mled.find(x=>x.id===id);Object.assign(t,o);delete t.auto;delete t.ref;delete t.sh;}
-  else S.mled.push(Object.assign({id:S.mseq++},o));
+  if(id){const t=S.mled.find(x=>x.id===id);Object.assign(t,o);delete t.auto;delete t.ref;delete t.sh;touchRaw(t);}
+  else{const nm2=Object.assign({id:S.mseq++,uid:'M'+Date.now()+Math.random().toString(36).slice(2,6)},o);
+    S.mled.push(nm2); touchRaw(nm2);}
   save(); render(); closeAll(); toast(cno+' '+o.k+' '+kg(q)+' kg 등록');
 }
 function delMio(){
@@ -7192,7 +7267,7 @@ function saveBom(){
   if(dup>=0){toast('이미 등록된 품번입니다');return;}
   const o={pn,mt:$('bMt').value.trim().toUpperCase(),t:+$('bT').value||0,w:+$('bW').value||0,
     net:+$('bNet').value||0,y:+$('bY').value||0,uw:+$('bUw').value||0,n:$('bN').value.trim()};
-  if(i<0)S.bom.push(o); else Object.assign(S.bom[i],o);
+  if(i<0){touchRaw(o);S.bom.push(o);} else {Object.assign(S.bom[i],o);touchRaw(S.bom[i]);}
   S.bom.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
   save(); autoBom(true); render(); closeAll();
 }
@@ -7532,6 +7607,13 @@ async function refreshAll(){
       L.push('■ 오늘('+td+') 출하 전표가 없습니다 — 출하의뢰서 앱에 아직 등록되지 않았거나 동기화 전입니다.');
     }
 
+    /* ①-2 다른 기기에서 입력한 원소재 자료 받기 */
+    if(info)info.textContent='다른 기기 자료를 받는 중…';
+    const gp=await pullRaw(true);
+    if(gp&&gp.err)L.push('· ⚠ 원소재 공유 자료를 받지 못했습니다 ('+gp.err+') — PC와 휴대폰 값이 다를 수 있습니다');
+    else if(gp&&(gp.c||gp.b||gp.m))
+      L.push('· 다른 기기에서 입력한 자료 반영 — 코일 '+gp.c+'본 / 소요량 '+gp.b+'종 / 전표 '+gp.m+'건');
+
     if(info)info.textContent='수입검사 자료를 가져오는 중…';
     const a=await syncIqc(true);
     if(a)L.push('· 수입검사에서 코일 '+(a.add||0)+'본 새로 등록'
@@ -7549,6 +7631,11 @@ async function refreshAll(){
     L.push('· 생산실적으로 소재 사용량 '+(c?c.add:0)+'건 차감'
       +((c&&c.shN)?' (코일이 모자란 '+c.shN+'건 있음)':''));
   }catch(e){ L.push('· 오류: '+e.message); }
+  /* 내 기기 자료를 서버에 올려 다른 기기와 맞춘다 */
+  if(info)info.textContent='자료를 공유 저장하는 중…';
+  const okPush=await pushRaw(true);
+  L.push(okPush?'· 원소재 자료를 공유 저장했습니다 (PC·휴대폰 값이 같아집니다)'
+               :'· ⚠ 원소재 자료 공유 저장 실패 — 이 기기에만 저장되었습니다');
   render();
   const now=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
   S.refAt=now; save();
@@ -7571,6 +7658,178 @@ async function refreshAll(){
       +todo.map((x,i)=>'  '+(i+1)+'. '+x).join('\n')
       +'\n\n→ 화면 위쪽 붉은 안내 상자에 처리 버튼이 있습니다.'
       :'\n\n모두 정상입니다. 처리할 일이 없습니다.'));
+}
+
+
+
+/* ═══════ 휴대폰용 카드 목록 ═══════ */
+function mcCoil(c,i,n){
+  const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
+  const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
+  const bc=pct>=90?'#B3261E':(pct>=70?'#9A6400':'#2f6e49');
+  const mt2=mountOf(c.cno);
+  return `<tr><td onclick="openCoil(${i})">
+    <div class="mtitle"><span class="pn">${esc(c.cno)}</span>
+      <span class="tag" style="background:#EEF2F6;color:${sc}">${st}</span>
+      ${usable(c)?'':'<span class="tag" style="background:#FBE9E7;color:#B3261E">'+esc(c.iq)+'</span>'}
+      ${c.iq==='미등록'?'<span class="tag" style="background:#FFF3DC;color:#8A6D1F">보완</span>':''}</div>
+    <div class="mrow"><span>${esc(specNm(c))}</span><span>·</span><span>${esc(c.sup||'-')}</span></div>
+    <div class="mrow"><b class="mbig" style="color:${r>0.5?'#1A1A1A':'#93A0AB'}">${kg(r)}</b><span>kg 남음</span>
+      <span style="margin-left:auto">입고 ${kg(c.wt)} · 투입 ${used>0.05?kg(used):'-'}</span></div>
+    <div class="mbar"><i style="width:${Math.min(100,pct).toFixed(0)}%;background:${bc}"></i></div>
+    <div class="mrow"><span>${esc(c.d||'')}</span>
+      ${mt2?'<span style="color:#0B4F9E;font-weight:700">'+esc(mt2.nm||mt2.mc)+' 장착</span>':''}
+      ${c.lc?'<span>'+esc(c.lc)+'</span>':''}
+      <span style="margin-left:auto">${c.cert?esc(c.cert):'검사 미발행'}</span></div>
+  </td></tr>`;
+}
+function mcSup(o){
+  const bc=o.pct>=90?'#B3261E':(o.pct>=70?'#9A6400':'#2f6e49');
+  return `<tr><td>
+    <div class="mtitle"><span class="pn" style="font-family:var(--sans)">${esc(o.nm)}</span>
+      <span class="tag" style="background:#EEF2F6;color:#4a5968">${o.remN}코일 보유</span></div>
+    <div class="mrow"><b class="mbig">${kg(o.remKg)}</b><span>kg 재고</span>
+      <span style="margin-left:auto">입고 ${o.n}코일 · 반출 ${o.outN}코일</span></div>
+    <div class="mbar"><i style="width:${Math.min(100,o.pct).toFixed(0)}%;background:${bc}"></i></div>
+    <div class="mrow"><span>소진율 ${o.pct.toFixed(0)}%</span>
+      ${o.holdN?'<span style="color:#9A6400;font-weight:700">보류 '+o.holdN+'</span>':''}
+      ${o.mountN?'<span style="color:#0B4F9E;font-weight:700">장착 '+o.mountN+'</span>':''}
+      <span style="margin-left:auto">최근 ${esc(o.last||'-')}</span></div>
+    ${o.specs.slice(0,4).map(sp=>`<div class="mrow" style="padding-left:8px;border-top:1px dotted #dde3ea;padding-top:4px">
+      <span>└ ${esc(specNm(sp))}</span><b style="margin-left:auto">${kg(sp.remKg)} kg</b>
+      <span>(${sp.remN}코일)</span></div>`).join('')}
+  </td></tr>`;
+}
+function mcEq(e,x){
+  const run=/^R/i.test(e.st)||e.st==='가동';
+  const used=e.aq*e.ug/1000;
+  return `<tr><td>
+    <div class="mtitle"><span class="pn" style="font-family:var(--sans)">${esc(e.nm||e.mc)}</span>
+      <span class="tag" style="background:${run?'#E4F1EA':'#EEF2F6'};color:${run?'#0B6B3A':'#93A0AB'}">${run?'● 가동':'■ 정지'}</span></div>
+    <div class="mrow"><span>${esc(e.pn||'-')}</span><span>${esc(e.inm||'')}</span></div>
+    <div class="mrow"><span>${e.mt?esc(e.mt)+' '+tmm(e.t)+'t'+(e.w?' × '+nf(e.w)+'W':''):'규격 미상'}</span>
+      <span style="margin-left:auto">LOT ${esc(e.lot||'-')}</span></div>
+    <div class="mrow"><b class="mbig">${x.mesRem!=null?kg(x.mesRem):'-'}</b><span>kg 예상잔량</span>
+      <span style="margin-left:auto">실적 ${nf(e.aq)} · 사용 ${used?kg(used):'-'}kg</span></div>
+    <div class="mrow"><span>코일 ${e.ckg?kg(e.ckg):'-'}kg · 소요 ${e.ug?e.ug.toFixed(1):'-'}g</span>
+      <span style="margin-left:auto;color:${x.c?'#0B6B3A':'#B3261E'};font-weight:700">${e.lot?(x.c?'원장 등록':'원장 미등록'):''}</span></div>
+  </td></tr>`;
+}
+function mcRawCnt(c,i){
+  const sys=Math.round(remOf(c)*10)/10;
+  const has=c.ct!=null, g=has?Math.round(((+c.ct||0)-sys)*10)/10:null;
+  const ok=has&&Math.abs(g)<=0.05;
+  return `<tr style="${has?(ok?'border-color:#8ec5a3':'border-color:#e0a9a2'):''}"><td>
+    <div class="mtitle"><span class="pn">${esc(c.cno)}</span>
+      <span class="tag" style="background:#EEF2F6;color:#4a5968">${coilSt(c)}</span>
+      ${has?`<span class="tag" style="background:${ok?'#E4F1EA':'#FBE9E7'};color:${ok?'#0B6B3A':'#B3261E'}">${ok?'일치':(g>0?'과다 +'+kg(g):'부족 '+kg(g))}</span>`:''}</div>
+    <div class="mrow"><span>${esc(specNm(c))}</span><span>${esc(c.sup||'')}</span>
+      ${c.lc?'<span>'+esc(c.lc)+'</span>':''}</div>
+    <div class="mrow"><span>전산</span><b class="mbig">${kg(sys)}</b><span>kg</span></div>
+    <div class="mrow" style="margin-top:7px;gap:6px">
+      <input type="number" step="0.1" class="ce cnt-i" data-ci="${i}" value="${has?c.ct:''}"
+        placeholder="실사 잔량 kg" style="flex:1;min-width:90px;border:1px solid #c9d4e2;text-align:right;padding:8px">
+      <button class="btn" data-cnt="ok" data-ci="${i}" style="padding:8px 12px">있음</button>
+      <button class="btn r" data-cnt="no" data-ci="${i}" style="padding:8px 12px">없음</button></div>
+  </td></tr>`;
+}
+
+/* ═══════ 원소재 자료 기기 간 공유 ═══════
+   코일·수불·소요량은 지금까지 브라우저에만 저장돼 PC와 휴대폰 값이 달랐다.
+   Supabase kv_store 에 올려 두고 최신화할 때마다 합친다(항목별 최신본 우선). */
+const RAW_KEY='tj_raw_stock_v1';
+const rawHdr=pf=>{const o={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(pf)o.Prefer=pf; return o;};
+const nowIso=()=>new Date().toISOString();
+function touchRaw(o){ if(o)o.ua=nowIso(); rawDirty=true; schedRawPush(); }
+let rawDirty=false, rawBusy=false, rawTmr=null;
+function schedRawPush(){ clearTimeout(rawTmr); rawTmr=setTimeout(()=>pushRaw(true),2500); }
+/* 공유 대상: 코일 / 소요량 / 안전재고 / 사람이 만든 수불전표(자동차감은 각 기기에서 재계산) */
+function rawPayload(){
+  return {
+    v:1, ua:nowIso(),
+    coils:S.coils,
+    bom:S.bom,
+    msf:S.msf||{},
+    spec:S.spec||{}, lotDate:S.lotDate||{},
+    mled:S.mled.filter(m=>!m.auto),          /* 수기·실사·분할조정만 공유 */
+    cseq:S.cseq, mseq:S.mseq, iqcFrom:S.iqcFrom||''
+  };
+}
+async function pushRaw(silent){
+  if(rawBusy)return; rawBusy=true;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
+      {method:'POST',headers:rawHdr('return=minimal,resolution=merge-duplicates'),
+       body:JSON.stringify([{key:RAW_KEY,value:rawPayload(),updated_at:nowIso()}])});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    rawDirty=false;
+    if(!silent)toast('원소재 자료를 공유 저장했습니다');
+    return true;
+  }catch(e){
+    if(!silent)toast('원소재 공유 저장 실패: '+e.message);
+    console.warn('pushRaw:',e.message);
+    return false;
+  }finally{ rawBusy=false; }
+}
+/* 항목별 최신본 우선 병합 — 다른 기기에서 넣은 것도 살아남는다 */
+function mergeRaw(sv){
+  if(!sv||typeof sv!=='object')return {c:0,b:0,m:0};
+  let c=0,b=0,m=0;
+  /* 코일: 코일번호 기준 */
+  const byCno=new Map(S.coils.map(x=>[x.cno,x]));
+  (sv.coils||[]).forEach(r=>{
+    const mine=byCno.get(r.cno);
+    if(!mine){ S.coils.push(Object.assign({},r,{id:S.cseq++})); c++; return; }
+    if(String(r.ua||'')>String(mine.ua||'')){
+      const id=mine.id; Object.assign(mine,r,{id}); c++;
+    }
+  });
+  /* 소요량: 품번 기준 */
+  const byPn=new Map(S.bom.map(x=>[x.pn,x]));
+  (sv.bom||[]).forEach(r=>{
+    const mine=byPn.get(r.pn);
+    if(!mine){ S.bom.push(Object.assign({},r)); b++; return; }
+    if(String(r.ua||'')>String(mine.ua||'')){ Object.assign(mine,r); b++; }
+  });
+  /* 수기 수불전표: uid 기준 */
+  const uidOf=x=>x.uid||x.mk||(x.cno+'|'+x.d+'|'+x.k+'|'+x.q);
+  const have=new Set(S.mled.map(uidOf));
+  const cnoId=new Map(S.coils.map(x=>[x.cno,x.id]));
+  (sv.mled||[]).forEach(r=>{
+    const u=uidOf(r);
+    if(have.has(u))return;
+    const cid=cnoId.get(r.cno);
+    if(r.cid&&!cid)return;                    /* 대상 코일이 없으면 건너뜀 */
+    S.mled.push(Object.assign({},r,{id:S.mseq++,cid:cid||r.cid}));
+    have.add(u); m++;
+  });
+  /* 사전류는 합집합 */
+  S.spec=Object.assign({},sv.spec||{},S.spec||{});
+  S.lotDate=Object.assign({},sv.lotDate||{},S.lotDate||{});
+  S.msf=Object.assign({},sv.msf||{},S.msf||{});
+  if(sv.iqcFrom&&!S.iqcFrom)S.iqcFrom=sv.iqcFrom;
+  S.cseq=Math.max(S.cseq||1,...S.coils.map(x=>+x.id||0))+1;
+  S.mseq=Math.max(S.mseq||1,...S.mled.map(x=>+x.id||0))+1;
+  return {c,b,m};
+}
+async function pullRaw(silent){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+RAW_KEY+'&select=value,updated_at',
+      {headers:rawHdr()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(!j.length)return {c:0,b:0,m:0,none:true};
+    const g=mergeRaw(j[0].value);
+    if(g.c||g.b||g.m){ S.coils.sort((a,b2)=>String(a.d||'').localeCompare(String(b2.d||''))||a.id-b2.id);
+      save(); }
+    S.rawPullAt=j[0].updated_at;
+    if(!silent&&(g.c||g.b||g.m))toast('다른 기기 자료 반영 · 코일 '+g.c+' / 소요량 '+g.b+' / 전표 '+g.m);
+    return g;
+  }catch(e){
+    console.warn('pullRaw:',e.message);
+    return {err:e.message};
+  }
 }
 
 /* ═══════ MES 소재 규격 필드 추출 ═══════
@@ -7811,7 +8070,7 @@ document.addEventListener('change',e=>{
   }else if(f==='mt'){ c.mt=String(v).trim().toUpperCase(); }
   else if(f==='d'){ c.d=v||today(); }
   else { c[f]=String(v).trim(); }
-  lockField(c,f);
+  lockField(c,f); touchRaw(c);
   save(); autoBom(false); render();
   toast('저장되었습니다'+(LOCKABLE.includes(f)?' · 이 칸은 최신화해도 유지됩니다 🔒':''));
 });
@@ -9001,12 +9260,13 @@ function init(){
   if($('refreshInfo')&&S.refAt)$('refreshInfo').textContent='마지막 최신화 '+S.refAt;
   $('iqcFrom').onchange=()=>{S.iqcFrom=$('iqcFrom').value;save();};
   fillRawLists(); autoBom(false);
+  pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.map(p=>`<option value="${esc(p)}">`).join('');
   rDTabs(); render();
   syncMes(true);
 }
 load();init();
-window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);});
+window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if(rawDirty)pushRaw(true);});
 </script>
 
 
