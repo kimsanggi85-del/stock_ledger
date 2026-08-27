@@ -5071,8 +5071,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <span class="chip" data-rv="bom" onclick="setRV('bom')">원단위(BOM)</span>
     <span class="chip" data-rv="eq" onclick="setRV('eq')">설비 장착현황</span>
     <input id="rawQ" placeholder="코일No / 재질 / 품번 검색" class="kbi" style="width:170px;margin-left:8px">
-    <label style="margin-left:6px">연동 시작일</label>
-    <input type="date" id="iqcFrom" style="width:140px" title="이 날짜 이후 수입검사 합격분만 코일로 가져옵니다">
+    <label style="margin-left:6px">원소재 기초일자</label>
+    <input type="date" id="iqcFrom" style="width:140px" title="코일 연동 시작일이자 자동차감 대상 전표의 시작일입니다. 이 날짜 이전 생산분은 차감하지 않습니다">
     <select id="rawSt" class="fsel" style="min-width:110px">
       <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
       <option value="__hold">⛔ 검사대기·불합격(보류)</option>
@@ -5232,6 +5232,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           직접 등록한 원단위는 덮어쓰지 않습니다(출처 열에 [MES]/[수기] 표시).<br>
         · 설비에 현재 물려 있는 코일은 코일대장 <b>장착설비</b> 열에 표시되고, 자동차감 때 <b>그 코일이 최우선</b>으로
           배정됩니다(선입선출보다 우선). 실제 투입 코일과 원장이 어긋나지 않습니다.<br>
+        · <b>원소재 기초일자</b>는 코일을 가져오는 시작일이자 <b>자동차감 대상 생산입고 전표의 시작일</b>입니다.
+          이 날짜 이전 생산분은 그때 쓴 소재로 만든 것이므로 지금 코일에서 빼지 않습니다.
+          기초일자를 잘못 앞당기면 과거 생산량이 현재 코일을 전부 먹어 <b>잔량 0</b>이 되니, 코일 데이터가 있는 시점에 맞추세요.<br>
         · <b>🧪 수입검사 연동</b>을 누르면 원천 데이터의 <b>월별 분포와 빠진 달</b>이 함께 표시됩니다.
           특정 달이 통째로 비어 있으면 앱 문제가 아니라 <b>검사앱에 그 기간 소재입고 등록이 없는 것</b>입니다.<br>
         · 입고일(receipt_date)이 비어 있는 행은 <b>등록일(created_at)</b>로 대체해 가져오므로, 날짜 누락으로 통째로 빠지지 않습니다.<br>
@@ -6219,8 +6222,11 @@ function whyNoMatch(b){
   const ok=wd.filter(c=>usable(c)&&remOf(c)>0.01);
   if(!ok.length){
     const hd=wd.filter(c=>!usable(c)&&remOf(c)>0.5);
-    return hd.length?'규격은 맞으나 '+hd.length+'본이 검사대기·불합격으로 보류 상태입니다 (검사앱에서 판정 확정 필요)'
-                   :'규격은 맞으나 가용 잔량 0 (소진/반품)';}
+    if(hd.length)return '규격은 맞으나 '+hd.length+'본이 검사대기·불합격으로 보류 상태입니다 (검사앱에서 판정 확정 필요)';
+    const inKg=wd.reduce((a,c)=>a+(+c.wt||0),0);
+    const outKg=wd.reduce((a,c)=>a+((+c.wt||0)-remOf(c)),0);
+    return '규격은 맞으나 '+wd.length+'본 모두 소진 — 입고 '+kg(inKg)+'kg / 투입 '+kg(outKg)
+      +'kg. 기초일자('+rawBd()+') 이후 코일 입고가 생산량에 못 미칩니다';}
   return '';
 }
 /* 코일 잔량(kg) = 입고중량 + 입고전표 − 출고전표 */
@@ -6241,6 +6247,7 @@ function isDeadCoil(c){ return coilSt(c)!=='소진'&&coilSt(c)!=='반품'&&coilA
 /* ── 원단위 FIFO 자동차감 ─────────────────────────────────── */
 function autoBom(verbose){
   const bomOf=pn=>S.bom.find(b=>b.pn===pn&&+b.uw>0);
+  const BD=rawBd();
   /* 진단: 당월 생산입고가 있는데 원단위가 없는 품번 */
   const a0=mStart(), b0=mEnd(), NB=new Map();
   S.led.forEach(r=>{
@@ -6249,7 +6256,8 @@ function autoBom(verbose){
     NB.set(r.pn,(NB.get(r.pn)||0)+r.q);
   });
   S.diag={noBom:[...NB.entries()].sort((x,y)=>y[1]-x[1]),noCoil:[]};
-  const src=S.led.filter(r=>r.k==='생산입고'&&r.q>0&&bomOf(r.pn));
+  /* 기초일자 이전 생산분은 차감하지 않는다 (그 소재는 이미 소진된 별개 재고) */
+  const src=S.led.filter(r=>r.k==='생산입고'&&r.q>0&&r.d>=BD&&bomOf(r.pn));
   const M=new Map(src.map(r=>[r.id,r]));
   let del=0;
   for(let i=S.mled.length-1;i>=0;i--){
@@ -6291,6 +6299,7 @@ function autoBom(verbose){
   if(verbose){
     const L=[];
     L.push('자동차감 결과');
+    L.push('  · 차감 대상: 원소재 기초일자 '+BD+' 이후 생산입고 '+src.length+'건');
     L.push('  · 생성 '+add+'건'+(del?' / 재계산 '+del:''));
     L.push('  · 원단위 등록 품번: '+S.bom.filter(b=>+b.uw>0).length+'종');
     L.push('  · 코일: 총 '+S.coils.length+'본 / 가용 '
@@ -6415,6 +6424,15 @@ function rRaw(){
       +' — 가용재고·자동차감에서 제외됩니다. 검사앱에서 성적서를 발행한 뒤 <b>[🧪 수입검사 연동]</b>을 다시 누르면 풀립니다.'
       +'<div style="margin-top:5px">해당 LOT: <b>'+held.slice(0,8).map(c=>esc(c.cno)).join(', ')
       +(held.length>8?' 외 '+(held.length-8)+'본':'')+'</b></div>');
+  }
+  /* 기초일자 이전 생산분은 차감 대상이 아님을 알린다 */
+  {
+    const BD=rawBd();
+    let bq=0,bn=0;
+    S.led.forEach(r=>{ if(r.k==='생산입고'&&r.q>0&&r.d<BD){bq+=r.q;bn++;} });
+    if(bn)msgs.push('ℹ <b>원소재 기초일자 '+BD+'</b> — 그 이전 생산입고 '+bn+'건 / '+nf(bq)+' EA 는 '
+      +'<b>차감 대상이 아닙니다</b>. 그때 쓴 소재는 이 원장에 없는 별개 재고이기 때문입니다. '
+      +'기초일자를 앞당기면 그 기간 코일과 생산분이 함께 들어옵니다.');
   }
   /* 같은 LOT 이 두 번 등록된 경우 */
   const cnt={}; S.coils.forEach(c=>{const k=String(c.cno||'').replace(/#\d+$/,''); cnt[k]=(cnt[k]||0)+1;});
@@ -6790,6 +6808,9 @@ const IQC_URL='https://omngtyewdaqpphnzeate.supabase.co';
 const IQC_KEY='sb_publishable_9j2YkkL-7ul1TrhH-NjVdQ_vWDG2-1D';
 const IQC_TABLE='inspection_certs';
 const IQC_FROM_DEF='2026-05-01';
+/* 원소재 기초일자: 코일 연동 시작일이자 자동차감 대상 전표의 시작일.
+   이 날짜 이전 생산분은 그 전에 쓴 소재로 만든 것이므로 지금 재고에서 빼면 안 된다. */
+const rawBd=()=>S.iqcFrom||IQC_FROM_DEF;
 const fnum=v=>{const x=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,''));return isNaN(x)?0:x;};
 /* LOT 베이스: 26F12140-11-017B → 26F12140 */
 function lotBase(l){const s2=String(l||'').trim();const i=s2.indexOf('-');return i>=0?s2.slice(0,i):s2;}
@@ -6949,7 +6970,7 @@ async function syncIqc(silent){
       L.push('수입검사 연동 결과');
       L.push('  · 원천(inspection_certs) 전체 '+DG.total+'행');
       L.push('  · 데이터 기간: '+(DG.minD||'-')+' ~ '+(DG.maxD||'-'));
-      L.push('  · 연동 시작일 '+from+' 이후 '+DG.used+'건 채택 → 코일 '+DG.coils+'본');
+      L.push('  · 원소재 기초일자 '+from+' 이후 '+DG.used+'건 채택 → 코일 '+DG.coils+'본');
       L.push('  · 신규 '+add+(upd?' / 갱신 '+upd:'')+(del?' / 정리 '+del:''));
       L.push('  · 수요자 검사 발행분(iqc_inspections) '+insN+'건 조회');
       L.push('  · 판정 근거: 검사발행 '+insHit+'본 / 성적서판정만 '+noIns+'본');
@@ -6972,7 +6993,7 @@ async function syncIqc(silent){
           L.push('   → 이 기간은 수입검사 앱에 소재입고 등록이 안 된 것입니다.');
           L.push('     검사앱에 소급 입력하거나, [📥 코일 CSV 등록]으로 직접 넣으세요.');}
       }
-      if(DG.before)L.push('\n  · 연동 시작일 이전이라 건너뛴 행: '+DG.before+'건 (시작일을 앞당기면 들어옵니다)');
+      if(DG.before)L.push('\n  · 기초일자 이전이라 건너뛴 행: '+DG.before+'건 (기초일자를 앞당기면 들어옵니다)');
       if(DG.noDate)L.push('  · 입고일·등록일이 모두 없어 건너뛴 행: '+DG.noDate+'건');
       if(DG.dup)L.push('  · 같은 LOT@입고일 중복 적재로 제외한 행: '+DG.dup+'건');
       if(DG.noWt)L.push('  · 중량이 0인 행: '+DG.noWt+'건 (코일 중량이 0으로 등록됩니다)');
