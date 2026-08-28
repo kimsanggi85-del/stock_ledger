@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.1</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.2</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7227,6 +7227,7 @@ async function rTrc(){
 }
 /* ── 구간별 표 ── */
 function secCoil(coils){
+  coils=coils.filter(c=>!c.miss);   /* 대장에 없는 LOT 행(붉은 안내)은 표시하지 않는다 */
   return `<div class="trc-sec"><div class="trc-hd">① 소 재 입 고 (밀시트)<span class="n">${coils.length}코일</span></div>
    <div class="trc-box">${coils.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>코일 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>입고중량</th><th>잔량</th>
