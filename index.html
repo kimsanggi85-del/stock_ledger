@@ -5375,14 +5375,17 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
   <div class="guide">
     <span class="step">1</span>아래 칸에 <b>아무거나</b> 넣고 조회하세요 — 소재 LOT·HEAT·제품 품번·제품 LOT(생산일자)·출하일자 모두 됩니다.
-    &nbsp;·&nbsp; <span class="step">2</span><b>소재 → 제품</b>(이 소재가 어디로 갔나)와 <b>제품 → 소재</b>(이 제품이 뭘로 만들어졌나)를 자동으로 판단합니다.
+    &nbsp;·&nbsp; <span class="step">2</span>결과는 언제나 <b>① 소재입고 → ② 생산 → ③ 출하</b> 순으로 나옵니다.
     &nbsp;·&nbsp; <span class="step">3</span>고객 클레임 시 <b>출하일 + 품번</b>으로 찾으면 밀시트까지 한 번에 나옵니다.
+    <br><span style="color:#8A6D1F">※ 출하 전표에 거래처가 없어 <b>품번 규칙</b>으로 고객사를 표시합니다 —
+    [🏢 고객사 규칙]에서 확인·수정하세요.</span>
   </div>
 
   <div class="fbar">
     <input id="trcQ" placeholder="예: SP38425-3 · SP38425 · 1952-0056-01 · 260818 · 2026-08-27"
       style="flex:1;min-width:220px;font-size:13px">
     <button class="btn k" onclick="rTrc()">🔍 추적</button>
+    <button class="btn" onclick="openCust()" title="출하 전표에 거래처가 없을 때 품번으로 고객사를 정합니다">🏢 고객사 규칙</button>
     <div class="rt">
       <label>기간</label>
       <input type="date" id="trcF" style="width:140px">
@@ -5606,11 +5609,45 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
 
     <div class="hs">
-      <h3>6. 데이터 보관</h3>
+      <h3>6. LOT 추적</h3>
+      <div class="hint" style="font-size:12px;color:#41556a">
+        · <b>LOT 추적</b> 탭에서 소재 LOT · HEAT · 제품 품번 · 제품 LOT(생산일자 6자리) · 출하일자 중 아무거나 넣으면
+          방향을 자동으로 판단해 <b>밀시트 ↔ 생산 ↔ 출하</b>를 이어 보여줍니다.<br>
+        · 연결 근거는 이렇습니다 — 생산입고 전표의 <b>LOT 칸에 그날 투입한 소재 LOT</b>, <b>거래처 칸에 설비 호기</b>가 들어옵니다.
+          출하 전표의 <b>LOT 칸은 제품 LOT = 생산일자(YYMMDD)</b>이며 <b>260818/19</b> 처럼 여러 날이 묶일 수 있습니다.<br>
+        · 고객 클레임 시 <b>출하일자 + 품번</b>으로 조회하면 그 물량이 어느 생산일·어느 설비·어느 코일·어느 밀시트에서 나왔는지 한 번에 확인됩니다.<br>
+        · <b>고객사</b>는 ① 출하 전표의 거래처 → ② 품목 마스터의 고객 → ③ <b>품번 규칙</b> 순으로 정합니다.
+          출하의뢰서에서 거래처가 넘어오지 않아 규칙으로 보완하며, [🏢 고객사 규칙]에서 확인·수정할 수 있습니다.<br>
+        · 결재란이 있는 <b>LOT 추적서</b>로 인쇄되고 엑셀로도 저장됩니다.
+      </div>
+    </div>
+
+    <div class="hs">
+      <h3>7. 데이터 보관</h3>
       <div class="hint" style="font-size:12px;color:#41556a">· 데이터는 이 브라우저(PC)에 저장됩니다. 다른 PC나 브라우저에서는 보이지 않으므로 <b>백업 파일로 이동</b>하세요.<br>· 브라우저 데이터 삭제 시 함께 삭제됩니다. MES 자동전표는 동기화로 복구되지만 수동 전표·실사값·품목 설정은 백업이 있어야 복구됩니다.<br>· 월말 마감 순서: 실사 → 조정전표 → 총괄표 인쇄(결재) → 엑셀 저장 → 백업</div>
     </div>
   </div>
 </div>
+
+<!-- 고객사 규칙 -->
+<div class="mask" id="mCust"><div class="modal" style="max-width:560px">
+  <h3>고객사 판정 규칙<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:9px">
+      · 출하의뢰서에서 거래처가 넘어오지 않아, <b>품번으로 고객사를 정합니다</b>.<br>
+      · 판정 순서: ① 출하 전표의 거래처 → ② 품목 마스터의 고객 → ③ 아래 규칙<br>
+      · 한 줄에 <b>품번패턴=고객사</b> 형식. <b>*</b> 는 앞자리만 맞추면 되고, <b>*</b> 한 글자는 나머지 전부를 뜻합니다.<br>
+      · 위에서부터 먼저 맞는 규칙이 적용되므로 <b>*=일진</b> 같은 기본값은 맨 아래에 두세요.
+    </div>
+    <div class="fld"><label>규칙 (한 줄에 하나)</label>
+      <textarea id="custTxt" rows="6" oninput="cuPreview()" style="width:100%;border:1px solid var(--line);
+        padding:9px;font-family:var(--mono);font-size:12px;resize:vertical"></textarea></div>
+    <div style="font-size:11.5px;color:#6b7885;margin:8px 0 4px">적용 결과 미리보기</div>
+    <div style="background:#F7FAFD;border:1px solid #c9d4e2;border-radius:4px;padding:9px 11px;
+      font-size:11.5px;max-height:200px;overflow:auto" id="custPre"></div>
+    <div class="act"><button class="btn k" onclick="saveCust()">저장</button></div>
+  </div>
+</div></div>
 
 <!-- 사급 소재 -->
 <div class="mask" id="mFree"><div class="modal" style="max-width:560px">
@@ -6815,6 +6852,58 @@ function applyCoilCount(){
 
 
 
+
+/* ═══════ 고객사 판정 ═══════
+   출하 전표에 거래처가 비어 있고 품목 마스터도 일부만 채워져 있어,
+   ① 출하 전표의 거래처 → ② 품목 마스터의 고객 → ③ 품번 규칙 순으로 정한다. */
+const CUST_RULE_DEF='IW/OW-*=SKF씰\n45631-*=부강스프링\n54610-*=세동\n*=일진';
+function custRules(){
+  return String(S.custRule==null?CUST_RULE_DEF:S.custRule).split(/\n|;/)
+    .map(l=>l.trim()).filter(Boolean).map(l=>{
+      const i=l.lastIndexOf('=');
+      return i<0?null:{pat:l.slice(0,i).trim().toUpperCase(),cu:l.slice(i+1).trim()};
+    }).filter(x=>x&&x.pat&&x.cu);
+}
+function custByRule(pn){
+  const k=String(pn||'').trim().toUpperCase();
+  for(const r of custRules()){
+    if(r.pat==='*')return r.cu;
+    if(r.pat.endsWith('*')){ if(k.startsWith(r.pat.slice(0,-1)))return r.cu; }
+    else if(k===r.pat)return r.cu;
+  }
+  return '';
+}
+/* 출하 전표 한 건의 고객사 */
+function custOf(r){
+  const p2=String((r&&r.p)||'').trim();
+  if(p2&&!/^\d+$/.test(p2))return p2;                 /* 숫자만이면 설비코드라 제외 */
+  const it=S.items.find(x=>x.pn===(r&&r.pn));
+  if(it&&String(it.cu||'').trim())return String(it.cu).trim();
+  return custByRule(r&&r.pn)||'';
+}
+/* ── 고객사 규칙 관리 ── */
+function openCust(){
+  $('custTxt').value=custRules().map(r=>r.pat+'='+r.cu).join('\n');
+  cuPreview();
+  $('mCust').classList.add('on');
+}
+function cuPreview(){
+  const save0=S.custRule; S.custRule=$('custTxt').value;
+  const M=new Map();
+  S.items.forEach(i=>{ if(isExcl&&isExcl(i.pn))return;
+    const c=custOf({pn:i.pn})||'(미지정)';
+    if(!M.has(c))M.set(c,[]); M.get(c).push(i.pn); });
+  S.custRule=save0;
+  $('custPre').innerHTML=[...M.entries()].sort((a,b)=>b[1].length-a[1].length)
+    .map(([c,ps])=>`<div style="margin-bottom:4px"><b>${esc(c)}</b> ${ps.length}품목
+      <span style="color:#7d8b99">${ps.slice(0,6).map(esc).join(', ')}${ps.length>6?' 외':''}</span></div>`).join('');
+}
+function saveCust(){
+  S.custRule=$('custTxt').value.split('\n').map(x=>x.trim()).filter(Boolean).join('\n');
+  save(); rawDirty=true; schedRawPush(); render(); closeAll();
+  toast('고객사 판정 규칙을 저장했습니다');
+}
+
 /* ═══════════════════════════════════════════════════════════════
    LOT 추적
    · 생산입고 전표의 lot = 그날 투입한 소재 LOT (여러 개면 콤마), party = 설비 호기
@@ -6928,31 +7017,31 @@ function rTrc(){
   }
   const dir=trcDir(key);
   $('t_dir').textContent=dir==='fwd'?'소재 → 제품 (정추적)':'제품 → 소재 (역추적)';
-  const H=[];
-  if(dir==='fwd'){
-    const {coils,prod,ships}=traceFwd(key);
-    H.push(secCoil(coils));
-    H.push(secProd(prod,false));
-    H.push(secShip(ships,true));
-    if(!coils.length&&!prod.length)
-      H.push('<div class="trc-empty">해당 소재 LOT 으로 생산·출하 기록을 찾지 못했습니다. HEAT 만 넣어보세요.</div>');
-  }else{
-    const {ships,prod,coils}=traceBack(key);
-    H.push(secShip(ships,false));
-    H.push(secProd(prod,true));
-    H.push(secCoilPair(coils));
-    if(!ships.length&&!prod.length)
-      H.push('<div class="trc-empty">해당 제품·일자로 기록을 찾지 못했습니다. 품번이나 출하일자를 확인하세요.</div>');
+  /* 조회 방향과 무관하게 화면은 언제나 소재입고 → 생산 → 출하 순으로 보여준다 */
+  let coils,prod,ships;
+  if(dir==='fwd'){ ({coils,prod,ships}=traceFwd(key)); }
+  else{
+    const R=traceBack(key);
+    prod=R.prod; ships=R.ships;
+    coils=R.coils.map(({lot,c})=>c||{cno:lot,miss:1,wt:0,t:0,w:0});
   }
+  const H=[secCoil(coils),secProd(prod,dir!=='fwd'),secShip(ships,dir==='fwd')];
+  if(!coils.length&&!prod.length&&!ships.length)
+    H.push('<div class="trc-empty">기록을 찾지 못했습니다.<br>'
+      +'소재 LOT · HEAT · 제품 품번 · 제품 LOT(생산일자 6자리) · 출하일자 로 다시 조회해 보세요.</div>');
   $('trcBody').innerHTML=H.join('');
 }
 /* ── 구간별 표 ── */
 function secCoil(coils){
-  return `<div class="trc-sec"><div class="trc-hd">① 소 재 (밀시트)<span class="n">${coils.length}코일</span></div>
+  return `<div class="trc-sec"><div class="trc-hd">① 소 재 입 고 (밀시트)<span class="n">${coils.length}코일</span></div>
    <div class="trc-box">${coils.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>코일 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>입고중량</th><th>잔량</th>
       <th>공급업체</th><th>입고일</th><th>검사 성적서</th><th>검사일</th><th>판정</th></tr></thead><tbody>
-    ${coils.map(c=>`<tr>
+    ${coils.map(c=>c.miss?`<tr style="background:#FDECEA">
+      <td class="l" style="font-weight:700">${esc(c.cno)}</td>
+      <td class="l" colspan="10" style="font-family:var(--sans);color:#B3261E">
+        코일대장에 없는 LOT — 수입검사 등록이 빠졌거나 사급 소재입니다</td></tr>`
+     :`<tr>
       <td class="l" style="font-weight:700">${esc(c.cno)}</td><td class="l">${esc(c.ms||'')}</td>
       <td class="c" style="font-family:var(--sans)">${esc(c.mt||'')}</td>
       <td class="c" style="font-family:var(--sans)">${tmm(c.t)}t${c.w?' × '+nf(c.w)+'W':''}</td>
@@ -6962,28 +7051,11 @@ function secCoil(coils){
       <td class="l">${esc(c.cert||'-')}</td><td class="c">${esc(c.ins||'-')}</td>
       <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':'#0B6B3A'}">${esc(c.iq||'')}</td>
     </tr>`).join('')}</tbody></table></div></div>`
-   :'<div class="trc-empty">해당 코일이 원장에 없습니다.</div>'}</div></div>`;
-}
-function secCoilPair(pairs){
-  return `<div class="trc-sec"><div class="trc-hd">③ 사 용 소 재 (밀시트 역추적)<span class="n">${pairs.length}LOT</span></div>
-   <div class="trc-box">${pairs.length?`<div class="gw"><div class="scroll"><table class="t">
-    <thead><tr><th>소재 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>공급업체</th><th>소재 입고일</th>
-      <th>검사 성적서</th><th>검사일</th><th>판정</th></tr></thead><tbody>
-    ${pairs.map(({lot,c})=>`<tr>
-      <td class="l" style="font-weight:700">${esc(lot)}</td>
-      <td class="l">${c?esc(c.ms||''):'<span style="color:#B3261E">원장 없음</span>'}</td>
-      <td class="c" style="font-family:var(--sans)">${c?esc(c.mt||''):''}</td>
-      <td class="c" style="font-family:var(--sans)">${c?(tmm(c.t)+'t'+(c.w?' × '+nf(c.w)+'W':'')):''}</td>
-      <td class="l" style="font-family:var(--sans)">${c?esc(c.sup||''):''}</td>
-      <td class="c">${c?esc(c.d||''):''}</td>
-      <td class="l">${c?esc(c.cert||'-'):''}</td><td class="c">${c?esc(c.ins||'-'):''}</td>
-      <td class="c" style="font-family:var(--sans);font-weight:700">${c?esc(c.iq||''):''}</td>
-    </tr>`).join('')}</tbody></table></div></div>`
-   :'<div class="trc-empty">생산 전표에 소재 LOT 이 없습니다.</div>'}</div></div>`;
+   :'<div class="trc-empty">연결된 소재 기록이 없습니다.</div>'}</div></div>`;
 }
 function secProd(prod,back){
   const P=prod.slice().sort((a,b)=>a.d.localeCompare(b.d));
-  return `<div class="trc-sec"><div class="trc-hd">② 생 산<span class="n">${P.length}건 · ${nf(P.reduce((a,r)=>a+r.q,0))} EA</span></div>
+  return `<div class="trc-sec"><div class="trc-hd">② 생 산 (투입 · 설비)<span class="n">${P.length}건 · ${nf(P.reduce((a,r)=>a+r.q,0))} EA</span></div>
    <div class="trc-box">${P.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>생산일자</th><th>제품 LOT</th><th>제품 품번</th><th>품명</th><th>수량(EA)</th>
       <th>설비</th><th>투입 소재 LOT</th>${back?'<th>출하일</th>':''}</tr></thead><tbody>
@@ -7001,7 +7073,7 @@ function secProd(prod,back){
 }
 function secShip(ships,fwd){
   const X=ships.slice().sort((a,b)=>a.d.localeCompare(b.d));
-  return `<div class="trc-sec"><div class="trc-hd">${fwd?'③':'①'} 출 하<span class="n">${X.length}건 · ${nf(X.reduce((a,r)=>a+r.q,0))} EA</span></div>
+  return `<div class="trc-sec"><div class="trc-hd">③ 출 하 (고객 납품)<span class="n">${X.length}건 · ${nf(X.reduce((a,r)=>a+r.q,0))} EA</span></div>
    <div class="trc-box">${X.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>출하일자</th><th>제품 품번</th><th>품명</th><th>고객</th><th>수량(EA)</th>
       <th>제품 LOT(생산일자)</th>${fwd?'<th>해당 생산일</th>':''}<th>비고</th></tr></thead><tbody>
@@ -7009,7 +7081,8 @@ function secShip(ships,fwd){
       return `<tr>
       <td class="c">${r.d}</td><td class="l" style="font-weight:700">${esc(r.pn)}</td>
       <td class="l" style="font-family:var(--sans)">${esc(it.nm||'')}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(r.p||it.cu||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${(c2=>c2?esc(c2)
+        :'<span style="color:#B3261E">미지정</span>')(custOf(r))}</td>
       <td>${nf(r.q)}</td>
       <td class="l">${parseShipLots(r.lot).map(l=>esc(l)).join(' / ')||esc(r.lot||'')}</td>
       ${fwd?'<td class="c">'+esc(r.src||'')+'</td>':''}
@@ -7025,14 +7098,13 @@ function exportTrc(){
   const T=(nm,h,rows)=>`<table><tr><th colspan="${h.length}" style="background:#1F3864;color:#fff">${nm}</th></tr>
     <tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>
     ${rows.map(r=>'<tr>'+r.map(v=>`<td>${v==null?'':v}</td>`).join('')+'</tr>').join('')}</table>`;
-  const coils=dir==='fwd'?R.coils:R.coils.map(x=>x.c).filter(Boolean);
-  const c1=T('① 소재(밀시트)',['코일LOT','HEAT','재질','두께','폭','입고중량kg','공급업체','입고일','성적서','검사일','판정'],
+  const coils=dir==='fwd'?R.coils:R.coils.map(x=>x.c||{cno:x.lot,t:0,w:0,wt:0});
+  const c1=T('① 소재입고 (밀시트)',['코일LOT','HEAT','재질','두께','폭','입고중량kg','공급업체','입고일','성적서','검사일','판정'],
     coils.map(c=>[c.cno,c.ms||'',c.mt||'',+c.t,+c.w,+c.wt,c.sup||'',c.d||'',c.cert||'',c.ins||'',c.iq||'']));
-  const c2=T('② 생산',['생산일자','제품LOT','품번','수량EA','설비','투입 소재LOT'],
+  const c2=T('② 생산 (투입·설비)',['생산일자','제품LOT','품번','수량EA','설비','투입 소재LOT'],
     R.prod.map(r=>[r.d,ymd6(r.d),r.pn,r.q,eqName(r.p),prodLots(r).join(' / ')]));
-  const c3=T('③ 출하',['출하일자','품번','고객','수량EA','제품LOT'],
-    R.ships.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{cu:''};
-      return [r.d,r.pn,r.p||it.cu||'',r.q,parseShipLots(r.lot).join(' / ')];}));
+  const c3=T('③ 출하 (고객 납품)',['출하일자','품번','고객','수량EA','제품LOT'],
+    R.ships.map(r=>[r.d,r.pn,custOf(r),r.q,parseShipLots(r.lot).join(' / ')]));
   const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;margin-bottom:18px}'
     +'td,th{border:1px solid #999;padding:3px 6px;font-size:11px;font-family:맑은 고딕}'
     +'th{background:#DCE3EF;font-weight:700}</style></head><body>'
@@ -8494,6 +8566,7 @@ function rawPayload(){
     spec:S.spec||{}, lotDate:S.lotDate||{},
     mled:S.mled.filter(m=>!m.auto),          /* 수기·실사·분할조정만 공유 */
     del:S.rawDel||{}, supAlias:S.supAlias||{}, freeMat:S.freeMat==null?FREE_DEF:S.freeMat,
+    custRule:S.custRule==null?CUST_RULE_DEF:S.custRule,
     cseq:S.cseq, mseq:S.mseq, iqcFrom:S.iqcFrom||''
   };
 }
@@ -8532,6 +8605,7 @@ function mergeRaw(sv){
   if(sv.supAlias&&Object.keys(sv.supAlias).length&&!Object.keys(S.supAlias||{}).length)
     S.supAlias=sv.supAlias;
   if(sv.freeMat!=null&&S.freeMat==null)S.freeMat=sv.freeMat;
+  if(sv.custRule!=null&&S.custRule==null)S.custRule=sv.custRule;
   /* 코일: 코일번호 기준 */
   const byCno=new Map(S.coils.map(x=>[x.cno,x]));
   (sv.coils||[]).forEach(r=>{
@@ -9866,7 +9940,7 @@ const SUB={
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
-  trc:[['🔍','추적','rTrc()','pri'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
+  trc:[['🔍','추적','rTrc()','pri'],['🏢','고객사','openCust()'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
   raw:[['🔄','최신화','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
