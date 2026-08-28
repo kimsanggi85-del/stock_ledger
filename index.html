@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.0</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.1</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7087,17 +7087,8 @@ async function loadShipHist(force){
   if(shipBusy)return SHIP_H;
   if(!force&&SHIP_H&&Date.now()-SHIP_AT<10*60*1000)return SHIP_H;
   shipBusy=true;
-  const tryKey=async key=>{
-    const out=[]; const step=5000;
-    for(let off=0;off<40000;off+=step){
-      /* 컬럼을 지정하지 않는다 — 출하의뢰서 앱 버전에 따라 destination 등이 없을 수 있다 */
-      const r=await fetch(IQC_URL+'/rest/v1/shipment_history?select=*&order=reg_date.asc&limit='+step+'&offset='+off,
-        {headers:{apikey:key,Authorization:'Bearer '+key}});
-      if(!r.ok)throw new Error('HTTP '+r.status+' '+(await r.text()).slice(0,120));
-      const j=await r.json(); out.push(...j); if(j.length<step)break;
-    }
-    return out;
-  };
+  /* 컬럼을 지정하지 않는다 — 출하의뢰서 앱 버전에 따라 destination 등이 없을 수 있다 */
+  const tryKey=key=>fetchAll(IQC_URL+'/rest/v1/shipment_history?select=*&order=reg_date.asc,id.asc',{apikey:key,Authorization:'Bearer '+key});
   try{
     let rows;
     try{ rows=await tryKey(IQC_KEY); }catch(e){ rows=await tryKey(DF_KEY); }
@@ -10212,11 +10203,13 @@ function syncSince(){
   return ds.length?ds[0]:'2020-01-01';
 }
 /* 5000건 초과분까지 모두 가져오는 페이지 조회 */
+/* Supabase(PostgREST)는 한 번에 최대 1,000행만 준다 — 5,000을 요청해도 1,000에서 잘리므로 1,000씩 끝까지 넘긴다.
+   (이 때문에 전표가 1~2월 1,000건까지만 들어오고 최근 이력이 통째로 빠져 있었다) */
 async function fetchAll(url,hd,cap){
-  const out=[]; const step=5000; cap=cap||60000;
+  const out=[]; const step=1000; cap=cap||200000;
   for(let off=0;off<cap;off+=step){
-    const r=await fetch(url+'&limit='+step+'&offset='+off,{headers:hd});
-    if(!r.ok)throw new Error('HTTP '+r.status);
+    const r=await fetch(url+'&limit='+step+'&offset='+off,{headers:Object.assign({Range:off+'-'+(off+step-1),'Range-Unit':'items'},hd)});
+    if(!r.ok&&r.status!==206)throw new Error('HTTP '+r.status);
     const j=await r.json(); out.push(...j);
     if(j.length<step)break;
   }
