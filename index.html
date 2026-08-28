@@ -87,7 +87,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .gw .scroll{overflow:auto}
 .t.fix{table-layout:fixed}
 .t.fix th,.t.fix td{overflow:hidden}
-#tRaw.w-coil{min-width:1680px}
+#tRaw.w-coil{min-width:1770px}
 #tRaw.w-eq{min-width:1420px}
 #tRaw.w-sup{min-width:1180px}
 #tRaw.w-spec{min-width:1020px}
@@ -5271,7 +5271,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="d"><span>재고 부족 규격</span><b id="r5">0</b><em>규격</em></div>
     <div><span>프레스에 물린</span><b id="r6">0</b><em>코일</em></div>
     <div class="w"><span>검사 등록 빠짐</span><b id="r8">0</b><em>코일</em></div>
-    <div class="w"><span>90일 넘은 코일</span><b id="r7">0</b><em>코일</em></div>
+    <div class="w"><span>사용연한 임박·초과</span><b id="r7">0</b><em>코일</em></div>
   </div>
 
   <div class="guide">
@@ -5598,7 +5598,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
           업체 행 아래에 규격별 소계가 붙습니다. 엑셀에도 첫 시트로 들어갑니다.<br>
         · <b>설비 장착현황</b> 화면에서 설비별 <b>MES 예상잔량(코일중량 − 실적×소요g)</b>과 <b>원장 잔량</b>을 나란히 대조합니다.
           차이가 크면 원단위나 투입전표를 점검하세요.<br>
-        · <b>📥 코일 CSV 등록</b>: 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
+        · <b>사용연한</b>은 재질로 자동 계산합니다 — <b>SPCC 60일 · 430 계열 180일 · 304 계열 360일</b>.
+          코일 목록에 마감일과 <b>D-일수</b>가 표시되고, 14일 이내면 주황·초과하면 빨강으로 뜹니다.
+          코일을 열어 마감일을 직접 지정할 수도 있습니다.<br>
+        · <b>📥 코일 CSV 등록</b>: 코일번호를 비우면 <b>밀시트-롤번호</b>(260109/01S7639327-3)로 자동 부여되어
+          MES 의 LOT 과 그대로 맞물립니다. 비고에 <b>사용연한YYYY-MM-DD</b> 를 넣으면 그 값이 마감일로 들어갑니다.<br> 수입검사 앱에 성적서가 아직 없는 기간은 엑셀로 직접 넣습니다.
           양식은 <b>입고일,코일No,재질,두께,폭,중량kg,조수,공급업체,밀시트/LOT,보관위치,비고</b> 이며,
           <b>조수</b>를 2 이상 넣으면 그 수만큼 코일로 분할하고 중량을 균등 배분합니다.
           코일No를 비우면 <b>밀시트-폭W-조번호</b>로 자동 부여되고, 이미 있는 코일No는 건너뜁니다.<br>
@@ -5729,6 +5733,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <option value="합격">합격</option><option value="특채">특채</option><option value="미등록">수입검사 미등록 (보완분)</option><option value="대기">검사대기 (투입 보류)</option><option value="불합격">불합격 (격리)</option></select></div></div>
     <div class="g2">
       <div class="fld"><label>보관위치</label><input id="cLc" style="font-family:var(--sans)" placeholder="예: 코일장 A-3"></div>
+      <div class="fld"><label>사용연한 마감일</label><input type="date" id="cDue"
+        title="비우면 재질 기준으로 자동 계산합니다 (SPCC 60일 · 430 180일 · 304 360일)"></div></div>
+    <div class="g2">
       <div class="fld"><label>상태</label><select id="cSt" style="font-family:var(--sans)">
         <option>대기</option><option>사용중</option><option>소진</option><option>반품</option></select></div></div>
     <div class="fld"><label>비고</label><input id="cN" style="font-family:var(--sans)"></div>
@@ -7065,10 +7072,10 @@ function secCoil(coils){
   return `<div class="trc-sec"><div class="trc-hd">① 소 재 입 고 (밀시트)<span class="n">${coils.length}코일</span></div>
    <div class="trc-box">${coils.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>코일 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>입고중량</th><th>잔량</th>
-      <th>공급업체</th><th>입고일</th><th>검사 성적서</th><th>검사일</th><th>판정</th></tr></thead><tbody>
+      <th>공급업체</th><th>입고일</th><th>검사 성적서</th><th>검사일</th><th>사용연한</th><th>판정</th></tr></thead><tbody>
     ${coils.map(c=>c.miss?`<tr style="background:#FDECEA">
       <td class="l" style="font-weight:700">${esc(c.cno)}</td>
-      <td class="l" colspan="10" style="font-family:var(--sans);color:#B3261E">
+      <td class="l" colspan="11" style="font-family:var(--sans);color:#B3261E">
         코일대장에 없는 LOT — 수입검사 등록이 빠졌거나 사급 소재입니다</td></tr>`
      :`<tr>
       <td class="l" style="font-weight:700">${esc(c.cno)}</td><td class="l">${esc(c.ms||'')}</td>
@@ -7078,6 +7085,7 @@ function secCoil(coils){
       <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
       <td class="c">${esc(c.d||'')}</td>
       <td class="l">${esc(c.cert||'-')}</td><td class="c">${esc(c.ins||'-')}</td>
+      <td class="c ${dueCls(dueLeft(c))}">${esc(dueOf(c)||'-')}</td>
       <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':'#0B6B3A'}">${esc(c.iq||'')}</td>
     </tr>`).join('')}</tbody></table></div></div>`
    :'<div class="trc-empty">연결된 소재 기록이 없습니다.</div>'}</div></div>`;
@@ -7145,6 +7153,36 @@ function exportTrc(){
   dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),'LOT추적_'+key.replace(/[^\w가-힣-]/g,'')+'_'+today().replace(/-/g,'')+'.xls');
   toast('LOT 추적서를 내려받았습니다');
 }
+
+
+/* ═══════ 소재 사용연한 ═══════
+   현행 관리대장 기준 — SPCC 60일 · 430 계열 180일 · 304(STS) 계열 360일 */
+const LIFE_DEF='SPCC=60,SPH=60,SGA=60,430=180,STS430=180,SUS430=180,304=360,STS304=360,SUS304=360,316=360';
+function lifeDays(mt){
+  const k=String(mt||'').toUpperCase().replace(/[\s\-_]/g,'');
+  const L=String(S.lifeRule==null?LIFE_DEF:S.lifeRule).split(',').map(x=>x.trim()).filter(Boolean);
+  for(const e of L){
+    const i=e.lastIndexOf('='); if(i<0)continue;
+    const pat=e.slice(0,i).toUpperCase().replace(/[\s\-_]/g,''), v=+e.slice(i+1)||0;
+    if(pat&&v&&k.includes(pat))return v;
+  }
+  return 60;                                   /* 모르면 가장 짧게 잡는다 */
+}
+/* 코일의 사용연한 마감일 */
+function dueOf(c){
+  if(!c)return '';
+  if(c.due)return c.due;
+  if(!c.d)return '';
+  const t=new Date(c.d); if(isNaN(t))return '';
+  t.setDate(t.getDate()+lifeDays(c.mt));
+  return t.toISOString().slice(0,10);
+}
+/* 마감까지 남은 일수 (음수면 초과) */
+function dueLeft(c){
+  const d=dueOf(c); if(!d)return null;
+  return Math.round((new Date(d)-new Date(today()))/864e5);
+}
+const dueCls=v=>v==null?'':(v<0?'neg':(v<=14?'wn':''));
 
 /* ═══════ 사급(고객 지급) 소재 ═══════
    고객이 지급한 소재는 우리 재고가 아니므로 집계·차감·경고에서 모두 뺀다.
@@ -7359,7 +7397,8 @@ function rRaw(){
   let freeN=0;
   S.coils.forEach(c=>{const r=remOf(c);
     if(isOff(c)){ if(r>0.5&&isFree(c))freeN++; return; }   /* 사급·무의미 코일은 재고에서 뺀다 */
-    if(usable(c)&&r>0.5){nC++;rem+=r;} if(isDeadCoil(c))dead++;});
+    if(usable(c)&&r>0.5){nC++;rem+=r;}
+    if(r>0.5){const L=dueLeft(c); if(L!=null&&L<=14)dead++;}});
   S.coils.forEach(c=>{if(!isOff(c)&&c.st!=='반품'&&c.d>=a&&c.d<=b)iq+=(+c.wt||0);});
   S.mled.forEach(m=>{if(m.d<a||m.d>b)return; if(mKindIO(m.k)==='I')iq+=m.q; else if(m.k==='생산투입')oq+=m.q;});
   const SP=specAgg(), nShort=SP.filter(o=>o.sf>0&&o.gap<0).length;
@@ -7445,6 +7484,23 @@ function rRaw(){
     if(bad.length)msgs.push('⚠ <b>성적서와 LOT이 어긋난 코일 '+bad.length+'본 / '+kg(bad.reduce((a2,c)=>a2+remOf(c),0))+' kg</b>'
       +' — 수입검사 앱의 묶음 성적서를 잘못 펼쳐 만들어진 코일입니다. 재고가 실제보다 부풀려집니다. &nbsp;'
       +'<button class="btn r" style="padding:3px 10px;font-size:11px" onclick="rebuildIqc()">🔁 코일 다시 만들기</button>');
+  }
+  /* 사용연한 임박·초과 */
+  {
+    const over=[],soon=[];
+    S.coils.forEach(c=>{ if(isOff(c)||remOf(c)<=0.5)return;
+      const L=dueLeft(c); if(L==null)return;
+      if(L<0)over.push(c); else if(L<=14)soon.push(c); });
+    if(over.length||soon.length){
+      const kgs=a2=>kg(a2.reduce((x,c)=>x+remOf(c),0));
+      msgs.push('⏳ <b>사용연한 관리</b>'
+        +(over.length?' · <b style="color:#B3261E">초과 '+over.length+'본 / '+kgs(over)+' kg</b>':'')
+        +(soon.length?' · <b style="color:#9A6400">14일 이내 '+soon.length+'본 / '+kgs(soon)+' kg</b>':'')
+        +' — SPCC 60일 · 430 계열 180일 · 304 계열 360일 기준입니다. 초과분은 재검토 후 사용하세요.'
+        +'<div style="margin-top:5px"><b>'
+        +over.concat(soon).slice(0,8).map(c=>esc(c.cno)+' ('+dueOf(c)+')').join(', ')
+        +(over.length+soon.length>8?' 외 '+(over.length+soon.length-8)+'본':'')+'</b></div>');
+    }
   }
   /* 코일번호가 비어 있는 행 */
   {
@@ -7563,10 +7619,10 @@ function rRaw(){
       <col style="width:58px"><col style="width:60px"><col style="width:80px"><col style="width:70px">
       <col style="width:78px"><col style="width:50px"><col style="width:56px"><col style="width:72px">
       <col style="width:104px"><col style="width:100px"><col style="width:124px"><col style="width:124px">
-      <col style="width:96px"><col style="width:48px"><col style="width:170px"></colgroup>
+      <col style="width:96px"><col style="width:48px"><col style="width:86px"><col style="width:170px"></colgroup>
       <thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
-      <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>비고</th></tr></thead><tbody>`
+      <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>사용연한</th><th>비고</th></tr></thead><tbody>`
      +(R.length?R.map(({c,i},n)=>{
         const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
         const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
@@ -7596,13 +7652,15 @@ function rRaw(){
             +(m2.pn?'<div style="font-size:9px;color:#888">'+esc(m2.pn)+'</div>':''):'')(mountOf(c.cno))}</td>
          <td class="l" style="padding:0">${E('lc',c.lc,'class="ce l" style="font-family:var(--sans)" placeholder="보관위치"')}</td>
          <td class="${isDeadCoil(c)?'wn':''}">${coilAge(c)}</td>
+         <td class="c ${dueCls(dueLeft(c))}" style="font-size:10.5px">${(v=>{const d2=dueOf(c);
+            return d2?esc(d2)+(v==null?'':'<div style="font-size:9px">'+(v<0?'초과 '+(-v)+'일':'D-'+v)+'</div>'):'-';})(dueLeft(c))}</td>
          <td class="l" style="padding:0">${isFree(c)?'<span style="background:#EDE7F6;color:#5B4B8A;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700">사급</span>':''}${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span>':''}
            ${E('n',c.n,'class="ce l" style="font-family:var(--sans);font-size:10.5px"')}</td></tr>`;
-       }).join(''):`<tr><td colspan="19" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
+       }).join(''):`<tr><td colspan="20" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
        <td>${kg(R.reduce((s2,{c})=>s2+(+c.wt||0),0))}</td>
        <td>${kg(R.reduce((s2,{c})=>s2+((+c.wt||0)-remOf(c)),0))}</td>
-       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="10"></td></tr></tfoot>`;
+       <td>${kg(R.reduce((s2,{c})=>s2+remOf(c),0))}</td><td colspan="11"></td></tr></tfoot>`;
   }
 
   else if(RV==='spec'){
@@ -7867,9 +7925,10 @@ function openCoil(i){
   $('coT').firstChild.textContent=n?'코일 입고 등록':'코일 정보 수정';
   $('cIdx').value=i;
   [['cD','d'],['cNo','cno'],['cMt','mt'],['cT','t'],['cW','w'],['cWt','wt'],['cSup','sup'],
-   ['cMs','ms'],['cIq','iq'],['cLc','lc'],['cSt','st'],['cN','n']].forEach(([f,k])=>$(f).value=c[k]==null?'':c[k]);
+   ['cMs','ms'],['cIq','iq'],['cLc','lc'],['cSt','st'],['cDue','due'],['cN','n']].forEach(([f,k])=>$(f).value=c[k]==null?'':c[k]);
   $('cInfo').innerHTML=n?'코일 1본 단위로 등록합니다. 잔량은 수불전표로 자동 계산됩니다.'
-    :`잔량 <b>${kg(remOf(c))}</b> kg · 상태 <b>${coilSt(c)}</b> · 경과 ${coilAge(c)}일`;
+    :`잔량 <b>${kg(remOf(c))}</b> kg · 상태 <b>${coilSt(c)}</b> · 경과 ${coilAge(c)}일`
+      +(dueOf(c)?` · 사용연한 <b>${dueOf(c)}</b> (${(v=>v<0?'초과 '+(-v)+'일':'D-'+v)(dueLeft(c))})`:'');
   $('cDel').style.display=n?'none':'';
   const LN={mt:'재질',t:'두께',w:'폭',wt:'입고중량',iq:'검사',sup:'공급업체'};
   const lks=String(c.lk||'').split(',').filter(Boolean);
@@ -7893,7 +7952,8 @@ function saveCoil(){
   if(dup&&!confirm('같은 코일 No.가 이미 있습니다. 그래도 등록할까요?'))return;
   const o={d:$('cD').value||today(),cno,mt:$('cMt').value.trim().toUpperCase(),
     t:+$('cT').value||0,w:+$('cW').value||0,wt:+$('cWt').value||0,sup:$('cSup').value.trim(),
-    ms:$('cMs').value.trim(),iq:$('cIq').value,lc:$('cLc').value.trim(),st:$('cSt').value,n:$('cN').value.trim()};
+    ms:$('cMs').value.trim(),iq:$('cIq').value,lc:$('cLc').value.trim(),st:$('cSt').value,
+    due:$('cDue').value||'',n:$('cN').value.trim()};
   if(i<0){const nc=Object.assign({id:S.cseq++},o); S.coils.push(nc); touchRaw(nc);}
   else{
     const ex=S.coils[i];
@@ -8018,8 +8078,8 @@ function exportRaw(){
   const T=(nm,h,rows)=>`<table><tr><th colspan="${h.length}" style="background:#1F3864;color:#fff">${nm}　기준월 ${ym}</th></tr>
     <tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>
     ${rows.map(r=>'<tr>'+r.map(v=>`<td style="${typeof v==='number'?'text-align:right':''}">${v}</td>`).join('')+'</tr>').join('')}</table>`;
-  const c1=T('원소재 코일대장',['입고일','코일No','재질','두께t','폭W','입고중량kg','투입kg','잔량kg','상태','검사','공급업체','MILL SHEET','위치','경과일','비고'],
-    S.coils.map(c=>[c.d,c.cno,c.mt,+c.t,+c.w,+c.wt,+((+c.wt)-remOf(c)).toFixed(2),remOf(c),coilSt(c),c.iq||'',c.sup||'',c.ms||'',c.lc||'',coilAge(c),c.n||'']));
+  const c1=T('원소재 코일대장',['입고일','코일No','재질','두께t','폭W','입고중량kg','투입kg','잔량kg','상태','검사','공급업체','MILL SHEET','위치','경과일','사용연한','잔여일','비고'],
+    S.coils.map(c=>[c.d,c.cno,c.mt,+c.t,+c.w,+c.wt,+((+c.wt)-remOf(c)).toFixed(2),remOf(c),coilSt(c),c.iq||'',c.sup||'',c.ms||'',c.lc||'',coilAge(c),dueOf(c),dueLeft(c),c.n||'']));
   const c2=T('규격별 재고',['재질','두께t','폭W','보유코일','재고kg','당월입고kg','당월투입kg','안전재고kg','과부족'],
     specAgg().map(o=>[o.mt,o.t,o.w,o.n,+o.rem.toFixed(1),+o.iq.toFixed(1),+o.oq.toFixed(1),o.sf,+o.gap.toFixed(1)]));
   const a=mStart(),b=mEnd();
@@ -8598,7 +8658,7 @@ function rawPayload(){
     spec:S.spec||{}, lotDate:S.lotDate||{},
     mled:S.mled.filter(m=>!m.auto),          /* 수기·실사·분할조정만 공유 */
     del:S.rawDel||{}, supAlias:S.supAlias||{}, freeMat:S.freeMat==null?FREE_DEF:S.freeMat,
-    custRule:S.custRule==null?CUST_RULE_DEF:S.custRule,
+    custRule:S.custRule==null?CUST_RULE_DEF:S.custRule, lifeRule:S.lifeRule==null?LIFE_DEF:S.lifeRule,
     cseq:S.cseq, mseq:S.mseq, iqcFrom:S.iqcFrom||''
   };
 }
@@ -8638,6 +8698,7 @@ function mergeRaw(sv){
     S.supAlias=sv.supAlias;
   if(sv.freeMat!=null&&S.freeMat==null)S.freeMat=sv.freeMat;
   if(sv.custRule!=null&&S.custRule==null)S.custRule=sv.custRule;
+  if(sv.lifeRule!=null&&S.lifeRule==null)S.lifeRule=sv.lifeRule;
   /* 코일: 코일번호 기준 */
   const byCno=new Map(S.coils.map(x=>[x.cno,x]));
   (sv.coils||[]).forEach(r=>{
@@ -9138,6 +9199,10 @@ $('fCoil').onchange=async e=>{
   const txt=(await readText(f)).replace(/^\ufeff/,'');
   const lines=txt.split(/\r?\n/).filter(l=>l.trim());
   let add=0, dup=0, err=[];
+  /* 같은 밀시트가 여러 줄에 나오면 롤번호를 이어서 매긴다 (한 HEAT 를 여러 폭으로 슬릿한 경우) */
+  const seq={};
+  S.coils.forEach(c=>{ const m2=String(c.cno||'').match(/^(.*)-(\d+)$/);
+    if(m2)seq[m2[1]]=Math.max(seq[m2[1]]||0,+m2[2]); });
   lines.forEach((l,ln)=>{
     const p=l.split(/[,\t;]/).map(x=>x.trim().replace(/^"|"$/g,''));
     if(!p[0]||/입고일|일자|date/i.test(p[0]))return;         /* 헤더 */
@@ -9151,11 +9216,15 @@ $('fCoil').onchange=async e=>{
     const sup=p[7]||'', ms=p[8]||'', lc=p[9]||'', note=p[10]||'';
     for(let i=1;i<=cut;i++){
       let cno=(p[1]||'').trim();
-      if(!cno) cno=(ms||mt)+'-'+(w||0)+'W-'+p2(i);
-      else if(cut>1) cno=cno+'-'+p2(i);
+      /* 코일번호를 비우면 밀시트-롤번호 (MES LOT 과 같은 형식: 260109/01S7639327-3) */
+      if(!cno){ const b=(ms||mt); seq[b]=(seq[b]||0)+1; cno=b+'-'+seq[b]; }
+      else if(cut>1) cno=cno+'-'+i;
       if(S.coils.some(c=>c.cno===cno)){dup++;continue;}
-      S.coils.push({id:S.cseq++,d:pad3(d),cno,mt,t,w,wt:each,sup,ms,iq:'합격',
-        lc,st:'대기',n:note});
+      const cd=pad3(d);
+      const dm=String(note||'').match(/사용연한\s*(\d{4}-\d{2}-\d{2})/);
+      S.coils.push({id:S.cseq++,d:cd,cno,mt,t,w,wt:each,sup,ms,iq:'합격',
+        lc,st:'대기',n:String(note||'').replace(/\s*사용연한\s*\d{4}-\d{2}-\d{2}/,'').trim(),
+        due:dm?dm[1]:'',ua:nowIso()});
       add++;
     }
   });
