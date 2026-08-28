@@ -5374,15 +5374,15 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <button class="btn" onclick="exportTrc()">엑셀</button></div></div>
 
   <div class="guide">
-    <span class="step">1</span>아래 칸에 <b>아무거나</b> 넣고 조회하세요 — 소재 LOT·HEAT·제품 품번·제품 LOT(생산일자)·출하일자 모두 됩니다.
+    <span class="step">1</span>아래 칸에 <b>아무거나</b> 넣고 조회하세요 — 소재 LOT·HEAT·제품 품번·<b>금형제번</b>·<b>기종명</b>·제품 LOT(생산일자)·출하일자 모두 됩니다.
     &nbsp;·&nbsp; <span class="step">2</span>결과는 언제나 <b>① 소재입고 → ② 생산 → ③ 출하</b> 순으로 나옵니다.
     &nbsp;·&nbsp; <span class="step">3</span>고객 클레임 시 <b>출하일 + 품번</b>으로 찾으면 밀시트까지 한 번에 나옵니다.
-    <br><span style="color:#8A6D1F">※ 출하 전표에 거래처가 없어 <b>품번 규칙</b>으로 고객사를 표시합니다 —
-    [🏢 고객사 규칙]에서 확인·수정하세요.</span>
+    <br><span style="color:#41556a">※ 고객사·기종명·금형제번은 <b>품번 마스터</b>(2026년 소재입고/출하현황 기준, 47품번)에서 가져옵니다.
+    거기에 없는 품번은 [🏢 고객사 규칙]으로 보완합니다.</span>
   </div>
 
   <div class="fbar">
-    <input id="trcQ" placeholder="예: SP38425-3 · SP38425 · 1952-0056-01 · 260818 · 2026-08-27"
+    <input id="trcQ" placeholder="예: SP38425-3 · 1952-0056-01 · 18DHA215A · JA PACK · 260818 · 2026-08-27"
       style="flex:1;min-width:220px;font-size:13px">
     <button class="btn k" onclick="rTrc()">🔍 추적</button>
     <button class="btn" onclick="openCust()" title="출하 전표에 거래처가 없을 때 품번으로 고객사를 정합니다">🏢 고객사 규칙</button>
@@ -5616,8 +5616,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · 연결 근거는 이렇습니다 — 생산입고 전표의 <b>LOT 칸에 그날 투입한 소재 LOT</b>, <b>거래처 칸에 설비 호기</b>가 들어옵니다.
           출하 전표의 <b>LOT 칸은 제품 LOT = 생산일자(YYMMDD)</b>이며 <b>260818/19</b> 처럼 여러 날이 묶일 수 있습니다.<br>
         · 고객 클레임 시 <b>출하일자 + 품번</b>으로 조회하면 그 물량이 어느 생산일·어느 설비·어느 코일·어느 밀시트에서 나왔는지 한 번에 확인됩니다.<br>
-        · <b>고객사</b>는 ① 출하 전표의 거래처 → ② 품목 마스터의 고객 → ③ <b>품번 규칙</b> 순으로 정합니다.
-          출하의뢰서에서 거래처가 넘어오지 않아 규칙으로 보완하며, [🏢 고객사 규칙]에서 확인·수정할 수 있습니다.<br>
+        · <b>고객사 · 기종명 · 금형제번</b>은 <b>품번 마스터</b>에서 가져옵니다.
+          2026년 소재입고/출하현황(SKF) 엑셀의 소재·생산일자·출하일자 시트에서 뽑은 47품번이 들어 있습니다
+          (예: 1952-0056-21 → SKF씰 · JA PACK SELA(F/L) · 18DHA215A).<br>
+        · 판정 순서는 ① 출하 전표의 거래처 → ② 품번 마스터 → ③ 품목 마스터의 고객 → ④ 품번 규칙 입니다.
+          마스터에 없는 품번은 [🏢 고객사 규칙]으로 보완하세요.<br>
+        · <b>금형제번</b>(18DHA215A)이나 <b>기종명</b>(JA PACK)으로도 추적할 수 있어, 금형 문제로 클레임이 들어와도 바로 찾습니다.<br>
         · 결재란이 있는 <b>LOT 추적서</b>로 인쇄되고 엑셀로도 저장됩니다.
       </div>
     </div>
@@ -6853,6 +6857,22 @@ function applyCoilCount(){
 
 
 
+
+/* ═══════ 품번 마스터 (고객사 · 기종명 · 금형제번 · 소재규격) ═══════
+   2026년 소재입고/출하현황(SKF) 엑셀의 소재·생산일자·출하일자 시트에서 뽑은 값.
+   [고객사, 기종명, 금형제번, 재질, 두께t, 폭W, 소요 g/EA]                     */
+const PMAP={"1960-0031-21":["SKF씰","CN7 FRT ES (FL)","19DHA204A","430.0",0.6,80.0,28.9],"AB3248-SC-01":["일진","9BUX","17IGA202A","304-2B",0.5,118.0,59.0],"1967-391":["SKF씰","IK/CK","16DHA206A","SPCC",0.6,112.0,54.9],"1951-386":["SKF씰","YB/RR","16DHA202A","SPCC",0.6,76.0,23.6],"1958-365-1":["SKF씰","MD-FRT","12DHA203A","SPCC",0.6,74.0,25.1],"1969-0030-01":["SKF씰","CN7 RR O/S","19DHA205A","SPCC",0.6,102.0,44.2],"1952-0056-21":["SKF씰","JA PACK SELA(F/L)","18DHA215A","430-2B",0.6,70.0,22.0],"1982-371":["SKF씰","GM","13DHA206A","SPCC",0.8,108.0,71.9],"1862-651":["SKF씰","MP(가공품)","15DHA207A","SPCC",0.6,90.0,35.1],"AT3037-GC-01":["일진","T1XX GREASE CAP","17IGA201A","304-2B",0.5,126.0,59.0],"1GE0-0009":["SKF씰","DX12 Rear Oil Seal","18DHA210A","SPCC",1.2,182.0,308.6],"1960-0031-01":["SKF씰","CN7 FRT ES (IN)","19DHA203A","SPCC",0.6,90.0,37.3],"1660-132":["SKF씰","L38 (가공품)","13DHA201A","SPCC",0.6,86.0,33.2],"1979-0051-01":["SKF씰","US4 RR OPEN SEAL","20DHA211A","SPCC",0.8,120.0,110.0],"1952-0056-01":["SKF씰","JA PACK SELA(I/N)","18DHA214A","SPCC",0.6,76.0,26.5],"1972-383":["SKF씰","HI","15DHA209A","SPCC",0.6,114.0,55.8],"1962-0030":["SKF씰","SU2 RR OPEN SEAL","18DHA202A","SPCC",0.6,94.0,37.2],"1551-189":["SKF씰","GAMMA(신형)","14DHA212A","SPCC",0.6,90.0,37.3],"1945-349-1":["SKF씰","RB","10DHA205A","SPCC",0.6,68.0,21.1],"1515-196":["SKF씰","X69F","16DHA205A","SPCC",0.9,64.0,24.9],"1952-367-2":["SKF씰","MX-FRT","12DHA212","304-2B",0.6,74.0,27.0],"1963-0055-02":["SKF씰","GSR FLINGER","18DHA225A","430-2B",0.6,84.0,31.9],"1888-0005(가공품)":["SKF씰","VS30 (CAP)","16DHA209A","304-J1",0.5,126.0,59.0],"1781-0001-00":["SKF씰","SK OPEN SEAL","17DHA205A","SPCC",0.6,110.0,52.8],"1968-0016-01":["SKF씰","LF-FRT(IN/S)","17DHA206A","SPCC",0.6,92.0,39.0],"1970-363":["SKF씰","비대칭베어링","11DHA212A","SPCC",0.6,94.0,41.6],"1654-119-1":["SKF씰","0060","1DHA103A","SPCC",0.6,80.0,22.1],"1654-119-2":["SKF씰","0060","200.0","304BA",0.5,75.0,29.0],"1861-596":["SKF씰","BMW PL7","10DHA214A","SPCC",0.6,94.0,40.7],"1976-0004-01":["SKF씰","RG3 ENCODER RING(I/N)","19DHA201A","SPCC",0.6,102.0,44.2],"1958-365-2":["SKF씰","MD-FRT","12DHA204A","304-2B",0.6,80.0,33.1],"1963-0055-01":["SKF씰","GSR INSERT","18DHA224A","SPCC",0.6,90.0,37.3],"1970-372-1":["SKF씰","GM","13DHA204A","SPCC",0.8,94.0,54.3],"1970-372-2":["SKF씰","GM","13DHA205A","430BA",0.6,86.0,34.7],"1858-619":["SKF씰","A/S용","10DHA239A","SPCC",0.6,80.0,31.3],"1946-0053-01":["SKF씰","B13 OPEN SEAL","19DHA206A","SPCC",0.6,92.0,35.5],"1972-383(2호)":["SKF씰","HI","15DHA209A","SPCC",0.6,114.0,55.8],"1888-0005":["SKF씰","VS30 (CAP)","16DHA209A","304-J1",0.5,126.0,59.0],"1660-131-2":["SKF씰","L38","12DHA213A","430BA",0.6,80.0,27.9],"1549-156":["SKF씰","GAMMA","10DHA209A","SPCC",0.6,86.0,34.0],"1870-602-1":["SKF씰","A/S용","10DHA223A","SPCC",0.6,94.0,39.8],"1870-602-2":["SKF씰","A/S용","10DHA224A","430BA",0.6,86.0,33.8],"1945-349-2":["SKF씰","RB","10DHA206A","430BA",0.6,60.0,16.7],"1664-128-2":["SKF씰","L43","12DHA207A","430BA",0.6,82.0,31.5],"1960-361":["SKF씰","BH - RR","12DHA216A","SPCC",0.8,78.0,37.2],"1861-597":["SKF씰","BMW PL7","10DHA215A","430BA",0.6,80.0,30.0],"1968-0016-02":["SKF씰","LF-FRT(F/L)","17DHA207A","430-2B",0.6,90.0,36.3]};
+function pinfo(pn){
+  const k=String(pn||'').trim();
+  let a=PMAP[k];
+  if(!a){                                  /* (가공품) 같은 꼬리표는 떼고 다시 */
+    const b=k.replace(/\(.*?\)\s*$/,'').trim();
+    a=PMAP[b];
+  }
+  if(!a)return null;
+  return {cu:a[0],model:a[1],mold:a[2],mt:a[3],t:+a[4]||0,w:+a[5]||0,uw:+a[6]||0};
+}
+
 /* ═══════ 고객사 판정 ═══════
    출하 전표에 거래처가 비어 있고 품목 마스터도 일부만 채워져 있어,
    ① 출하 전표의 거래처 → ② 품목 마스터의 고객 → ③ 품번 규칙 순으로 정한다. */
@@ -6877,6 +6897,8 @@ function custByRule(pn){
 function custOf(r){
   const p2=String((r&&r.p)||'').trim();
   if(p2&&!/^\d+$/.test(p2))return p2;                 /* 숫자만이면 설비코드라 제외 */
+  const pi=pinfo(r&&r.pn);
+  if(pi&&pi.cu)return pi.cu;                          /* 품번 마스터 */
   const it=S.items.find(x=>x.pn===(r&&r.pn));
   if(it&&String(it.cu||'').trim())return String(it.cu).trim();
   return custByRule(r&&r.pn)||'';
@@ -6970,7 +6992,10 @@ function traceBack(key){
     if(!inRange(r.d,R))return false;
     if(isDate)return r.d===K;
     if(is6)return parseShipLots(r.lot).includes(K);
-    return String(r.pn||'').toUpperCase()===K||String(r.pn||'').toUpperCase().includes(K);
+    const pu=String(r.pn||'').toUpperCase();
+    if(pu===K||pu.includes(K))return true;
+    const pi=pinfo(r.pn);                                  /* 금형제번·기종명으로도 찾는다 */
+    return !!pi&&(String(pi.mold||'').toUpperCase()===K||String(pi.model||'').toUpperCase().includes(K));
   });
   /* 출하 → 제품LOT(생산일자) → 생산입고 */
   const prod=[]; const seen=new Set();
@@ -6986,7 +7011,10 @@ function traceBack(key){
   });
   /* 제품LOT 없이 품번만 물었을 때는 생산 전표에서 바로 */
   if(!prod.length&&!isDate&&!is6){
-    S.led.forEach(r=>{ if(r.k==='생산입고'&&String(r.pn||'').toUpperCase().includes(K)&&inRange(r.d,R))prod.push(r); });
+    S.led.forEach(r=>{ if(r.k!=='생산입고'||!inRange(r.d,R))return;
+      const pu=String(r.pn||'').toUpperCase(), pi=pinfo(r.pn);
+      if(pu.includes(K)||(pi&&(String(pi.mold||'').toUpperCase()===K
+        ||String(pi.model||'').toUpperCase().includes(K))))prod.push(r); });
   }
   const lots=[...new Set(prod.flatMap(prodLots))];
   const coils=lots.map(l=>({lot:l,c:S.coils.find(c=>c.cno===l)||coilByLot(l)}));
@@ -7000,6 +7028,7 @@ function trcDir(key){
   if(S.coils.some(c=>String(c.cno||'').toUpperCase()===K||String(c.ms||'').toUpperCase()===K
      ||lotBase(String(c.cno||'').toUpperCase())===K))return 'fwd';
   if(S.items.some(i=>String(i.pn||'').toUpperCase()===K))return 'back';
+  if(Object.values(PMAP).some(a=>String(a[2]||'').toUpperCase()===K))return 'back';   /* 금형제번 */
   if(S.led.some(r=>r.k==='생산입고'&&prodLots(r).some(l=>l.toUpperCase()===K)))return 'fwd';
   return 'back';
 }
@@ -7057,13 +7086,14 @@ function secProd(prod,back){
   const P=prod.slice().sort((a,b)=>a.d.localeCompare(b.d));
   return `<div class="trc-sec"><div class="trc-hd">② 생 산 (투입 · 설비)<span class="n">${P.length}건 · ${nf(P.reduce((a,r)=>a+r.q,0))} EA</span></div>
    <div class="trc-box">${P.length?`<div class="gw"><div class="scroll"><table class="t">
-    <thead><tr><th>생산일자</th><th>제품 LOT</th><th>제품 품번</th><th>품명</th><th>수량(EA)</th>
+    <thead><tr><th>생산일자</th><th>제품 LOT</th><th>제품 품번</th><th>기종명</th><th>금형제번</th><th>수량(EA)</th>
       <th>설비</th><th>투입 소재 LOT</th>${back?'<th>출하일</th>':''}</tr></thead><tbody>
-    ${P.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:''};
+    ${P.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:''}, pi=pinfo(r.pn)||{};
       return `<tr>
       <td class="c">${r.d}</td><td class="c" style="font-weight:700">${ymd6(r.d)}</td>
       <td class="l" style="font-weight:700">${esc(r.pn)}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(it.nm||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(pi.model||it.nm||'')}</td>
+      <td class="c" style="font-weight:700;color:#0B4F9E">${esc(pi.mold||'')}</td>
       <td>${nf(r.q)}</td>
       <td class="c" style="font-family:var(--sans)">${esc(eqName(r.p))}</td>
       <td class="l">${prodLots(r).map(esc).join('<br>')}</td>
@@ -7075,12 +7105,12 @@ function secShip(ships,fwd){
   const X=ships.slice().sort((a,b)=>a.d.localeCompare(b.d));
   return `<div class="trc-sec"><div class="trc-hd">③ 출 하 (고객 납품)<span class="n">${X.length}건 · ${nf(X.reduce((a,r)=>a+r.q,0))} EA</span></div>
    <div class="trc-box">${X.length?`<div class="gw"><div class="scroll"><table class="t">
-    <thead><tr><th>출하일자</th><th>제품 품번</th><th>품명</th><th>고객</th><th>수량(EA)</th>
+    <thead><tr><th>출하일자</th><th>제품 품번</th><th>기종명</th><th>고객</th><th>수량(EA)</th>
       <th>제품 LOT(생산일자)</th>${fwd?'<th>해당 생산일</th>':''}<th>비고</th></tr></thead><tbody>
-    ${X.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:'',cu:''};
+    ${X.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:'',cu:''}, pi=pinfo(r.pn)||{};
       return `<tr>
       <td class="c">${r.d}</td><td class="l" style="font-weight:700">${esc(r.pn)}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(it.nm||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(pi.model||it.nm||'')}</td>
       <td class="l" style="font-family:var(--sans)">${(c2=>c2?esc(c2)
         :'<span style="color:#B3261E">미지정</span>')(custOf(r))}</td>
       <td>${nf(r.q)}</td>
@@ -7101,10 +7131,12 @@ function exportTrc(){
   const coils=dir==='fwd'?R.coils:R.coils.map(x=>x.c||{cno:x.lot,t:0,w:0,wt:0});
   const c1=T('① 소재입고 (밀시트)',['코일LOT','HEAT','재질','두께','폭','입고중량kg','공급업체','입고일','성적서','검사일','판정'],
     coils.map(c=>[c.cno,c.ms||'',c.mt||'',+c.t,+c.w,+c.wt,c.sup||'',c.d||'',c.cert||'',c.ins||'',c.iq||'']));
-  const c2=T('② 생산 (투입·설비)',['생산일자','제품LOT','품번','수량EA','설비','투입 소재LOT'],
-    R.prod.map(r=>[r.d,ymd6(r.d),r.pn,r.q,eqName(r.p),prodLots(r).join(' / ')]));
-  const c3=T('③ 출하 (고객 납품)',['출하일자','품번','고객','수량EA','제품LOT'],
-    R.ships.map(r=>[r.d,r.pn,custOf(r),r.q,parseShipLots(r.lot).join(' / ')]));
+  const c2=T('② 생산 (투입·설비)',['생산일자','제품LOT','품번','기종명','금형제번','수량EA','설비','투입 소재LOT'],
+    R.prod.map(r=>{const pi=pinfo(r.pn)||{};
+      return [r.d,ymd6(r.d),r.pn,pi.model||'',pi.mold||'',r.q,eqName(r.p),prodLots(r).join(' / ')];}));
+  const c3=T('③ 출하 (고객 납품)',['출하일자','품번','기종명','고객','수량EA','제품LOT'],
+    R.ships.map(r=>{const pi=pinfo(r.pn)||{};
+      return [r.d,r.pn,pi.model||'',custOf(r),r.q,parseShipLots(r.lot).join(' / ')];}));
   const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;margin-bottom:18px}'
     +'td,th{border:1px solid #999;padding:3px 6px;font-size:11px;font-family:맑은 고딕}'
     +'th{background:#DCE3EF;font-weight:700}</style></head><body>'
