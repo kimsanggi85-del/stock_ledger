@@ -94,6 +94,21 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 #tRaw.w-led{min-width:1000px}
 #tRaw.w-bom{min-width:1120px}
 #tRaw.w-cnt{min-width:1180px}
+/* LOT 추적 */
+.trc-sec{max-width:1400px;margin:0 auto 14px}
+.trc-hd{background:var(--hd);color:#fff;padding:7px 12px;font-size:12.5px;font-weight:800;
+  border-radius:3px 3px 0 0;display:flex;align-items:center;gap:8px}
+.trc-hd .n{background:rgba(255,255,255,.22);border-radius:99px;padding:1px 9px;font-size:11px}
+.trc-box{border:1px solid var(--line);border-top:0;background:#fff;padding:0}
+.trc-empty{padding:22px;text-align:center;color:#93A0AB;font-size:12px}
+.trc-chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;padding:12px;background:#F7FAFD}
+.trc-card{flex:1 1 260px;background:#fff;border:1px solid #c9d4e2;border-radius:5px;padding:10px 12px;min-width:0}
+.trc-card h4{margin:0 0 6px;font-size:11px;color:#5b6b7c;font-family:var(--sans);font-weight:800;letter-spacing:.5px}
+.trc-card .big{font-size:15px;font-weight:800;font-family:var(--mono);word-break:break-all}
+.trc-card .kv{display:flex;gap:6px;font-size:11.5px;margin-top:3px;color:#41556a}
+.trc-card .kv b{font-family:var(--mono)}
+.trc-arw{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:#8494a4;font-size:18px}
+@media(max-width:760px){ .trc-arw{flex:1 1 100%;height:18px;transform:rotate(90deg)} .trc-chain{padding:8px} }
 /* 가로 스크롤 중에도 No·코일번호는 붙어 있게 */
 #tRaw.w-coil th:nth-child(1),#tRaw.w-coil td:nth-child(1){position:sticky;left:0;z-index:4;background:#fff}
 #tRaw.w-coil th:nth-child(3),#tRaw.w-coil td:nth-child(3){position:sticky;left:34px;z-index:4;background:#fff;
@@ -670,6 +685,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div data-t="io"><span class="lg">입출고 내역</span><span class="sm">입출고</span></div>
   <div data-t="cnt" class="on"><span class="lg">재고실사표</span><span class="sm">실사</span></div>
   <div data-t="raw"><span class="lg">원소재 재고(코일)</span><span class="sm">원소재</span></div>
+  <div data-t="trc"><span class="lg">LOT 추적</span><span class="sm">추적</span></div>
   <div data-t="cfg"><span class="lg">품목 마스터</span><span class="sm">품목</span></div>
   <div data-t="help"><span class="lg">사용안내</span><span class="sm">안내</span></div>
   <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-08-27 09:00:21</span></span>
@@ -5351,6 +5367,41 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   </div>
 </div>
 
+<!-- ══ LOT 추적 ══ -->
+<div class="page" id="p-trc">
+  <div class="pt"><h2>LOT 추적</h2><span class="sub">TRACEABILITY · 소재 밀시트 ↔ 생산 ↔ 출하</span>
+    <div class="pa"><button class="btn" onclick="window.print()">인쇄</button>
+      <button class="btn" onclick="exportTrc()">엑셀</button></div></div>
+
+  <div class="guide">
+    <span class="step">1</span>아래 칸에 <b>아무거나</b> 넣고 조회하세요 — 소재 LOT·HEAT·제품 품번·제품 LOT(생산일자)·출하일자 모두 됩니다.
+    &nbsp;·&nbsp; <span class="step">2</span><b>소재 → 제품</b>(이 소재가 어디로 갔나)와 <b>제품 → 소재</b>(이 제품이 뭘로 만들어졌나)를 자동으로 판단합니다.
+    &nbsp;·&nbsp; <span class="step">3</span>고객 클레임 시 <b>출하일 + 품번</b>으로 찾으면 밀시트까지 한 번에 나옵니다.
+  </div>
+
+  <div class="fbar">
+    <input id="trcQ" placeholder="예: SP38425-3 · SP38425 · 1952-0056-01 · 260818 · 2026-08-27"
+      style="flex:1;min-width:220px;font-size:13px">
+    <button class="btn k" onclick="rTrc()">🔍 추적</button>
+    <div class="rt">
+      <label>기간</label>
+      <input type="date" id="trcF" style="width:140px">
+      <span>~</span>
+      <input type="date" id="trcT" style="width:140px">
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="doc-hd"><div class="doc-no">문서번호 <b>TJP-QP-0807</b><br>개정번호 <b>Rev.0</b></div>
+      <h1>L O T &nbsp; 추 적 서</h1>
+      <table class="appr"><tr><td class="v" rowspan="2">결<br>재</td><td class="t">담당</td><td class="t">검토</td><td class="t">승인</td></tr>
+        <tr><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td></tr></table></div>
+    <div class="doc-info"><span><b>조회 대상</b><i id="t_key">-</i></span><span><b>추적 방향</b><i id="t_dir">-</i></span>
+      <span><b>작성</b><i id="t_by">-</i></span><span><b>출력일시</b><i id="t_dt">-</i></span></div>
+    <div id="trcBody"></div>
+  </div>
+</div>
+
 <!-- ══ 마스터 ══ -->
 <div class="page" id="p-cfg">
   <div class="pt"><h2>품목 마스터</h2><span class="sub">ITEM MASTER · 품목 기준정보 관리</span><div class="pa"><button class="btn" onclick="rCfg()">조회</button></div></div>
@@ -6762,6 +6813,234 @@ function applyCoilCount(){
 }
 
 
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOT 추적
+   · 생산입고 전표의 lot = 그날 투입한 소재 LOT (여러 개면 콤마), party = 설비 호기
+   · 출하 전표의 lot = 제품 LOT = 생산일자(YYMMDD), 여러 날이면 260818/19 형태
+   → 소재 LOT ↔ 생산일 ↔ 제품 LOT ↔ 출하 를 양방향으로 잇는다.
+   ═══════════════════════════════════════════════════════════════ */
+/* "260818/19" → ['260818','260819'] · "260622/0710" → ['260622','260710'] */
+function parseShipLots(v){
+  const out=[];
+  String(v||'').split(/[\/,·]/).map(x=>x.trim()).filter(Boolean).forEach(t2=>{
+    const d=t2.replace(/\D/g,''); if(!d)return;
+    if(d.length>=6){ out.push(d.slice(0,6)); return; }
+    const prev=out[out.length-1];
+    if(!prev)return;
+    out.push(prev.slice(0,6-d.length)+d);       /* 앞자리는 직전 값에서 물려받는다 */
+  });
+  return [...new Set(out)];
+}
+const ymd6=d=>String(d||'').replace(/-/g,'').slice(2);        /* 2026-08-18 → 260818 */
+const d6to10=v=>{const d=String(v||'').replace(/\D/g,''); return d.length===6?'20'+d.slice(0,2)+'-'+d.slice(2,4)+'-'+d.slice(4,6):'';};
+/* 생산입고 전표의 소재 LOT 목록 */
+const prodLots=r=>String(r.lot||'').split(/[,·]/).map(x=>x.trim()).filter(Boolean);
+/* 설비 호기 → 이름 */
+function eqName(code){
+  const c=String(code||'').trim(); if(!c)return '';
+  const e=(S.eq||[]).find(x=>String(x.mc).replace(/^0+/,'')===c.replace(/^0+/,''));
+  return e?(e.nm||e.mc):c+'호기';
+}
+function trcRange(){
+  const f=$('trcF').value||'', t2=$('trcT').value||'';
+  return {f,t:t2};
+}
+const inRange=(d,R)=>(!R.f||d>=R.f)&&(!R.t||d<=R.t);
+
+/* 소재 → 제품 : 이 코일(또는 HEAT)이 어느 제품·어느 출하로 갔나 */
+function traceFwd(key){
+  const K=String(key||'').trim().toUpperCase();
+  const R=trcRange();
+  const coils=S.coils.filter(c=>{
+    const cn=String(c.cno||'').toUpperCase(), ms=String(c.ms||'').toUpperCase();
+    return cn===K||ms===K||lotBase(cn)===K||cn.startsWith(K);
+  });
+  const prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&
+    prodLots(r).some(l=>{const u=l.toUpperCase(); return u===K||lotBase(u)===K||u.startsWith(K);}));
+  /* 생산일자별 제품LOT → 출하 찾기 */
+  const ships=[];
+  prod.forEach(r=>{
+    const lot6=ymd6(r.d);
+    S.led.forEach(x=>{
+      if(x.k!=='출하'||x.pn!==r.pn)return;
+      if(!parseShipLots(x.lot).includes(lot6))return;
+      if(!ships.some(y=>y.id===x.id))ships.push(Object.assign({},x,{src:r.d}));
+    });
+  });
+  return {coils,prod,ships};
+}
+/* 제품 → 소재 : 이 제품(품번·제품LOT·출하일)이 무엇으로 만들어졌나 */
+function traceBack(key){
+  const K=String(key||'').trim().toUpperCase();
+  const R=trcRange();
+  const isDate=/^\d{4}-\d{2}-\d{2}$/.test(K), is6=/^\d{6}$/.test(K);
+  let ships=S.led.filter(r=>{
+    if(r.k!=='출하')return false;
+    if(!inRange(r.d,R))return false;
+    if(isDate)return r.d===K;
+    if(is6)return parseShipLots(r.lot).includes(K);
+    return String(r.pn||'').toUpperCase()===K||String(r.pn||'').toUpperCase().includes(K);
+  });
+  /* 출하 → 제품LOT(생산일자) → 생산입고 */
+  const prod=[]; const seen=new Set();
+  ships.forEach(x=>{
+    parseShipLots(x.lot).forEach(l6=>{
+      const d=d6to10(l6); if(!d)return;
+      S.led.forEach(r=>{
+        if(r.k!=='생산입고'||r.pn!==x.pn||r.d!==d)return;
+        const k2=r.id; if(seen.has(k2))return; seen.add(k2);
+        prod.push(Object.assign({},r,{ship:x.d,shipLot:l6}));
+      });
+    });
+  });
+  /* 제품LOT 없이 품번만 물었을 때는 생산 전표에서 바로 */
+  if(!prod.length&&!isDate&&!is6){
+    S.led.forEach(r=>{ if(r.k==='생산입고'&&String(r.pn||'').toUpperCase().includes(K)&&inRange(r.d,R))prod.push(r); });
+  }
+  const lots=[...new Set(prod.flatMap(prodLots))];
+  const coils=lots.map(l=>({lot:l,c:S.coils.find(c=>c.cno===l)||coilByLot(l)}));
+  return {ships,prod,coils};
+}
+/* 방향 자동 판단 */
+function trcDir(key){
+  const K=String(key||'').trim().toUpperCase();
+  if(!K)return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(K)||/^\d{6}$/.test(K))return 'back';
+  if(S.coils.some(c=>String(c.cno||'').toUpperCase()===K||String(c.ms||'').toUpperCase()===K
+     ||lotBase(String(c.cno||'').toUpperCase())===K))return 'fwd';
+  if(S.items.some(i=>String(i.pn||'').toUpperCase()===K))return 'back';
+  if(S.led.some(r=>r.k==='생산입고'&&prodLots(r).some(l=>l.toUpperCase()===K)))return 'fwd';
+  return 'back';
+}
+
+function rTrc(){
+  const key=$('trcQ').value.trim();
+  $('t_by').textContent=S.user||'-';
+  $('t_dt').textContent=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
+  $('t_key').textContent=key||'-';
+  if(!key){
+    $('t_dir').textContent='-';
+    $('trcBody').innerHTML='<div class="trc-empty">추적할 값을 입력하고 [🔍 추적]을 누르세요.<br>'
+      +'소재 LOT · HEAT · 제품 품번 · 제품 LOT(생산일자 6자리) · 출하일자 모두 됩니다.</div>';
+    return;
+  }
+  const dir=trcDir(key);
+  $('t_dir').textContent=dir==='fwd'?'소재 → 제품 (정추적)':'제품 → 소재 (역추적)';
+  const H=[];
+  if(dir==='fwd'){
+    const {coils,prod,ships}=traceFwd(key);
+    H.push(secCoil(coils));
+    H.push(secProd(prod,false));
+    H.push(secShip(ships,true));
+    if(!coils.length&&!prod.length)
+      H.push('<div class="trc-empty">해당 소재 LOT 으로 생산·출하 기록을 찾지 못했습니다. HEAT 만 넣어보세요.</div>');
+  }else{
+    const {ships,prod,coils}=traceBack(key);
+    H.push(secShip(ships,false));
+    H.push(secProd(prod,true));
+    H.push(secCoilPair(coils));
+    if(!ships.length&&!prod.length)
+      H.push('<div class="trc-empty">해당 제품·일자로 기록을 찾지 못했습니다. 품번이나 출하일자를 확인하세요.</div>');
+  }
+  $('trcBody').innerHTML=H.join('');
+}
+/* ── 구간별 표 ── */
+function secCoil(coils){
+  return `<div class="trc-sec"><div class="trc-hd">① 소 재 (밀시트)<span class="n">${coils.length}코일</span></div>
+   <div class="trc-box">${coils.length?`<div class="gw"><div class="scroll"><table class="t">
+    <thead><tr><th>코일 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>입고중량</th><th>잔량</th>
+      <th>공급업체</th><th>입고일</th><th>검사 성적서</th><th>검사일</th><th>판정</th></tr></thead><tbody>
+    ${coils.map(c=>`<tr>
+      <td class="l" style="font-weight:700">${esc(c.cno)}</td><td class="l">${esc(c.ms||'')}</td>
+      <td class="c" style="font-family:var(--sans)">${esc(c.mt||'')}</td>
+      <td class="c" style="font-family:var(--sans)">${tmm(c.t)}t${c.w?' × '+nf(c.w)+'W':''}</td>
+      <td>${kg(c.wt)}</td><td>${kg(remOf(c))}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
+      <td class="c">${esc(c.d||'')}</td>
+      <td class="l">${esc(c.cert||'-')}</td><td class="c">${esc(c.ins||'-')}</td>
+      <td class="c" style="font-family:var(--sans);font-weight:700;color:${c.iq==='불합격'?'#B3261E':'#0B6B3A'}">${esc(c.iq||'')}</td>
+    </tr>`).join('')}</tbody></table></div></div>`
+   :'<div class="trc-empty">해당 코일이 원장에 없습니다.</div>'}</div></div>`;
+}
+function secCoilPair(pairs){
+  return `<div class="trc-sec"><div class="trc-hd">③ 사 용 소 재 (밀시트 역추적)<span class="n">${pairs.length}LOT</span></div>
+   <div class="trc-box">${pairs.length?`<div class="gw"><div class="scroll"><table class="t">
+    <thead><tr><th>소재 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>공급업체</th><th>소재 입고일</th>
+      <th>검사 성적서</th><th>검사일</th><th>판정</th></tr></thead><tbody>
+    ${pairs.map(({lot,c})=>`<tr>
+      <td class="l" style="font-weight:700">${esc(lot)}</td>
+      <td class="l">${c?esc(c.ms||''):'<span style="color:#B3261E">원장 없음</span>'}</td>
+      <td class="c" style="font-family:var(--sans)">${c?esc(c.mt||''):''}</td>
+      <td class="c" style="font-family:var(--sans)">${c?(tmm(c.t)+'t'+(c.w?' × '+nf(c.w)+'W':'')):''}</td>
+      <td class="l" style="font-family:var(--sans)">${c?esc(c.sup||''):''}</td>
+      <td class="c">${c?esc(c.d||''):''}</td>
+      <td class="l">${c?esc(c.cert||'-'):''}</td><td class="c">${c?esc(c.ins||'-'):''}</td>
+      <td class="c" style="font-family:var(--sans);font-weight:700">${c?esc(c.iq||''):''}</td>
+    </tr>`).join('')}</tbody></table></div></div>`
+   :'<div class="trc-empty">생산 전표에 소재 LOT 이 없습니다.</div>'}</div></div>`;
+}
+function secProd(prod,back){
+  const P=prod.slice().sort((a,b)=>a.d.localeCompare(b.d));
+  return `<div class="trc-sec"><div class="trc-hd">② 생 산<span class="n">${P.length}건 · ${nf(P.reduce((a,r)=>a+r.q,0))} EA</span></div>
+   <div class="trc-box">${P.length?`<div class="gw"><div class="scroll"><table class="t">
+    <thead><tr><th>생산일자</th><th>제품 LOT</th><th>제품 품번</th><th>품명</th><th>수량(EA)</th>
+      <th>설비</th><th>투입 소재 LOT</th>${back?'<th>출하일</th>':''}</tr></thead><tbody>
+    ${P.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:''};
+      return `<tr>
+      <td class="c">${r.d}</td><td class="c" style="font-weight:700">${ymd6(r.d)}</td>
+      <td class="l" style="font-weight:700">${esc(r.pn)}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(it.nm||'')}</td>
+      <td>${nf(r.q)}</td>
+      <td class="c" style="font-family:var(--sans)">${esc(eqName(r.p))}</td>
+      <td class="l">${prodLots(r).map(esc).join('<br>')}</td>
+      ${back?'<td class="c">'+esc(r.ship||'')+'</td>':''}</tr>`;}).join('')}
+    </tbody></table></div></div>`
+   :'<div class="trc-empty">해당 생산 기록이 없습니다.</div>'}</div></div>`;
+}
+function secShip(ships,fwd){
+  const X=ships.slice().sort((a,b)=>a.d.localeCompare(b.d));
+  return `<div class="trc-sec"><div class="trc-hd">${fwd?'③':'①'} 출 하<span class="n">${X.length}건 · ${nf(X.reduce((a,r)=>a+r.q,0))} EA</span></div>
+   <div class="trc-box">${X.length?`<div class="gw"><div class="scroll"><table class="t">
+    <thead><tr><th>출하일자</th><th>제품 품번</th><th>품명</th><th>고객</th><th>수량(EA)</th>
+      <th>제품 LOT(생산일자)</th>${fwd?'<th>해당 생산일</th>':''}<th>비고</th></tr></thead><tbody>
+    ${X.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:'',cu:''};
+      return `<tr>
+      <td class="c">${r.d}</td><td class="l" style="font-weight:700">${esc(r.pn)}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(it.nm||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(r.p||it.cu||'')}</td>
+      <td>${nf(r.q)}</td>
+      <td class="l">${parseShipLots(r.lot).map(l=>esc(l)).join(' / ')||esc(r.lot||'')}</td>
+      ${fwd?'<td class="c">'+esc(r.src||'')+'</td>':''}
+      <td class="l" style="font-family:var(--sans);font-size:10.5px">${esc(r.n||'')}</td></tr>`;}).join('')}
+    </tbody></table></div></div>`
+   :'<div class="trc-empty">해당 출하 기록이 없습니다.</div>'}</div></div>`;
+}
+function exportTrc(){
+  const key=$('trcQ').value.trim();
+  if(!key){toast('추적할 값을 먼저 입력하세요');return;}
+  const dir=trcDir(key);
+  const R=dir==='fwd'?traceFwd(key):traceBack(key);
+  const T=(nm,h,rows)=>`<table><tr><th colspan="${h.length}" style="background:#1F3864;color:#fff">${nm}</th></tr>
+    <tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>
+    ${rows.map(r=>'<tr>'+r.map(v=>`<td>${v==null?'':v}</td>`).join('')+'</tr>').join('')}</table>`;
+  const coils=dir==='fwd'?R.coils:R.coils.map(x=>x.c).filter(Boolean);
+  const c1=T('① 소재(밀시트)',['코일LOT','HEAT','재질','두께','폭','입고중량kg','공급업체','입고일','성적서','검사일','판정'],
+    coils.map(c=>[c.cno,c.ms||'',c.mt||'',+c.t,+c.w,+c.wt,c.sup||'',c.d||'',c.cert||'',c.ins||'',c.iq||'']));
+  const c2=T('② 생산',['생산일자','제품LOT','품번','수량EA','설비','투입 소재LOT'],
+    R.prod.map(r=>[r.d,ymd6(r.d),r.pn,r.q,eqName(r.p),prodLots(r).join(' / ')]));
+  const c3=T('③ 출하',['출하일자','품번','고객','수량EA','제품LOT'],
+    R.ships.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{cu:''};
+      return [r.d,r.pn,r.p||it.cu||'',r.q,parseShipLots(r.lot).join(' / ')];}));
+  const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;margin-bottom:18px}'
+    +'td,th{border:1px solid #999;padding:3px 6px;font-size:11px;font-family:맑은 고딕}'
+    +'th{background:#DCE3EF;font-weight:700}</style></head><body>'
+    +'<h3>LOT 추적서 — 대상 '+esc(key)+' ('+(dir==='fwd'?'소재→제품':'제품→소재')+') · 출력 '+today()+'</h3>'
+    +c1+c2+c3+'</body></html>';
+  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),'LOT추적_'+key.replace(/[^\w가-힣-]/g,'')+'_'+today().replace(/-/g,'')+'.xls');
+  toast('LOT 추적서를 내려받았습니다');
+}
 
 /* ═══════ 사급(고객 지급) 소재 ═══════
    고객이 지급한 소재는 우리 재고가 아니므로 집계·차감·경고에서 모두 뺀다.
@@ -9581,12 +9860,13 @@ window.addEventListener('resize',()=>{clearTimeout(window._rz);
   window._rz=setTimeout(()=>{ const m=isMob(); if(m!==_wasMob){_wasMob=m;} render(); },250);});
 window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
-const TABN=[['sum','📊','재고수불 총괄표','SUMMARY'],['bin','📒','품목별 수불부','BIN CARD'],['io','↔','입출고 내역','IN / OUT'],['cnt','✅','재고실사표','COUNT'],['raw','🧱','원소재 재고','RAW COIL'],['cfg','⚙','품목 마스터','MASTER'],['help','❓','사용안내','HELP']];
+const TABN=[['sum','📊','재고수불 총괄표','SUMMARY'],['bin','📒','품목별 수불부','BIN CARD'],['io','↔','입출고 내역','IN / OUT'],['cnt','✅','재고실사표','COUNT'],['raw','🧱','원소재 재고','RAW COIL'],['trc','🔗','LOT 추적','TRACEABILITY'],['cfg','⚙','품목 마스터','MASTER'],['help','❓','사용안내','HELP']];
 const SUB={
   sum:[['🔄','조회','render()','pri'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
+  trc:[['🔍','추적','rTrc()','pri'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
   raw:[['🔄','최신화','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
   help:[['🖨','안내 인쇄','window.print()','pri'],['📊','총괄표로','setTab(\'sum\')']]
@@ -9686,6 +9966,8 @@ $('cfgEx').onchange=e=>{
 $('binPn').onchange=rBin;
 /* ── 원소재 이벤트 ── */
 $('rawQ').oninput=rRaw; $('rawSt').onchange=rRaw;
+$('trcQ').onkeydown=e=>{if(e.key==='Enter')rTrc();};
+$('trcF').onchange=rTrc; $('trcT').onchange=rTrc;
 $('mCno').oninput=mInfo; $('bPn').oninput=bInfo;
 ['bNet','bY'].forEach(i=>$(i).oninput=calcUw);
 ['bMt','bT','bW'].forEach(i=>$(i).oninput=bMatch);
@@ -9747,6 +10029,7 @@ function render(){
   whLabel();
   if(tab==='sum')rSum();else if(tab==='bin')rBin();else if(tab==='io')rIo();
   else if(tab==='cnt')rCnt();else if(tab==='cfg')rCfg();else if(tab==='raw')rRaw();
+  else if(tab==='trc')rTrc();
   const d=new Date();
   $('i3').textContent=today()+' '+p2(d.getHours())+':'+p2(d.getMinutes());
 }
