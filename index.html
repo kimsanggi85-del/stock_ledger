@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.3</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.4</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7115,13 +7115,24 @@ async function loadShipHist(force){
   if(!force&&SHIP_H&&Date.now()-SHIP_AT<10*60*1000)return SHIP_H;
   shipBusy=true;
   /* 컬럼을 지정하지 않는다 — 출하의뢰서 앱 버전에 따라 destination 등이 없을 수 있다 */
-  const tryKey=key=>fetchAll(IQC_URL+'/rest/v1/shipment_history?select=*&order=reg_date.asc,id.asc',{apikey:key,Authorization:'Bearer '+key});
+  const tryKey=async key=>{
+    const H={apikey:key,Authorization:'Bearer '+key};
+    const a=await fetchAll(IQC_URL+'/rest/v1/shipment_history?select=*&order=reg_date.asc,id.asc',H);
+    let b=[];
+    try{ b=await fetchAll(IQC_URL+'/rest/v1/move_history_tj?select=*&process=eq.'+encodeURIComponent('출하')+'&order=move_date.asc,id.asc',H); }
+    catch(e){ console.warn('출하(일반):',e.message); }
+    return {a,b};
+  };
   try{
     let rows;
     try{ rows=await tryKey(IQC_KEY); }catch(e){ rows=await tryKey(DF_KEY); }
-    SHIP_H=rows.map(x=>({id:'SH'+x.id,d:String(x.reg_date||'').slice(0,10),pn:canonPn(String(x.part_no||'').trim()),k:'출하',
+    const A=rows.a.map(x=>({id:'SH'+x.id,d:String(x.reg_date||'').slice(0,10),pn:canonPn(String(x.part_no||'').trim()),k:'출하',
       q:(+x.qty)||((+x.box_count||0)*(+x.box_size||0))||0,p:x.destination||'',lot:String(x.lot_no||''),
-      n:'출하의뢰서'+(x.lot_no?'':' · LOT 미기록'),by:'출하앱',src:'SHIP|'+x.id})).filter(r=>r.pn&&r.d&&r.q>0);
+      n:'출하의뢰서'+(x.lot_no?'':' · LOT 미기록'),by:'출하앱',src:'SHIP|'+x.id}));
+    const B=rows.b.map(x=>({id:'GN'+x.id,d:String(x.move_date||'').slice(0,10),pn:canonPn(String(x.general_model||x.base_part||'').trim()),k:'출하',
+      q:+x.qty||0,p:x.destination||'',lot:String(x.lot||''),
+      n:'출하(일반)'+(x.lot?'':' · LOT 미기록'),by:'출하일반',src:'GN|'+x.id}));
+    SHIP_H=A.concat(B).filter(r=>r.pn&&r.d&&r.q>0).sort((x,y)=>x.d.localeCompare(y.d));
     SHIP_AT=Date.now();
     SHIP_ERR='';
   }catch(e){ console.warn('출하이력:',e.message); SHIP_ERR=e.message; if(!SHIP_H)SHIP_H=null; }
@@ -7143,8 +7154,17 @@ function traceFwd(key){
     const cn=String(c.cno||'').toUpperCase(), ms=String(c.ms||'').toUpperCase();
     return cn===K||ms===K||lotBase(cn)===K||cn.startsWith(K);
   });
-  const prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&
-    prodLots(r).some(l=>{const u=l.toUpperCase(); return u===K||lotBase(u)===K||u.startsWith(K);}));
+  let prod;
+  const rnos=new Set(coils.map(c=>String(c.rno||'')).filter(Boolean));
+  const ruMine=rnos.size?(S.ru||[]).filter(x=>x.rno&&rnos.has(x.rno)):[];
+  if(ruMine.length){
+    /* MES 실사용이 있으면 입고번호로 정확히 — 같은 LOT 이름의 다른 규격 코일 생산은 섞이지 않는다 */
+    const dk=new Set(ruMine.map(x=>x.d+'|'+x.pn));
+    prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&dk.has(r.d+'|'+r.pn));
+  }else{
+    prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&
+      prodLots(r).some(l=>{const u=l.toUpperCase(); return u===K||lotBase(u)===K||u.startsWith(K);}));
+  }
   /* 생산일자별 제품LOT → 출하 찾기 */
   const ships=[];
   prod.forEach(r=>{
@@ -7201,9 +7221,14 @@ function traceBack(key){
       if(pu.includes(K)||(pi&&(String(pi.mold||'').toUpperCase()===K
         ||String(pi.model||'').toUpperCase().includes(K))))prod.push(r); });
   }
-  const lots=[...new Set(prod.flatMap(prodLots))];
-  const coils=lots.map(l=>({lot:l,c:S.coils.find(c=>c.cno===l)||coilByLot(l)}));
-  return {ships,prod,coils};
+  /* 역추적 소재: MES 실사용(입고번호) 우선 — 같은 LOT 이름이라도 실제 투입된 코일만 */
+  const out=[]; const put=c=>{ if(c&&!out.some(x=>x.c&&c&&x.c.id===c.id))out.push({lot:c.cno,c}); };
+  prod.forEach(r=>{
+    const ru2=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
+    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===x.rno)||S.coils.find(c=>c.cno===x.lot)); }); }
+    else prodLots(r).forEach(l=>{ const c=S.coils.find(c2=>c2.cno===l)||coilByLot(l); if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
+  });
+  return {ships,prod,coils:out};
 }
 /* 방향 자동 판단 */
 function trcDir(key){
