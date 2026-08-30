@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.2</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.3</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7083,6 +7083,33 @@ const inRange=(d,R)=>(!R.f||d>=R.f)&&(!R.t||d<=R.t);
    수불부의 출하 전표는 최근 14일 + 누적(HIST)뿐이라 제품 LOT 연결이 안 된다.
    출하의뢰서 앱에는 등록일·품번·수량·제품LOT(lot_no)이 그대로 있으므로 추적은 그쪽을 정본으로 쓴다. */
 let SHIP_H=null, SHIP_AT=0, shipBusy=false, SHIP_ERR='';
+/* ═══════ 소재마스터: 출하(일반) 앱의 material_master_tj — 재질·두께·폭·피치 ↔ 매핑기종·금형재번·기종코드 ═══════ */
+let MATM=null, MATM_AT=0, matmBusy=false;
+const mmPick=(o,ks)=>{ for(const k of ks){ if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k]; } return ''; };
+async function loadMatMaster(){
+  if(matmBusy)return MATM;
+  if(MATM&&Date.now()-MATM_AT<10*60*1000)return MATM;
+  matmBusy=true;
+  try{
+    let rows;
+    const q=key=>fetchAll(IQC_URL+'/rest/v1/material_master_tj?select=*&order=id.asc',{apikey:key,Authorization:'Bearer '+key});
+    try{ rows=await q(IQC_KEY); }catch(e){ rows=await q(DF_KEY); }
+    const M=new Map();
+    rows.forEach(r=>{
+      const info={mt:String(mmPick(r,['material_name','material','mat'])).trim(),
+        t:String(mmPick(r,['thickness','thick','t'])).trim(), w:String(mmPick(r,['width','w'])).trim(),
+        pitch:String(mmPick(r,['pitch'])).trim(), mold:String(mmPick(r,['mold_no','mold','die_no','mold_code'])).trim(),
+        code:String(mmPick(r,['model_code','code_name','code','item_code'])).trim(),
+        cust:String(mmPick(r,['customer','cust'])).trim()};
+      String(mmPick(r,['mapped_models','models','model_name'])).split(',').map(x=>x.trim()).filter(Boolean)
+        .forEach(mn=>{ M.set(canonPn(mn).toUpperCase(),info); });
+    });
+    MATM=M; MATM_AT=Date.now();
+  }catch(e){ console.warn('소재마스터:',e.message); if(!MATM)MATM=null; }
+  finally{ matmBusy=false; }
+  return MATM;
+}
+const matmOf=pn=>MATM?(MATM.get(String(canonPn(pn||'')).toUpperCase())||null):null;
 async function loadShipHist(force){
   if(shipBusy)return SHIP_H;
   if(!force&&SHIP_H&&Date.now()-SHIP_AT<10*60*1000)return SHIP_H;
@@ -7208,6 +7235,7 @@ async function rTrc(){
     $('trcBody').innerHTML='<div class="trc-empty">출하의뢰서 출하 이력을 가져오는 중…</div>';
     await loadShipHist(false);
   }
+  await loadMatMaster();
   /* 조회 방향과 무관하게 화면은 언제나 소재입고 → 생산 → 출하 순으로 보여준다 */
   let coils,prod,ships;
   if(dir==='fwd'){ ({coils,prod,ships}=traceFwd(key)); }
@@ -7222,7 +7250,8 @@ async function rTrc(){
       +'소재 LOT · HEAT · 제품 품번 · 제품 LOT(생산일자 6자리) · 출하일자 로 다시 조회해 보세요.</div>');
   if(!SHIP_H)H.push('<div style="background:#FDECEA;border:1px solid #E0A9A2;border-radius:6px;padding:7px 10px;font-size:11.5px;color:#B3261E">'
     +'⚠ 출하의뢰서 출하 이력을 가져오지 못해 수불부 출하 전표(최근 14일 + 누적)만으로 표시했습니다. ('+esc(SHIP_ERR||'원인 미상')+') 다시 추적하세요.</div>');
-  else H.push('<div style="font-size:11px;color:#7d8b99;margin-top:4px">출하는 출하의뢰서 앱 이력 '+nf(SHIP_H.length)+'건 기준 ('+(SHIP_H.length?SHIP_H[0].d+' ~ '+SHIP_H[SHIP_H.length-1].d:'-')+')</div>');
+  else H.push('<div style="font-size:11px;color:#7d8b99;margin-top:4px">출하는 출하의뢰서 앱 이력 '+nf(SHIP_H.length)+'건 기준 ('+(SHIP_H.length?SHIP_H[0].d+' ~ '+SHIP_H[SHIP_H.length-1].d:'-')+')'
+    +(MATM&&MATM.size?' · 기종명·금형재번은 출하(일반) 소재마스터 '+MATM.size+'기종 연동':'')+'</div>');
   $('trcBody').innerHTML=H.join('');
 }
 /* ── 구간별 표 ── */
@@ -7255,12 +7284,12 @@ function secProd(prod,back){
    <div class="trc-box">${P.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>생산일자</th><th>제품 LOT</th><th>제품 품번</th><th>기종명</th><th>금형제번</th><th>수량(EA)</th>
       <th>설비</th><th>투입 소재 LOT</th>${back?'<th>출하일</th>':''}</tr></thead><tbody>
-    ${P.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:''}, pi=pinfo(r.pn)||{};
+    ${P.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:''}, pi=pinfo(r.pn)||{}, mm=matmOf(r.pn)||{};
       return `<tr>
       <td class="c">${r.d}</td><td class="c" style="font-weight:700">${ymd6(r.d)}</td>
       <td class="l" style="font-weight:700">${esc(r.pn)}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(pi.model||it.nm||'')}</td>
-      <td class="c" style="font-weight:700;color:#0B4F9E">${esc(pi.mold||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(pi.model||mm.code||it.nm||'')}</td>
+      <td class="c" style="font-weight:700;color:#0B4F9E">${esc(pi.mold||mm.mold||'')}${mm.mt?'<br><span style="font-weight:400;color:#7d8b99;font-size:10px">'+esc(mm.mt+' '+mm.t+'×'+mm.w+(mm.pitch?' P'+mm.pitch:''))+'</span>':''}</td>
       <td>${nf(r.q)}</td>
       <td class="c" style="font-family:var(--sans)">${esc(eqName(r.p))}</td>
       <td class="l">${prodLots(r).map(l=>{const u=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn&&(x.lot===l||x.rno===l)).reduce((a,x)=>a+x.kg,0);
@@ -7278,10 +7307,10 @@ function secShip(ships,fwd){
       어느 생산일 제품이 나갔는지 연결할 수 없습니다. 이 소재로 만든 제품은 그 누적 출하에 포함돼 있습니다.</div>`:''}${X.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>출하일자</th><th>제품 품번</th><th>기종명</th><th>고객</th><th>수량(EA)</th>
       <th>제품 LOT(생산일자)</th>${fwd?'<th>해당 생산일</th>':''}<th>비고</th></tr></thead><tbody>
-    ${X.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:'',cu:''}, pi=pinfo(r.pn)||{};
+    ${X.map(r=>{const it=S.items.find(x=>x.pn===r.pn)||{nm:'',cu:''}, pi=pinfo(r.pn)||{}, mm=matmOf(r.pn)||{};
       return `<tr${r.nolot?' style="background:#FFF7E0;color:#6B4F00"':''}>
       <td class="c">${r.d}${r.nolot?'<br><span style="font-size:10px">참고</span>':''}</td><td class="l" style="font-weight:700">${esc(r.pn)}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(pi.model||it.nm||'')}</td>
+      <td class="l" style="font-family:var(--sans)">${esc(pi.model||mm.code||it.nm||'')}</td>
       <td class="l" style="font-family:var(--sans)">${(c2=>c2?esc(c2)
         :'<span style="color:#B3261E">미지정</span>')(custOf(r))}</td>
       <td>${nf(r.q)}</td>
