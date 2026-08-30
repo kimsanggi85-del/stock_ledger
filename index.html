@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.4</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.6</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7084,6 +7084,202 @@ const inRange=(d,R)=>(!R.f||d>=R.f)&&(!R.t||d<=R.t);
    출하의뢰서 앱에는 등록일·품번·수량·제품LOT(lot_no)이 그대로 있으므로 추적은 그쪽을 정본으로 쓴다. */
 let SHIP_H=null, SHIP_AT=0, shipBusy=false, SHIP_ERR='';
 /* ═══════ 소재마스터: 출하(일반) 앱의 material_master_tj — 재질·두께·폭·피치 ↔ 매핑기종·금형재번·기종코드 ═══════ */
+/* 소재마스터 내장본 (소재마스터_20260831.xlsx · 186기종) — 출하(일반) material_master_tj 가 있으면 그쪽이 우선 */
+const MATM_DEF=[
+["1106-1","S55CM-S",1.01,125.0,116.0,"14DFA209A","MSBU RING","SKF SBC"],
+["1106-2","S55CM-S",1.01,125.0,116.0,"14DFA209B","MSBU RING","SKF SBC"],
+["1106-3","S55CM-S",1.01,125.0,116.0,"24TJA211A","MSBU RING","SKF SBC"],
+["1113-1","S70CM-S",1.25,132.0,124.0,"16DFA201A","MSBU RING","SKF SBC"],
+["1113-2","S70CM-S",1.25,132.0,124.0,"19ACA207A","MSBU RING","SKF SBC"],
+["1113-3","S70CM-S",1.25,132.0,124.0,"21RDA601A","MSBU RING","SKF SBC"],
+["1124","S55CM-S",1.01,118.0,110.0,"18CAA208A","MSBU RING","SKF SBC"],
+["1156","C67SCM-S",1.25,143.0,136.0,"22SKA201A","MSBU RING","SKF SBC"],
+["1159","S55CM-S",1.01,141.0,134.0,"19RDA613A","MSBU RING","SKF SBC"],
+["1165","S55CM-S",1.01,134.0,124.0,"20CAA214A","MSBU RING","SKF SBC"],
+["1179-1","C67SCM-S",1.25,137.0,130.0,"19SKA202A_1179","MSBU RING","SKF SBC"],
+["1179-2","C67SCM-S",1.25,137.0,130.0,"21TJA201A","MSBU RING","SKF SBC"],
+["1179-3","C67SCM-S",1.25,248.0,130.0,"22RDA602A(Transfer)","MSBU RING","SKF SBC"],
+["1513-182","SPCC",1.0,66.0,64.0,"13DHA203A","X51R","SKF씰"],
+["1515-196","SPCC",0.9,64.0,55.0,"16DHA205A","X69F","SKF씰"],
+["1520-172","SPCC",0.8,44.0,42.0,"11DHA211A","PS","SKF씰"],
+["1547-102-1","SPCC",0.6,70.0,69.0,"1DHA089","0092","SKF씰"],
+["1547-102-2","304BA",0.5,68.0,64.0,"1DHA088","0092","SKF씰"],
+["1549-157","SPCC",0.6,74.0,72.0,"10DHA207A","GAMMA","SKF씰"],
+["1549-158","430BA",0.6,66.0,68.0,"10DHA208A","GAMMA","SKF씰"],
+["1553-101-1","SPCC",0.8,80.0,78.0,"0DHA041A","0030","SKF씰"],
+["1553-101-2","304BA",0.5,75.0,75.0,"0DHA040","0030","SKF씰"],
+["1560-0018-01","SPCC",0.6,90.0,88.0,"17DHA209A","","SKF씰"],
+["1560-0018-21","430-2B",0.6,82.0,77.5,"17DHA211A","","SKF씰"],
+["1560-006","SPCC",0.6,33.0,32.0,"5DHA088","0","SKF씰"],
+["1561-0017-00","SPCC",0.6,90.0,88.0,"17DHA210A","","SKF씰"],
+["1570-54-1","SPCC",0.8,70.0,65.0,"9DHA034A","6906","SKF씰"],
+["1570-54-2","304BA",0.5,75.0,75.0,"9DHA032","6906","SKF씰"],
+["1570-56-1","SPCC",0.5,76.0,72.0,"0DHA039A","4047","SKF씰"],
+["1570-56-2","304BA",0.5,72.0,68.0,"0DHA038","4047","SKF씰"],
+["1572-175-1 가공품","SPCC",0.8,98.0,98.0,"11DHA204A","(K2XX)","SKF씰"],
+["1572-175-2","430BA",0.6,92.0,90.0,"11DHA205A","(K2XX)","SKF씰"],
+["1580-171","304-2B",0.5,120.0,104.0,"11DHA210A","DELT","SKF씰"],
+["1583-176","SPCC",0.8,134.0,123.0,"11DHA206A","(K2XX)","SKF씰"],
+["1642-118-1","SPCC",0.6,70.0,65.0,"1DHA102A","0101","SKF씰"],
+["1642-118-2","304BA",0.5,64.0,62.0,"1DHA104A","0101","SKF씰"],
+["1648-115-1","SPCC",0.6,80.0,75.0,"0DHA101","4099BA","SKF씰"],
+["1648-115-2","304BA",0.5,72.0,68.0,"0DHA100","4099BA","SKF씰"],
+["1654-119-1","SPCC",0.6,80.0,77.0,"1DHA103A","0060","SKF씰"],
+["1654-119-2","304BA",0.5,75.0,73.5,"1DHA105","0060","SKF씰"],
+["1657-130","430BA",0.8,78.0,76.0,"12DHA210A","SACC(가공품)","SKF씰"],
+["1660-131-2","430BA",0.6,78.0,76.0,"12DHA213","L38","SKF씰"],
+["1660-132","SPCC",0.6,90.0,88.0,"12DHA214A","L38(가공)","SKF씰"],
+["1660-132","SPCC",0.6,86.0,82.0,"13DHA201A","L38 (가공품)","SKF씰"],
+["1664-128-1","SPCC",0.6,90.0,88.0,"12DHA206A","L43","SKF씰"],
+["1664-128-2","430BA",0.6,82.0,80.0,"12DHA207A","L43","SKF씰"],
+["1752-293-1","SPCC",0.6,74.0,70.0,"08DHA088A","JB","SKF씰"],
+["1752-293-2","430BA",0.5,74.0,72.0,"08DHA087A","JB","SKF씰"],
+["1752-297","SPCC",0.5,68.0,66.0,"12DHA209A","KIA","SKF씰"],
+["1753-295-1","SPCC",0.6,74.0,72.0,"10DHA246A","UB","SKF씰"],
+["1753-295-2","430BA",0.5,68.0,66.0,"10DHA247A","UB","SKF씰"],
+["1755-296","SPCC",0.5,72.0,70.0,"12DHA208A","KIA","SKF씰"],
+["1781-0001-00","SPCC",0.6,110.0,102.0,"17DHA205A","SK OP/S","SKF씰"],
+["1807-653","SPCC",0.6,28.0,26.0,"15DHA214A","퓨트로닉","SKF씰"],
+["1814-652-1","SPCC",1.0,47.0,37.5,"15DHA215A","Kapec","SKF씰"],
+["1816-0010-00","SPCC",1.0,50.0,40.5,"17DHA208A","완리양","SKF씰"],
+["1837-0033-01","SPCC",1.0,70.0,68.0,"18DHA207A","길리기차","SKF씰"],
+["1839-629","SPCC",0.6,80.0,0,"11DHA209A","A/S용","SKF씰"],
+["1847-600-1","SPCC",0.6,70.0,68.0,"10DHA225A","A/S용","SKF씰"],
+["1847-600-2","430BA",0.6,62.0,70.0,"10DHA226A","A/S용","SKF씰"],
+["1853-515-1","SPCC",0.8,80.0,78.0,"9DHA036A","6908BA","SKF씰"],
+["1853-515-2","304BA",0.5,75.0,75.0,"9DHA033","6908BA","SKF씰"],
+["1853-586","304BA",0.5,73.0,72.0,"08DHA086A","0106B","SKF씰"],
+["1856-627-1","SPCC",0.6,80.0,76.0,"11DHA207A","A/S용               (628 공용)","SKF씰"],
+["1856-627-2","430BA",0.6,72.0,70.0,"11DHA208A","A/S용              (628 공용)","SKF씰"],
+["1858-618-1","SPCC",0.6,80.0,78.0,"10DHA238A","A/S용","SKF씰"],
+["1858-619-2","430BA",0.6,80.0,74.0,"10DHA239A","A/S용","SKF씰"],
+["1859-650-1","SPCC",0.6,90.0,88.0,"15DHA205A","MP(IN/S)                   가공품","SKF씰"],
+["1859-650-2","430BA",0.6,80.0,76.0,"15DHA206A","MP (F/L)","SKF씰"],
+["1861-596","SPCC",0.6,94.0,92.0,"10DHA214A","BMW PL7","SKF씰"],
+["1861-597","430BA",0.6,80.0,78.0,"10DHA215A","BMW PL7","SKF씰"],
+["1862-0041-1=0042  IN/S","SPCC",0.6,90.0,88.0,"20DHA202A","FORO V713 (단조금형)","SKF씰"],
+["1862-0041-21  F/L  우창","430-2B",0.6,80.0,78.0,"20DHA203A","FORO V713 (실린더)","SKF씰"],
+["1862-0042-21  V713","430-2B",0.6,80.0,78.0,"20DHA204A","V713 (OUT)                실린더","SKF씰"],
+["1862-604","SPCC",0.8,90.0,86.0,"10DHA227A","FS(가공품)","SKF씰"],
+["1862-620-1","SPCC",0.6,88.0,86.0,"10DHA242A","A/S용","SKF씰"],
+["1862-620-2","430BA",0.6,88.0,74.0,"10DHA243A","(A/S용)가공","SKF씰"],
+["1862-624","430BA",0.6,100.0,90.0,"11DHA201A","CD","SKF씰"],
+["1863-607-1","SPCC",0.6,86.0,84.0,"10DHA228A","FORD 1톤","SKF씰"],
+["1863-607-2","430BA",0.6,82.0,80.0,"10DHA229A","FORD(가공품)","SKF씰"],
+["1866-599","SPCC",0.8,90.0,86.0,"10DHA221A","A/S용","SKF씰"],
+["1866-617-1","SPCC",0.6,94.0,90.0,"10DHA236A","A/S용","SKF씰"],
+["1866-617-2","430BA",0.6,88.0,74.0,"10DHA237A","A/S용(가공품)","SKF씰"],
+["1867-608-1","SPCC",0.8,98.0,94.0,"10DHA230A","FORD2톤(가공품)","SKF씰"],
+["1867-608-2","430BA",0.6,90.0,88.0,"10DHA231A","FORD2톤(가공품)","SKF씰"],
+["1869-621","SPCC",0.6,90.0,88.0,"10DHA248A","LY","SKF씰"],
+["1870-602-1","SPCC",0.6,94.0,90.0,"10DHA223A","A/S용(생산)","SKF씰"],
+["1870-602-2","430BA",0.6,86.0,82.0,"10DHA224A","A/S용(개발팀)","SKF씰"],
+["1871-0043-01  IN/S","SPCC",0.8,100.0,98.0,"20DHA205A","VX1 (단조금형)","SKF씰"],
+["1871-0043-21  F/L  우창","430-2B",0.6,92.0,90.0,"20DHA206A","VX1 실린더","SKF씰"],
+["1873-0044-21 O/P","430-2B",0.6,110.0,108.0,"20DHA207A","VX1 실린더(O/P)","SKF씰"],
+["1873-0045-01 OUT","SPCC",0.8,120.0,110.0,"20DHA208A","VX1 (프로금형) OUT","SKF씰"],
+["1873-622","430BA",0.6,92.0,90.0,"10DHA250A","LY","SKF씰"],
+["1874-598","SPCC",0.6,120.0,112.0,"10DHA220A","BMW F18","SKF씰"],
+["1874-603","SPCC",8.0,110.0,100.0,"10DHA222A","A/S용","SKF씰"],
+["1874-623","SPCC",0.6,100.0,98.0,"10DHA249A","LY(가공품)","SKF씰"],
+["1888-0005 더스트캡","304-(J1)",0.5,126.0,116.0,"16DHA209A","VS30                     (CAP,가공품)","SKF씰"],
+["1939-357-1","SPCC",0.6,60.0,58.0,"10DHA218A","HA-RR","SKF씰"],
+["1939-357-2","430BA",0.6,52.0,50.0,"10DHA219A","HA-RR","SKF씰"],
+["1945-349-1","SPCC",0.6,68.0,66.0,"10DHA205A","RB","SKF씰"],
+["1945-349-2","430BA",0.6,62.0,60.0,"10DHA235A","RB","SKF씰"],
+["1946-0053","SPCC",0.6,92.0,82.0,"19DHA206A","BI3 (프로금형)","SKF씰"],
+["1950-354-1","SPCC",0.6,74.0,72.0,"10DHA202A","MD","SKF씰"],
+["1950-354-2","430BA",0.6,70.0,68.0,"10DHA201A","MD","SKF씰"],
+["1950-358-1","SPCC",0.6,70.0,68.0,"10DHA216A","HA-FRT","SKF씰"],
+["1950-358-2","430BA",0.6,62.0,60.0,"10DHA217A","HA-FRT","SKF씰"],
+["1950-374-1","SPCC",0.6,66.0,64.0,"13DHA209A","XDC-RR","SKF씰"],
+["1950-374-2","304-2B",0.6,76.0,74.0,"13DHA210A","XDC-RR","SKF씰"],
+["1951-386","SPCC",0.6,76.0,66.0,"16DHA202A","YB-RR","SKF씰"],
+["1952-0056-01","SPCC",0.6,76.0,74.0,"18DHA214A","","SKF씰"],
+["1952-0056-21","430 2B",0.6,70.0,68.0,"18DHA215A","","SKF씰"],
+["1952-346-1","SPCC",0.6,74.0,72.0,"10DHA240A","YF","SKF씰"],
+["1952-346-2","430BA",0.6,66.0,66.0,"11DHA213A","YF","SKF씰"],
+["1952-347-1","SPCC",0.6,74.0,72.0,"10DHA241A","RD","SKF씰"],
+["1952-367-2","304-2B",0.6,74.0,74.0,"12DHA212","MX-FRT","SKF씰"],
+["1958-365-1","SPCC",0.6,74.0,72.0,"12DHA203A","MD-FRT","SKF씰"],
+["1958-365-2","304-2B",0.6,84.0,82.0,"12DHA204A","MD-FRT","SKF씰"],
+["1958-365-2","304-2B",0.6,80.0,82.0,"12DHA211A","MD-FRT","SKF씰"],
+["1958-373-1","SPCC",0.6,74.0,72.0,"13DHA207A","XDC-FRT","SKF씰"],
+["1958-373-2","304-2B",0.6,84.0,82.0,"13DHA208A","XDC-FRT","SKF씰"],
+["1959-0024-01","SPCC",0.6,86.0,84.0,"17DHA212A","","SKF씰"],
+["1959-0024-21","430-2B",0.6,82.0,80.0,"17DHA213A","","SKF씰"],
+["1959-360-1","SPCC",0.6,86.0,76.0,"11DHA202A","3G-GDE","SKF씰"],
+["1959-360-2","304-2B",0.6,86.0,82.0,"11DHA203A","3G-GDE","SKF씰"],
+["1960-0031-01  IN/S","SPCC",0.6,90.0,88.0,"19DHA203A","CN7 (단조금형)","SKF씰"],
+["1960-0031-21 F/L","430-2B",0.6,80.0,78.0,"19DHA204A","CN7 (실린더)","SKF씰"],
+["1960-361","SPCC",0.8,78.0,76.0,"12DHA216A","BH - RR","SKF씰"],
+["1962-0030","SPCC",0.6,94.0,0,"18DHA202A","","SKF씰"],
+["1963-0055-01","SPCC",0.6,90.0,88.0,"18DHA224A","GSR(단조금형)","SKF씰"],
+["1963-0055-21","430-2B",0.6,84.0,82.0,"18DHA225A","GSR(실린더)","SKF씰"],
+["1965-326-1","SPCC",0.8,100.0,90.0,"6DHA038","0187","SKF씰"],
+["1965-326-2","430BA",0.6,90.0,87.0,"6DHA037","0187","SKF씰"],
+["1967-0052-01  IN/S","SPCC",0.6,96.0,94.0,"20DHA209A","US4 RR                (단조금형)","SKF씰"],
+["1967-0052-21  F/L   우창","430-2B",0.6,86.0,84.0,"20DHA210A","US4 RR                    (실린더)","SKF씰"],
+["1967-391","SPCC",0.6,112.0,104.0,"16DHA206A","IK/CK","SKF씰"],
+["1967-392","SPCC",0.6,84.0,80.0,"16DHA207A","IK/CK","SKF씰"],
+["1968-0016-01","SPCC",0.6,92.0,90.0,"17DHA206A","LF-FRT                (가공품)","SKF씰"],
+["1968-0016-21","430-2B",0.6,90.0,87.0,"17DHA207A","LF-FRT","SKF씰"],
+["1968-362","SPCC",0.8,86.0,84.0,"12DHA215A","BH - FRT","SKF씰"],
+["1968-364-1","SPCC",0.6,86.0,84.0,"12DHA201A","(DM-FRT)","SKF씰"],
+["1968-364-2","304-2B",0.6,93.0,90.0,"15DHA216A","(DM-FRT)신형","SKF씰"],
+["1968-364-2","304-2B",0.6,96.0,94.0,"12DHA202A","(DM-FRT)구형","SKF씰"],
+["1969-0030-01","SPCC",0.6,102.0,0,"18DHA205A","","SKF씰"],
+["1970-372-1","SPCC",0.8,94.0,92.0,"13DHA204A","GM","SKF씰"],
+["1970-372-2","430BA",0.6,86.0,84.0,"13DHA205A","GM","SKF씰"],
+["1972-383","SPCC",0.6,114.0,104.0,"15DHA209A","HI O/P","SKF씰"],
+["1972-383-1","SPCC",0.6,114.0,104.0,"25TJA201A","(MP) HI OP","SKF씰"],
+["1973-325","SPCC",0.6,125.0,107.0,"6DHA039","0177","SKF씰"],
+["1974-0023-01","SPCC",0.6,100.0,98.0,"18DHA226A","UM (단조금형)","SKF씰"],
+["1974-0023-21","430-2B",0.6,94.0,92.0,"18DHA227A","UM (실린더)","SKF씰"],
+["1976-0004-01","SPCC",0.6,102.0,92.0,"19DHA205A","CN7                    (프로금형)","SKF씰"],
+["1976-0004-01","SPCC",0.6,102.0,98.0,"19DHA201A","RG3                    (프로금형)","SKF씰"],
+["1979-0051-01 O/P9고무작업)","SPCC",0.8,120.0,110.0,"20DHA211A","US4 RR                       (프로금형)","SKF씰"],
+["1982-371","SPCC",0.8,108.0,106.0,"13DHA206A","GM","SKF씰"],
+["1G26-014","SPCC",0.4,86.0,46.0,"10DHA210A","1G","SKF씰"],
+["1G34-015","SPCC",0.4,109.0,56.0,"10DHA212A","1G","SKF씰"],
+["1G35-013","SPCC",0.4,103.0,53.0,"10DHA211A","1G","SKF씰"],
+["1G36-012","SPCC",0.4,117.0,61.0,"10DHA213A","1G","SKF씰"],
+["1GE0-0009-01","SPCC",1.25,182.0,0,"18DHA210A","","SKF씰"],
+["C657-127","SPCC",1.2,90.0,85.0,"7DHA051A","0176 (도금제품)","SKF씰"],
+["45524-26210","SPCC",0.8,102.0,65.0,"23BKA005A","6AT SPRING O/D CLUTCH RETIRN","부강스프링"],
+["45624-2F010-L","SPCC",1.6,160.0,261.0,"23BKA004A","SPRING U/D BRAKE RETURN RETAINER LOWER","부강스프링"],
+["45624-2F010-U","SPCC",1.0,126.0,125.0,"23BKA003A","SPRING U/D BRAKE RETURN RETAINER UPPER","부강스프링"],
+["45631-26010","SPCC",1.4,190.0,388.0,"23BKA002A","A6GF1 SPRING L/R BRAKE RETURN","부강스프링"],
+["48338-2H010","SPCC",1.0,94.0,69.0,"23BKA001A","IVT RETAINER","부강스프링"],
+["54610-C1000","SPFH590-P",3.2,284.0,162.0,"19RDA604~612A","JF MAIN PLATE","세동산업"],
+["54610-D3500","SPFH590-P",3.6,283.0,166.0,"24SDA201~210A","SV/FE MAIN PLATE","세동산업"],
+["B171000-0009","SPFH590FB-P",3.6,338.0,179.0,"21SDA301A~K","TL MAIN PLATE","세동산업"],
+["1549-156","SPCC",0.6,86.0,84.0,"10DHA209A","GAMMA","우창산업"],
+["1551-189","SPCC",0.6,90.0,88.0,"14DHA212A","GAMMA(신형)","우창산업"],
+["1862-0041-21","SUS430",0.6,80.0,78.0,"20DHA203A","FORD V713 (FL)","우창산업"],
+["1862-651","SPCC",0.6,90.0,86.0,"15DHA207A","MP(가공품)","우창산업"],
+["1871-0043-21","SUS430",0.6,92.0,90.0,"20DHA206A","VX1 (FL)","우창산업"],
+["1947-353","SPCC",0.6,74.0,72.0,"10DHA203A","MD","우창산업"],
+["1967-0052-21","SUS430",0.6,86.0,84.0,"20DHA210A","US4 RR (FL)","우창산업"],
+["1970-363","SPCC",0.6,94.0,96.0,"13DHA211A","비대칭베어링","우창산업"],
+["1973-370","SPCC",0.6,100.0,98.0,"13DHA202A","DH  (가공품)","우창산업"],
+["AB3248-SC-01","304-2B",0.5,118.0,108.0,"17IGA202A(일진)","9BUX","일진글로벌"],
+["AB3248-SC-01","304-2B",0.5,118.0,108.0,"17IGA202A(일진)","9BUX","일진글로벌"],
+["AT3037-GC-01","304-2B",0.5,126.0,116.0,"17IGA201A(일진)","T1XX GREASE CAP","일진글로벌"],
+["IJ112042-SD-00","SPCC",0.6,84.0,81.0,"16IGA208A(일진)","SHIELD (도금제품)","일진글로벌"],
+["IJ223101-SC-00","SPCC",1.0,150.0,140.0,"15IGA213A(일진)","SEALING CAP","일진글로벌"],
+["IJ223127-DD-01","SPCC",1.0,114.0,106.0,"17IGA203A(일진)","도금제품","일진글로벌"],
+["씰링캡AB3038-SC","430J1L BB",0.5,116.0,47.5,"15IGA211A(일진)","IJG JC/JF","일진글로벌"],
+["116080-ST0","SUS304",0.5,130.0,116.0,"25JYA207A","CAP","진양오일씰"],
+["116090-ST2","SPCC",0.69,94.0,92.0,"25JYA206A","ENCODER RING","진양오일씰"]
+];
+/* 품번 정규화: (2호금형)·(단종대기) 등 괄호 제거, IW/OW-BDA- 접두어 제거, 끝의 A/B 변형 흡수 */
+function mmNorm(pn){
+  let k=String(canonPn(pn||'')).toUpperCase().replace(/\s+/g,'');
+  k=k.replace(/\(.*?\)/g,'');
+  k=k.replace(/^IW\/OW-BDA-/,'').replace(/^IW\/OW-/,'');
+  return k;
+}
 let MATM=null, MATM_AT=0, matmBusy=false;
 const mmPick=(o,ks)=>{ for(const k of ks){ if(o[k]!==undefined&&o[k]!==null&&String(o[k]).trim()!=='')return o[k]; } return ''; };
 async function loadMatMaster(){
@@ -7095,6 +7291,7 @@ async function loadMatMaster(){
     const q=key=>fetchAll(IQC_URL+'/rest/v1/material_master_tj?select=*&order=id.asc',{apikey:key,Authorization:'Bearer '+key});
     try{ rows=await q(IQC_KEY); }catch(e){ rows=await q(DF_KEY); }
     const M=new Map();
+    MATM_DEF.forEach(a=>{ M.set(mmNorm(a[0]),{mt:a[1],t:String(a[2]),w:String(a[3]),pitch:String(a[4]),mold:a[5],code:a[6],cust:a[7]}); });
     rows.forEach(r=>{
       const info={mt:String(mmPick(r,['material_name','material','mat'])).trim(),
         t:String(mmPick(r,['thickness','thick','t'])).trim(), w:String(mmPick(r,['width','w'])).trim(),
@@ -7102,14 +7299,42 @@ async function loadMatMaster(){
         code:String(mmPick(r,['model_code','code_name','code','item_code'])).trim(),
         cust:String(mmPick(r,['customer','cust'])).trim()};
       String(mmPick(r,['mapped_models','models','model_name'])).split(',').map(x=>x.trim()).filter(Boolean)
-        .forEach(mn=>{ M.set(canonPn(mn).toUpperCase(),info); });
+        .forEach(mn=>{ M.set(mmNorm(mn),info); });
     });
     MATM=M; MATM_AT=Date.now();
-  }catch(e){ console.warn('소재마스터:',e.message); if(!MATM)MATM=null; }
+  }catch(e){ console.warn('소재마스터:',e.message);
+    if(!MATM){ const M=new Map(); MATM_DEF.forEach(a=>{ M.set(mmNorm(a[0]),{mt:a[1],t:String(a[2]),w:String(a[3]),pitch:String(a[4]),mold:a[5],code:a[6],cust:a[7]}); }); MATM=M; MATM_AT=Date.now(); }
+  }
   finally{ matmBusy=false; }
   return MATM;
 }
-const matmOf=pn=>MATM?(MATM.get(String(canonPn(pn||'')).toUpperCase())||null):null;
+function matmOf(pn){
+  if(!MATM)return null;
+  const k=mmNorm(pn);
+  let v=MATM.get(k); if(v)return v;
+  const m=k.match(/^(.*?\d)([A-Z])$/);            /* 1159B → 1159, 1165A → 1165 */
+  if(m){ v=MATM.get(m[1]); if(v)return v; }
+  return null;
+}
+/* 코일 규격이 이 품번의 소재와 맞는가 — 소재마스터(출하일반) → 원단위/품번마스터 순으로 확인.
+   이름만 같은 다른 재질·폭 코일이 추적에 섞이지 않게 한다. 규격 정보가 없으면 통과. */
+function specOkFor(c,pn){
+  const mm=matmOf(pn); let mt='',t=0,w=0;
+  if(mm&&mm.mt){ mt=mm.mt; t=parseFloat(mm.t)||0; w=parseFloat(mm.w)||0; }
+  else{ const b=(S.bom||[]).find(x=>x.pn===pn); const pi=pinfo(pn)||{};
+    if(b&&b.mt){ mt=b.mt; t=+b.t||0; w=+b.w||0; }
+    else if(pi.mt){ mt=pi.mt; t=+pi.t||0; w=+pi.w||0; }
+  }
+  if(!mt)return true;
+  /* 재질 동등 비교: S55CM-S ≡ S55CM ≡ S55C, C67SCM-S ≡ C67S, SUS430 ≡ 430 (표기 차이 흡수) */
+  const mk=v=>String(v||'').toUpperCase().replace(/^SUS|^STS/,'').replace(/[^A-Z0-9]/g,'').replace(/S$/,'');
+  const a=mk(c.mt), b=mk(mt);
+  const eq=a===b||(a.length>=4&&b.startsWith(a))||(b.length>=4&&a.startsWith(b));
+  if(!eq)return false;
+  if(t&&+c.t&&Math.abs(+c.t-t)>0.06)return false;
+  if(w&&+c.w&&Math.abs(+c.w-w)>3)return false;
+  return true;
+}
 async function loadShipHist(force){
   if(shipBusy)return SHIP_H;
   if(!force&&SHIP_H&&Date.now()-SHIP_AT<10*60*1000)return SHIP_H;
@@ -7225,8 +7450,10 @@ function traceBack(key){
   const out=[]; const put=c=>{ if(c&&!out.some(x=>x.c&&c&&x.c.id===c.id))out.push({lot:c.cno,c}); };
   prod.forEach(r=>{
     const ru2=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
-    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===x.rno)||S.coils.find(c=>c.cno===x.lot)); }); }
-    else prodLots(r).forEach(l=>{ const c=S.coils.find(c2=>c2.cno===l)||coilByLot(l); if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
+    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===x.rno)||S.coils.find(c=>c.cno===x.lot&&specOkFor(c,r.pn))); }); }
+    else prodLots(r).forEach(l=>{ let c=S.coils.find(c2=>c2.cno===l)||coilByLot(l);
+      if(c&&!specOkFor(c,r.pn))c=S.coils.find(c2=>String(c2.cno).split('#')[0]===l&&specOkFor(c2,r.pn))||null;   /* 이름만 같은 다른 규격 코일 제외 */
+      if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
   });
   return {ships,prod,coils:out};
 }
@@ -7276,7 +7503,7 @@ async function rTrc(){
   if(!SHIP_H)H.push('<div style="background:#FDECEA;border:1px solid #E0A9A2;border-radius:6px;padding:7px 10px;font-size:11.5px;color:#B3261E">'
     +'⚠ 출하의뢰서 출하 이력을 가져오지 못해 수불부 출하 전표(최근 14일 + 누적)만으로 표시했습니다. ('+esc(SHIP_ERR||'원인 미상')+') 다시 추적하세요.</div>');
   else H.push('<div style="font-size:11px;color:#7d8b99;margin-top:4px">출하는 출하의뢰서 앱 이력 '+nf(SHIP_H.length)+'건 기준 ('+(SHIP_H.length?SHIP_H[0].d+' ~ '+SHIP_H[SHIP_H.length-1].d:'-')+')'
-    +(MATM&&MATM.size?' · 기종명·금형재번은 출하(일반) 소재마스터 '+MATM.size+'기종 연동':'')+'</div>');
+    +(MATM&&MATM.size?' · 소재마스터 '+MATM.size+'기종 (내장 '+MATM_DEF.length+' + 출하일반 연동)':'')+'</div>');
   $('trcBody').innerHTML=H.join('');
 }
 /* ── 구간별 표 ── */
