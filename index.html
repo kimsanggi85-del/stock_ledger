@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.2 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.3 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.5   (2026-08-31)
+   재고실사 모바일 애드온  v1.6   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v1.6 변경 — 입력 방식을 "차이 수량"으로 전환 (휴대폰 카드 화면만)
+     · 실사 총수량 대신 전산 대비 차이만 입력한다 (부족 −, 초과 +, 같으면 0)
+     · 실사값이 들어간 카드의 초록 버튼은 [입력 취소] — 미실사로 되돌린다
+     · 저장은 기존과 동일하게 실사 총수량으로 환산되어, 조정전표는 그대로 동작
+     · PC 표 화면은 지금까지처럼 실사 총수량 입력
 
    v1.5 변경 — 실사칸을 누르면 숫자키패드가 사라지던 문제 해결
      · 검색 뒤 250ms 지연 재렌더가 실사 입력칸을 새로 그려 포커스를 뺏고 있었음
@@ -11041,7 +11047,10 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '.cnt-same{display:block;width:100%;height:52px;margin:10px 0 0;border:0;border-radius:9px;'+
      'background:#0B6B3A;color:#fff;font-size:15.5px;font-weight:800}'+
    '.cnt-same:active{background:#095730}'+
-   '.mc.ok .cnt-same{background:#DCE9E2;color:#0B6B3A}';
+   '.mc.ok .cnt-same{background:#DCE9E2;color:#0B6B3A}'+
+   '.cnt-same.undo{background:#EEF1F3;color:#5A6875;height:44px;font-size:14px}'+
+   '.mc .du{font-size:11px;line-height:1.15;color:#5A6875;font-weight:700;text-align:center;'+
+     'align-self:center;padding-left:2px}';
   document.head.appendChild(css);
 
   /* ═══ 1. calc() 캐시 ═══
@@ -11080,21 +11089,33 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   /* ═══ 2. 카드에 [전산과 같음] 추가 ═══ */
   var _mc=mcCnt;
   function noBx(it){ return !(+it.bx>0); }              /* 박스단위 미등록 */
+  /* 전산 재고를 입력 단위(박스, 미등록이면 EA)로 환산 */
+  function baseOf(it,v){
+    var b=(+it.bx>0)?+it.bx:1;
+    return Math.floor((v&&isFinite(v.cur)?v.cur:0)/b);
+  }
   mcCnt=function(o,idx){
     var html=_mc(o,idx);
-    var ea=noBx(o.it);
-    var box=ea ? ((o.v&&isFinite(o.v.cur))?o.v.cur:0)
-               : ((o.v&&isFinite(o.v.box))?o.v.box:0);
+    var it=o.it, ea=noBx(it);
     var unit=ea?'EA':'박스';
-    var btn='<button class="cnt-same" data-same="'+idx+'" data-box="'+box+'">'+
-            (o.it.cnt!=null?'전산과 같음으로 변경':'전산과 같음 · '+box+unit)+'</button>';
+    var base=baseOf(it,o.v);
+    var diff=(it.cnt==null)?null:(it.cnt-base);
+
+    /* 입력칸을 '차이' 기준으로 바꾼다 */
+    html=html.replace(/placeholder="실사" value="[^"]*"/,
+      'placeholder="차이 0" value="'+(diff==null?'':diff)+'"');
+    html=html.replace('<button data-a="inc">＋</button><span>박스</span>',
+      '<button data-a="inc">＋</button><span class="du">차이<br>'+unit+'</span>');
+
+    /* 초록 버튼: 미실사 → 전산과 같음 / 입력됨 → 입력 취소 */
+    var btn = (it.cnt==null)
+      ? '<button class="cnt-same" data-act="same" data-i2="'+idx+'">전산과 같음 · 차이 0</button>'
+      : '<button class="cnt-same undo" data-act="clear" data-i2="'+idx+'">입력 취소</button>';
     html=html.replace('<div class="mc-step">', btn+'<div class="mc-step">');
+
     if(ea){
-      /* 입력 단위를 EA 로 표시하고, 박스단위 미등록임을 알린다 */
-      html=html.replace('<button data-a="inc">＋</button><span>박스</span>',
-                        '<button data-a="inc">＋</button><span class="ea-u">EA</span>');
       html=html.replace('<div class="mc-sub">',
-        '<div class="mc-sub" style="color:#946200">박스단위 미등록 — 낱개(EA)로 입력하세요</div>'+
+        '<div class="mc-sub" style="color:#946200">박스단위 미등록 — 낱개(EA) 기준으로 입력하세요</div>'+
         '<div class="mc-sub">',1);
     }
     return html;
@@ -11241,20 +11262,26 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
   /* 캡처 단계에서 먼저 처리하고 앱의 전체 재렌더를 막는다 (카드 화면에서만) */
   document.addEventListener('click',guard(function(e){
-    var same=e.target.closest('.cnt-same');
+    var btn=e.target.closest('.cnt-same');
     var stp=e.target.closest('#tCnt button[data-a]');
-    if(!same&&!stp) return;
+    if(!btn&&!stp) return;
     if(!isCard()) return;                       /* PC 표 화면은 원래대로 */
-    var wrap=(same||stp).closest('[data-i]'); if(!wrap) return;
-    var idx=+wrap.dataset.i, it=S.items[idx]; if(!it) return;
+    var wrap=(btn||stp).closest('[data-i]');
+    var idx=btn?+btn.dataset.i2:(wrap?+wrap.dataset.i:NaN);
+    var it=S.items[idx]; if(!it) return;
     e.stopPropagation(); e.preventDefault();
 
-    fixBx(it);
-    if(same){
-      var b=+same.dataset.box; it.cnt=isFinite(b)?b:0;
+    if(btn&&btn.dataset.act==='clear'){         /* 입력 취소 → 미실사 */
+      it.cnt=null;
     }else{
-      var now=it.cnt==null?(it.bx?Math.floor(calc(it).cur/it.bx):0):it.cnt;
-      it.cnt=Math.max(0, now + (stp.dataset.a==='inc'?1:-1));
+      fixBx(it);
+      var base=baseOf(it,calc(it));
+      if(btn){                                   /* 전산과 같음 → 차이 0 */
+        it.cnt=base;
+      }else{                                     /* ± 는 차이를 1씩 조정 */
+        var now=(it.cnt==null)?base:it.cnt;
+        it.cnt=Math.max(0, now + (stp.dataset.a==='inc'?1:-1));
+      }
     }
     CU[it.pn]=new Date().toISOString();
     save(); repaint(idx); sched();
@@ -11266,8 +11293,13 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var wrap=e.target.closest('[data-i]'); if(!wrap) return;
     var idx=+wrap.dataset.i, it=S.items[idx]; if(!it) return;
     e.stopPropagation();
-    fixBx(it);
-    it.cnt=e.target.value===''?null:Math.max(0,parseInt(e.target.value)||0);
+    var raw=String(e.target.value||'').trim();
+    if(raw===''){ it.cnt=null; }
+    else{
+      fixBx(it);
+      var d=parseInt(raw,10); if(!isFinite(d)) d=0;
+      it.cnt=Math.max(0, baseOf(it,calc(it)) + d);      /* 차이 → 실사 총수량 */
+    }
     CU[it.pn]=new Date().toISOString();
     save(); repaint(idx); sched();
   },'input'), true);
@@ -11344,7 +11376,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  console.log('실사 모바일 애드온 v1.5 적용');
+  console.log('실사 모바일 애드온 v1.6 적용');
 })();
 </script>
 
