@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.0 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.1 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.3   (2026-08-31)
+   재고실사 모바일 애드온  v1.4   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v1.4 변경 — 품번 검색 시 "품목이 없습니다" 해결
+     · 필터(미실사/차이/일치)가 검색보다 먼저 걸려, 찾은 품목이 그 필터에
+       해당하지 않으면 숨겨졌음
+     · 검색어가 있으면 필터를 적용하지 않고 검색 결과를 그대로 보여준다
+     · 검색 중에는 필터 칩 옆에 안내를 표시하고, 검색어를 지우면 원래 필터로 복귀
 
    v1.3 변경 — 박스단위 미등록 품목 실사 불가 해결
      · 박스단위(bx)가 0 인 품목은 실사수량 = 실사박스 × 0 = 0 이라
@@ -11025,6 +11031,8 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '#cntAddon .nb button{margin-left:6px;height:30px;padding:0 11px;border:0;border-radius:7px;'+
      'background:#946200;color:#fff;font-size:12px;font-weight:700}'+
    '.mc .ea-u{color:#946200;font-weight:800}'+
+   '#cntAddon .qm{flex:0 0 auto;align-self:center;font-size:12px;color:#946200;font-weight:700;'+
+     'padding-left:4px;white-space:nowrap}'+
    '.cnt-same{display:block;width:100%;height:52px;margin:10px 0 0;border:0;border-radius:9px;'+
      'background:#0B6B3A;color:#fff;font-size:15.5px;font-weight:800}'+
    '.cnt-same:active{background:#095730}'+
@@ -11105,6 +11113,10 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   }
 
   /* ═══ 3. 진행률 · 필터 ═══ */
+  function qNow(){
+    var e=document.getElementById('cntQ');
+    return e ? String(e.value||'').trim() : '';
+  }
   function stateOf(it){
     if(it.cnt==null) return 'todo';
     return (it.cnt*it.bx - calc(it).cur)===0 ? 'ok' : 'diff';
@@ -11121,6 +11133,8 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
       t.parentNode.insertBefore(box,t);
       box.querySelector('.ch').addEventListener('click',function(e){
         var b=e.target.closest('button[data-f]'); if(!b) return;
+        var q=document.getElementById('cntQ');
+        if(q&&q.value){ q.value=''; }              /* 필터를 고르면 검색어는 해제 */
         F=b.dataset.f; rCnt(); window.scrollTo(0,0);
       });
     }
@@ -11129,10 +11143,12 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var done=c.ok+c.diff;
     box.querySelector('.bar i').style.width=(list.length?done/list.length*100:0)+'%';
     box.querySelector('.pg b').textContent=done+' / '+list.length+' 품목';
+    var searching=!!qNow();
     box.querySelector('.ch').innerHTML=
       [['todo','미실사',c.todo],['diff','차이',c.diff],['ok','일치',c.ok],['all','전체',list.length]]
-      .map(function(x){ return '<button data-f="'+x[0]+'"'+(F===x[0]?' class="on"':'')+'>'+
-              x[1]+'<span>'+x[2]+'</span></button>'; }).join('');
+      .map(function(x){ return '<button data-f="'+x[0]+'"'+((!searching&&F===x[0])?' class="on"':'')+'>'+
+              x[1]+'<span>'+x[2]+'</span></button>'; }).join('')
+      + (searching?'<span class="qm">검색 중 · 필터 해제</span>':'');
     var g=document.getElementById('gt-cnt');
     if(g) g.innerHTML='재고실사표 · 총 <b>'+list.length+'</b>품목 · 실사입력 <b>'+done+'</b>';
 
@@ -11158,7 +11174,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     try{
       bar();
       var t=document.getElementById('tCnt');
-      if(!t||t.tagName==='TABLE'||F==='all') return;
+      if(!t||t.tagName==='TABLE'||F==='all'||qNow()) return;   /* 검색 중에는 필터 해제 */
       var cards=t.querySelectorAll('.mc[data-i]'), n=0;
       for(var i=0;i<cards.length;i++){
         var it=S.items[+cards[i].dataset.i]; if(!it) continue;
@@ -11303,7 +11319,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  console.log('실사 모바일 애드온 v1.3 적용');
+  console.log('실사 모바일 애드온 v1.4 적용');
 })();
 </script>
 
