@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.6</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.7</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7450,9 +7450,14 @@ function traceBack(key){
   const out=[]; const put=c=>{ if(c&&!out.some(x=>x.c&&c&&x.c.id===c.id))out.push({lot:c.cno,c}); };
   prod.forEach(r=>{
     const ru2=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
-    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===x.rno)||S.coils.find(c=>c.cno===x.lot&&specOkFor(c,r.pn))); }); }
-    else prodLots(r).forEach(l=>{ let c=S.coils.find(c2=>c2.cno===l)||coilByLot(l);
-      if(c&&!specOkFor(c,r.pn))c=S.coils.find(c2=>String(c2.cno).split('#')[0]===l&&specOkFor(c2,r.pn))||null;   /* 이름만 같은 다른 규격 코일 제외 */
+    /* 같은 LOT 이름 중에서 규격이 맞고 생산일 이전에 입고된 코일만 — 그중 가장 최근 입고분 */
+    const byName=(l,pn,d)=>{
+      const cand=S.coils.filter(c=>String(c.cno).split('#')[0]===String(l).trim()&&specOkFor(c,pn)&&(!c.d||c.d<=d))
+        .sort((x,y)=>String(y.d||'').localeCompare(String(x.d||'')));
+      return cand[0]||null;
+    };
+    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===String(x.rno))||byName(x.lot,r.pn,r.d)); }); }
+    else prodLots(r).forEach(l=>{ const c=byName(l,r.pn,r.d);
       if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
   });
   return {ships,prod,coils:out};
