@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.7</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7086,6 +7086,12 @@ let SHIP_H=null, SHIP_AT=0, shipBusy=false, SHIP_ERR='';
 /* ═══════ 소재마스터: 출하(일반) 앱의 material_master_tj — 재질·두께·폭·피치 ↔ 매핑기종·금형재번·기종코드 ═══════ */
 /* 소재마스터 내장본 (소재마스터_20260831.xlsx · 186기종) — 출하(일반) material_master_tj 가 있으면 그쪽이 우선 */
 const MATM_DEF=[
+["54610-D3501","SPFH590-P",3.6,283.0,0,"","A/S BRAKE BACKING PLATE","세동산업"],
+["54610-C1001","SPFH590-P",3.2,284.0,0,"","BRAKE BACKING PLATE","세동산업"],
+["AT3037-GC-00","304-2B",0.5,126.0,116,"17IGA201A(일진)","T1XX GREASE CAP","일진글로벌"],
+["1946-0053-01","SPCC",0.6,92.0,0,"","","SKF씰"],
+["1968-0016-02","430-2B",0.6,90.0,0,"","","SKF씰"],
+["1858-619","430-2B",0.6,80.0,0,"","","SKF씰"],
 ["1106-1","S55CM-S",1.01,125.0,116.0,"14DFA209A","MSBU RING","SKF SBC"],
 ["1106-2","S55CM-S",1.01,125.0,116.0,"14DFA209B","MSBU RING","SKF SBC"],
 ["1106-3","S55CM-S",1.01,125.0,116.0,"24TJA211A","MSBU RING","SKF SBC"],
@@ -7277,7 +7283,7 @@ const MATM_DEF=[
 function mmNorm(pn){
   let k=String(canonPn(pn||'')).toUpperCase().replace(/\s+/g,'');
   k=k.replace(/\(.*?\)/g,'');
-  k=k.replace(/^IW\/OW-BDA-/,'').replace(/^IW\/OW-/,'');
+  k=k.replace(/^IW\/OW-BDA-/,'').replace(/^IW\/OW-/,'').replace(/-+$/,'');
   return k;
 }
 let MATM=null, MATM_AT=0, matmBusy=false;
@@ -7318,6 +7324,20 @@ function matmOf(pn){
 }
 /* 코일 규격이 이 품번의 소재와 맞는가 — 소재마스터(출하일반) → 원단위/품번마스터 순으로 확인.
    이름만 같은 다른 재질·폭 코일이 추적에 섞이지 않게 한다. 규격 정보가 없으면 통과. */
+/* 재질 동등: S55CM-S≡S55CM≡S55C · C67S≡C67SCM≡S70C≡S70CM(같은 스프링강) · 스테인리스는 표면(2B/BA/BB) 차이 허용 · SUS430≡430 */
+function mtEq(x,y){
+  const mk=v=>String(v||'').toUpperCase().replace(/^SUS|^STS/,'').replace(/[^A-Z0-9]/g,'');
+  const a=mk(x), b=mk(y);
+  if(!a||!b)return true;
+  if(a===b)return true;
+  const sa=a.match(/^([34]\d{2})/), sb=b.match(/^([34]\d{2})/);
+  if(sa&&sb)return sa[1]===sb[1];                       /* 304-2B ≡ 304BA, 430-2B ≡ 430BA */
+  if((a.length>=4&&b.startsWith(a))||(b.length>=4&&a.startsWith(b)))return true;
+  const G=['C67','S70'];                                /* DIN C67S = JIS S70C 계열 */
+  const g=v=>G.some(t=>v.startsWith(t));
+  if(g(a)&&g(b))return true;
+  return false;
+}
 function specOkFor(c,pn){
   const mm=matmOf(pn); let mt='',t=0,w=0;
   if(mm&&mm.mt){ mt=mm.mt; t=parseFloat(mm.t)||0; w=parseFloat(mm.w)||0; }
@@ -7326,11 +7346,7 @@ function specOkFor(c,pn){
     else if(pi.mt){ mt=pi.mt; t=+pi.t||0; w=+pi.w||0; }
   }
   if(!mt)return true;
-  /* 재질 동등 비교: S55CM-S ≡ S55CM ≡ S55C, C67SCM-S ≡ C67S, SUS430 ≡ 430 (표기 차이 흡수) */
-  const mk=v=>String(v||'').toUpperCase().replace(/^SUS|^STS/,'').replace(/[^A-Z0-9]/g,'').replace(/S$/,'');
-  const a=mk(c.mt), b=mk(mt);
-  const eq=a===b||(a.length>=4&&b.startsWith(a))||(b.length>=4&&a.startsWith(b));
-  if(!eq)return false;
+  if(!mtEq(c.mt,mt))return false;
   if(t&&+c.t&&Math.abs(+c.t-t)>0.06)return false;
   if(w&&+c.w&&Math.abs(+c.w-w)>3)return false;
   return true;
@@ -7456,7 +7472,7 @@ function traceBack(key){
         .sort((x,y)=>String(y.d||'').localeCompare(String(x.d||'')));
       return cand[0]||null;
     };
-    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===String(x.rno))||byName(x.lot,r.pn,r.d)); }); }
+    if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===String(x.rno))||RCV_REF.get(String(x.rno))||byName(x.lot,r.pn,r.d)); }); }
     else prodLots(r).forEach(l=>{ const c=byName(l,r.pn,r.d);
       if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
   });
@@ -7518,7 +7534,16 @@ function secCoil(coils){
    <div class="trc-box">${coils.length?`<div class="gw"><div class="scroll"><table class="t">
     <thead><tr><th>코일 LOT</th><th>HEAT</th><th>재질</th><th>규격</th><th>입고중량</th><th>잔량</th>
       <th>공급업체</th><th>입고일</th><th>검사 성적서</th><th>검사일</th><th>사용연한</th><th>판정</th></tr></thead><tbody>
-    ${coils.map(c=>c.miss?`<tr style="background:#FDECEA">
+    ${coils.map(c=>c.ref?`<tr style="color:#7d8b99">
+      <td class="l" style="font-weight:700">${esc(c.cno)}</td><td class="l">${esc(c.ms||'')}</td>
+      <td class="c" style="font-family:var(--sans)">${esc(c.mt||'')}</td>
+      <td class="c" style="font-family:var(--sans)">${tmm(c.t)}t${c.w?' × '+nf(c.w)+'W':''}</td>
+      <td>${kg(c.wt)}</td><td class="c">-</td>
+      <td class="l" style="font-family:var(--sans)">${esc(c.sup||'')}</td>
+      <td class="c">${esc(c.d||'')}</td>
+      <td class="l" colspan="3" style="font-family:var(--sans)">재고 기준일 이전 입고분 — 대장 외 (MES 입고기록, 추적 참고)</td>
+      <td class="c">-</td></tr>`
+     :c.miss?`<tr style="background:#FDECEA">
       <td class="l" style="font-weight:700">${esc(c.cno)}</td>
       <td class="l" colspan="11" style="font-family:var(--sans);color:#B3261E">
         코일대장에 없는 LOT — 수입검사 등록이 빠졌거나 사급 소재입니다</td></tr>`
@@ -9388,7 +9413,7 @@ function mountOf(cno){ return (S.eq||[]).find(e=>e.lot&&e.lot===cno); }
 /* ═══════ MES 소재 실사용(raw_use) · 소재 입고(raw_receipt) 연동 ═══════
    mes_raw_sync.py 가 Oracle MES 의 IMTL_RAW_SF_USE_CASE_DTL(설비별 소재 LOT 실제 사용중량)과
    입고 테이블을 Supabase 로 올려 둔다. 있으면 원단위 추정 대신 이 실제 중량으로 차감한다. */
-let rawMesBusy=false;
+let rawMesBusy=false, RCV_REF=new Map();
 const MES_FROM='2026-05-01';                     /* MES 소재 자료 동기화 시작일 (mes_raw_sync.py 첫 소급일과 동일) */
 const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',DK:'동국산업',HK:'해강스틸',BK:'부강스프링',SW:'송원테크',NS:'나스테크'};
 const vendorNm=v=>{ const k=String(v||'').trim().toUpperCase(); return VENDOR_MAP[k]||supNm(v||''); };
@@ -9407,7 +9432,17 @@ async function syncRawMes(silent){
     out.use=S.ru.length; out.useKg=S.ru.reduce((a,x)=>a+x.kg,0);
     /* ② 입고 = 코일 1본 (입고번호+항번). LOT 이름은 업체가 재사용하므로 코일의 정체는 입고번호다 */
     const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag'
-      +'&receipt_date=gte.'+MES_FROM+'&order=receipt_date.asc,receipt_no.asc',H);
+      +'&receipt_date=gte.2026-01-01&order=receipt_date.asc,receipt_no.asc',H);
+    /* 기준일 이전 입고분은 재고에 넣지 않고 추적 참고용으로만 보관 */
+    RCV_REF=new Map();
+    rcv.filter(r=>String(r.receipt_date||'')<MES_FROM&&String(r.io_flag||'1')==='1').forEach(r=>{
+      const rno=String(r.receipt_no||'').split('|')[0].trim();
+      const lot=String(r.heat_no||'').trim()||rno;
+      const sp=parseMatCode(String(r.raw_item_code||''));
+      RCV_REF.set(rno,{id:'REF'+rno,ref:1,cno:lot,ms:lotBase(lot),mt:sp.mt,t:sp.t,w:sp.w,wt:Math.round((+r.weight||0)*10)/10,
+        d:String(r.receipt_date||'').slice(0,10),sup:vendorNm(r.vendor_site_id||r.supplier),iq:'',
+        n:'MES 입고 '+rno+' — 재고 기준일('+MES_FROM+') 이전 입고분 (대장 외, 추적 참고)'});
+    });
     /* ③ 투입 현황: 입고번호+항번별 상태(1 장착중 / 2 완료)·사용중량 */
     const inv=await fetchAll(SB_URL+'/rest/v1/raw_inventory?select=receipt_no,receipt_seq,heat_no,stock_status,put_on_date,put_out_date,issue_date,unit_weight,use_weight,item_code,machine_code,shot_qty'
       +'&order=put_on_date.asc',H);
@@ -9429,7 +9464,8 @@ async function syncRawMes(silent){
       S.mesMode=true;
       const keep=new Set();
       rcv.forEach(r=>{
-        if(String(r.io_flag||'1')!=='1')return;                /* 2 = 반출·취소 */
+        if(String(r.io_flag||'1')!=='1')return;
+        if(String(r.receipt_date||'')<MES_FROM)return;   /* 참고용 — 코일로 만들지 않는다 */                /* 2 = 반출·취소 */
         const rno=String(r.receipt_no||'').split('|')[0].trim(); const seq=Math.round(+r.seq||1);
         const key=rno+'|'+seq; const src='MESRCV|'+key;
         const lot=String(r.heat_no||'').trim()||rno;
