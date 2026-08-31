@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.1 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.2 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,15 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.4   (2026-08-31)
+   재고실사 모바일 애드온  v1.5   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v1.5 변경 — 실사칸을 누르면 숫자키패드가 사라지던 문제 해결
+     · 검색 뒤 250ms 지연 재렌더가 실사 입력칸을 새로 그려 포커스를 뺏고 있었음
+     · 실사 입력칸에 포커스가 있으면 화면을 다시 그리지 않고, 입력이 끝난 뒤 갱신
+     · 카드 한 장 갱신도 입력 중인 카드는 건드리지 않음
 
    v1.4 변경 — 품번 검색 시 "품목이 없습니다" 해결
      · 필터(미실사/차이/일치)가 검색보다 먼저 걸려, 찾은 품목이 그 필터에
@@ -11113,6 +11118,23 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   }
 
   /* ═══ 3. 진행률 · 필터 ═══ */
+  /* 실사 입력칸에 포커스가 있는가 (검색창 제외) */
+  function typing(){
+    var a=document.activeElement;
+    if(!a||a.tagName!=='INPUT'||a.id==='cntQ') return false;
+    return !!(a.closest && a.closest('#tCnt'));
+  }
+  var waitBlur=false;
+  function afterBlur(fn){
+    if(waitBlur) return;
+    waitBlur=true;
+    document.addEventListener('focusout',function h(){
+      document.removeEventListener('focusout',h);
+      waitBlur=false;
+      setTimeout(fn,60);
+    });
+  }
+
   function qNow(){
     var e=document.getElementById('cntQ');
     return e ? String(e.value||'').trim() : '';
@@ -11169,6 +11191,8 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
   var _rCnt=rCnt;
   rCnt=function(){
+    /* 숫자를 입력하는 중에는 다시 그리지 않는다 — 그리면 키패드가 닫힌다 */
+    if(typing()){ afterBlur(function(){ rCnt(); }); return; }
     refresh();
     try{ _rCnt.apply(this,arguments); }catch(e){ console.error('rCnt',e); }
     try{
@@ -11203,6 +11227,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var el=t.querySelector('.mc[data-i="'+idx+'"]');
     var it=S.items[idx]; if(!it) return;
     if(!el){ rCnt(); return; }
+    if(el.contains(document.activeElement)){ bar(); return; }   /* 입력 중인 카드는 그대로 둔다 */
     var v=calc(it);
     var real=it.cnt==null?null:it.cnt*it.bx;
     var df=real===null?null:real-v.cur;
@@ -11307,7 +11332,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     pull().then(function(){ if(typeof tab!=='undefined'&&tab==='cnt') rCnt(); });
   },1500);
   setInterval(function(){
-    if(document.hidden||busy) return;
+    if(document.hidden||busy||typing()) return;
     if(typeof tab!=='undefined'&&tab==='cnt') pull();
   },60000);
 
@@ -11319,7 +11344,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  console.log('실사 모바일 애드온 v1.4 적용');
+  console.log('실사 모바일 애드온 v1.5 적용');
 })();
 </script>
 
