@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.0 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.1 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v2.3   (2026-08-31)
+   재고실사 모바일 애드온  v2.4   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v2.4 변경 — 현황판 사진 입력 버튼 살리기
+     · 앱에 사진 판독 기능(openOcr / mOcr 모달)이 이미 들어 있으나
+       그 창을 여는 버튼이 화면 어디에도 없어 쓸 수 없었다 → 실사 탭에 버튼을 단다
+     · 현황판을 찍으면 품번·박스단위·재고수량을 읽어 실사표에 넣는다
+       (손글씨 판독은 불확실 행이 노란색으로 표시되니 반드시 확인 후 적용)
 
    v2.3 변경 — 목록이 끝까지 스크롤되지 않던 문제 · 키보드 확실 차단
      · v1.7 에서 표를 좌우로 보려고 .sheet 에 가로 스크롤을 걸었는데,
@@ -11114,6 +11120,9 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '#cntAddon .ch button.on{background:#1E2A36;border-color:#1E2A36;color:#fff}'+
    '#cntAddon .ch button span{opacity:.6;margin-left:4px}'+
    '#cntAddon .sv{font-size:12px;color:#7d8b99;margin-top:7px}'+
+   '#cntAddon .ocr-btn{width:100%;height:46px;margin-top:9px;border:0;border-radius:9px;'+
+     'background:#5B4B8A;color:#fff;font-size:14.5px;font-weight:800}'+
+   '#cntAddon .ocr-btn:active{background:#4a3d72}'+
    '#cntAddon .nb{margin-top:8px;padding:9px 11px;border-radius:9px;background:#FDF3DF;'+
      'border:1px solid #EBD9A8;color:#946200;font-size:12.5px;line-height:1.5}'+
    '#cntAddon .nb button{margin-left:6px;height:30px;padding:0 11px;border:0;border-radius:7px;'+
@@ -11355,8 +11364,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     if(!box){
       box=document.createElement('div'); box.id='cntAddon';
       box.innerHTML='<div class="pg"><div class="bar"><i></i></div><b></b></div>'+
-                    '<div class="ch"></div><div class="sv"></div>';
+                    '<div class="ch"></div>'+
+                    (typeof openOcr==='function'
+                      ? '<button class="ocr-btn" id="cntOcrBtn">현황판 사진으로 입력</button>'
+                      : '')+
+                    '<div class="sv"></div>';
       t.parentNode.insertBefore(box,t);
+      var ob=box.querySelector('#cntOcrBtn');
+      if(ob) ob.addEventListener('click',function(){
+        try{ openOcr(); }catch(e){ toast('사진 입력 창을 열지 못했습니다: '+e.message); }
+      });
       box.querySelector('.ch').addEventListener('click',function(e){
         var b=e.target.closest('button[data-f]'); if(!b) return;
         var q=document.getElementById('cntQ');
@@ -11684,7 +11701,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     setTimeout(function(){ try{ t.blur(); }catch(e){} },0);
   }, true);
 
-  console.log('실사 모바일 애드온 v2.3 적용');
+  console.log('실사 모바일 애드온 v2.4 적용');
 })();
 </script>
 
