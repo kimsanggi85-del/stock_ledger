@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.8 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.9 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,12 +10963,17 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.1   (2026-08-31)
+   재고실사 모바일 애드온  v1.2   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
 
-   v1.1 변경 — 모바일 버벅임 해결
+   v1.2 변경 — 검색 중 버벅임 해결
+     · 캐시 확인(서명 계산)을 화면을 다시 그릴 때 1회만 수행
+       (v1.1 은 calc() 호출마다 서명을 계산해 원래 비용이 그대로 남아 있었음)
+     · 품번 검색은 250ms 뒤에 한 번만 다시 그림 (글자마다 재렌더 방지)
+
+   기존 v1.1 개선
      · calc() 결과를 캐시 (전표가 바뀔 때만 다시 계산)  → 실사·총괄표 전체가 빨라짐
      · 버튼을 눌러도 전체를 다시 그리지 않고 누른 카드 한 장만 갱신
      · 애드온 오류가 나도 앱이 멈추지 않도록 전 구간 보호
@@ -11025,15 +11030,23 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     for(var i=0;i<n;i++){ r=S.led[i]; q+=(+r.q||0); d+=(+String(r.d||'').replace(/-/g,'')||0); }
     return n+'|'+q+'|'+d+'|'+(typeof ym!=='undefined'?ym:'')+'|'+S.items.length+'|'+VER;
   }
+  /* 서명 계산은 화면을 다시 그릴 때 1회만 한다.
+     calc() 안에서 매번 하면 전표를 품목 수만큼 다시 훑게 되어 캐시 효과가 사라진다. */
+  function refresh(){
+    try{ var s=sigNow(); if(s!==sig){ cache={}; sig=s; } }catch(e){ cache={}; }
+  }
   calc=function(it){
     try{
-      var s=sigNow();
-      if(s!==sig){ cache={}; sig=s; }
+      if(sig===null) refresh();
       var v=cache[it.pn];
       if(v===undefined){ v=_calc(it); cache[it.pn]=v; }
       return v;
     }catch(e){ return _calc(it); }
   };
+  if(typeof render==='function'){
+    var _render=render;
+    render=function(){ refresh(); return _render.apply(this,arguments); };
+  }
   /* 품목 마스터(기초재고·박스단위 등)를 고치면 캐시를 버린다 */
   if(typeof touchItem==='function'){
     var _ti=touchItem;
@@ -11085,6 +11098,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
   var _rCnt=rCnt;
   rCnt=function(){
+    refresh();
     try{ _rCnt.apply(this,arguments); }catch(e){ console.error('rCnt',e); }
     try{
       bar();
@@ -11224,7 +11238,15 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     if(typeof tab!=='undefined'&&tab==='cnt') pull();
   },60000);
 
-  console.log('실사 모바일 애드온 v1.1 적용');
+  /* ═══ 6. 품번 검색 디바운스 ═══
+     원본은 글자를 칠 때마다 rCnt() 로 카드 전체를 다시 그린다. 휴대폰에서 이때 멈춘다. */
+  var q=document.getElementById('cntQ');
+  if(q){
+    var qt=null;
+    q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
+  }
+
+  console.log('실사 모바일 애드온 v1.2 적용');
 })();
 </script>
 
