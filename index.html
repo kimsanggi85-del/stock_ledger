@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.3 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.6 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,32 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.6   (2026-08-31)
+   재고실사 모바일 애드온  v1.9   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v1.9 변경 — 박스 + 낱개 = 실수량 입력
+     · 카드 화면 입력을 [박스] [낱개] 두 칸으로 나눔
+       실수량 = 박스 x 박스단위 + 낱개,  차이는 자동 계산
+     · 박스단위가 1(낱개관리)인 품목은 낱개 칸을 숨기고 박스 칸만 쓴다
+     · 앱은 실사값을 박스수로 저장하므로 낱개는 소수 박스로 환산해 넣는다
+       (예: 3,000ea/박스에서 2박스+1,500개 → 2.5박스 = 7,500 EA)
+     · 조정전표 발행 뒤 소수점 오차가 남지 않도록 수량을 정수로 정리
+
+   v1.8 변경 — PC 표 화면에서 실사(EA)·차이(EA) 가 안 나오던 문제
+     · 키패드 보호(입력 중 재렌더 보류)가 PC 표 화면에도 걸려, 실사(박스)를 넣어도
+       실사(EA)·차이(EA)·정확도가 갱신되지 않았음 → 카드 화면에서만 적용하도록 변경
+     · 표 화면에서도 미실사/차이/일치 필터가 동작하도록 보완
+
+   v1.7 변경 — 모바일 화면 깨짐 · 아이폰 대응
+     · 태블릿·폴더블·데스크톱모드 등 화면이 760px 를 넘어도 터치 기기면 카드로 표시
+     · 표가 남는 화면(수불부·품목마스터 등)은 가로 스크롤로 끝까지 볼 수 있게
+     · 상단 입력줄이 화면을 벗어나지 않도록 줄바꿈 처리
+     · 아이폰: 입력칸 글자 16px 로 올려 자동 확대(레이아웃 틀어짐) 방지,
+       하단 홈바 영역(safe-area) 여백, 터치 스크롤 관성 적용
+     · 아이폰 숫자키패드에는 − 가 없으므로, 숫자만 입력하면 부족(−)으로 처리
+       (초과는 ＋ 버튼을 쓰거나 +3 처럼 부호를 붙여 입력)
 
    v1.6 변경 — 입력 방식을 "차이 수량"으로 전환 (휴대폰 카드 화면만)
      · 실사 총수량 대신 전산 대비 차이만 입력한다 (부족 −, 초과 +, 같으면 0)
@@ -11022,6 +11044,13 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     };
   }
 
+  /* 터치 기기 판정 — 화면 폭만으로는 태블릿·데스크톱모드에서 표가 나온다 */
+  function coarse(){
+    try{ return (window.matchMedia && matchMedia('(pointer:coarse)').matches) ||
+                ('ontouchstart' in window) || navigator.maxTouchPoints>0; }
+    catch(e){ return false; }
+  }
+
   /* ── 스타일 ── */
   var css=document.createElement('style');
   css.textContent=
@@ -11049,8 +11078,38 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '.cnt-same:active{background:#095730}'+
    '.mc.ok .cnt-same{background:#DCE9E2;color:#0B6B3A}'+
    '.cnt-same.undo{background:#EEF1F3;color:#5A6875;height:44px;font-size:14px}'+
+   '.mc .cnt2{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:flex-end}'+
+   '.mc .c2{flex:1 1 110px;display:flex;flex-direction:column;gap:3px}'+
+   '.mc .c2 em{font-style:normal;font-size:11.5px;color:#5A6875;font-weight:700}'+
+   '.mc .c2 input{width:100%;height:52px;border:1px solid #D7DCE1;border-radius:9px;'+
+     'text-align:center;font-size:19px;font-weight:800;background:#FFFDF2}'+
+   '.mc .c2r{flex:1 1 100%;font-size:13px;color:#16202B;padding-top:2px}'+
+   '.mc .c2r .mut{color:#7d8b99}'+
+   '.mc .c2r b{font-size:15px}'+
+   '.mc .c2r b.ng{color:#B3261E}'+
+   '.mc .c2r b.ok{color:#0B6B3A}'+
    '.mc .du{font-size:11px;line-height:1.15;color:#5A6875;font-weight:700;text-align:center;'+
-     'align-self:center;padding-left:2px}';
+     'align-self:center;padding-left:2px}'+
+
+   /* ── 모바일 · 아이폰 레이아웃 보정 ── */
+   '@media (max-width:900px){'+
+     'html{-webkit-text-size-adjust:100%}'+
+     /* 아이폰은 16px 미만 입력칸에 자동 확대가 걸려 화면이 틀어진다 */
+     'input,select,textarea,.t input{font-size:16px !important}'+
+     '.fbar{flex-wrap:wrap;gap:8px;align-items:stretch}'+
+     '.fbar>*{min-width:0}'+
+     '.fbar input,.fbar select{flex:1 1 140px;min-height:44px}'+
+     '.fbar button,.fbar .btn{min-height:44px}'+
+     '.fbar .rt{display:flex;flex-wrap:wrap;gap:8px;width:100%}'+
+     /* 표가 남는 화면은 가로로 끝까지 스크롤 */
+     '.sheet{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-left:8px;padding-right:8px}'+
+     '.sheet>table.t{min-width:720px}'+
+     '.mc{margin-bottom:10px}'+
+     '.mc-step input{font-size:17px !important;height:52px}'+
+     /* 하단 떠 있는 + 버튼에 마지막 카드가 가리지 않게 */
+     '#tCnt{padding-bottom:calc(84px + env(safe-area-inset-bottom))}'+
+     '#cntAddon{padding-left:2px;padding-right:2px}'+
+   '}';
   document.head.appendChild(css);
 
   /* ═══ 1. calc() 캐시 ═══
@@ -11089,29 +11148,56 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   /* ═══ 2. 카드에 [전산과 같음] 추가 ═══ */
   var _mc=mcCnt;
   function noBx(it){ return !(+it.bx>0); }              /* 박스단위 미등록 */
-  /* 전산 재고를 입력 단위(박스, 미등록이면 EA)로 환산 */
-  function baseOf(it,v){
-    var b=(+it.bx>0)?+it.bx:1;
-    return Math.floor((v&&isFinite(v.cur)?v.cur:0)/b);
+  function bxOf(it){ return (+it.bx>0)?+it.bx:1; }
+  function baseOf(it,v){                                 /* 전산 재고를 박스 단위로 */
+    return Math.floor((v&&isFinite(v.cur)?v.cur:0)/bxOf(it));
   }
+  function realOf(it){                                   /* 저장된 실사값 → 실수량(EA) */
+    return (it.cnt==null)?null:Math.round(it.cnt*bxOf(it));
+  }
+  /* 박스·낱개 → 실사값 저장 (앱은 박스수로 저장하므로 낱개는 소수로 환산) */
+  function setCnt(it,box,loose){
+    var bx=bxOf(it);
+    var real=Math.max(0, Math.round((+box||0)*bx + (+loose||0)));
+    it.cnt=real/bx;
+    return real;
+  }
+
   mcCnt=function(o,idx){
     var html=_mc(o,idx);
-    var it=o.it, ea=noBx(it);
-    var unit=ea?'EA':'박스';
-    var base=baseOf(it,o.v);
-    var diff=(it.cnt==null)?null:(it.cnt-base);
+    var it=o.it, bx=bxOf(it), ea=noBx(it);
+    var cur=(o.v&&isFinite(o.v.cur))?o.v.cur:0;
+    var real=realOf(it);
+    var box=(real==null)?'':Math.floor(real/bx);
+    var loose=(real==null)?'':(real%bx);
+    var df=(real==null)?null:(real-cur);
 
-    /* 입력칸을 '차이' 기준으로 바꾼다 */
-    html=html.replace(/placeholder="실사" value="[^"]*"/,
-      'placeholder="차이 0" value="'+(diff==null?'':diff)+'"');
-    html=html.replace('<button data-a="inc">＋</button><span>박스</span>',
-      '<button data-a="inc">＋</button><span class="du">차이<br>'+unit+'</span>');
+    /* 전산 표시: 박스 + 낱개 */
+    var cBox=Math.floor(cur/bx), cLoose=cur%bx;
 
-    /* 초록 버튼: 미실사 → 전산과 같음 / 입력됨 → 입력 취소 */
+    var input='<div class="cnt2">'+
+      '<label class="c2"><em>박스</em>'+
+        '<input type="number" inputmode="numeric" data-c="b" data-i2="'+idx+'" '+
+        'placeholder="0" value="'+box+'"></label>'+
+      (bx>1
+        ? '<label class="c2"><em>낱개</em>'+
+          '<input type="number" inputmode="numeric" data-c="e" data-i2="'+idx+'" '+
+          'placeholder="0" value="'+loose+'"></label>'
+        : '')+
+      '<div class="c2r">'+
+        (real==null
+          ? '<span class="mut">전산 '+nf(cBox)+'박스'+(cLoose?' + '+nf(cLoose):'')+' · '+nf(cur)+' EA</span>'
+          : '실사 <b>'+nf(real)+'</b> EA · 차이 <b class="'+(df?'ng':'ok')+'">'+(df>0?'+':'')+nf(df)+'</b>')+
+      '</div></div>';
+
+    /* 원본 입력줄(± 박스)을 박스+낱개 입력으로 교체 */
+    html=html.replace(/<div class="mc-step">[\s\S]*?<\/div>/, input);
+
     var btn = (it.cnt==null)
-      ? '<button class="cnt-same" data-act="same" data-i2="'+idx+'">전산과 같음 · 차이 0</button>'
+      ? '<button class="cnt-same" data-act="same" data-i2="'+idx+'">전산과 같음 · '+
+        nf(cBox)+'박스'+(cLoose?' + '+nf(cLoose):'')+'</button>'
       : '<button class="cnt-same undo" data-act="clear" data-i2="'+idx+'">입력 취소</button>';
-    html=html.replace('<div class="mc-step">', btn+'<div class="mc-step">');
+    html=html.replace('<div class="cnt2">', btn+'<div class="cnt2">');
 
     if(ea){
       html=html.replace('<div class="mc-sub">',
@@ -11156,13 +11242,17 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     });
   }
 
+  function isCard(){
+    var t=document.getElementById('tCnt');
+    return !!t && t.tagName!=='TABLE';
+  }
   function qNow(){
     var e=document.getElementById('cntQ');
     return e ? String(e.value||'').trim() : '';
   }
   function stateOf(it){
     if(it.cnt==null) return 'todo';
-    return (it.cnt*it.bx - calc(it).cur)===0 ? 'ok' : 'diff';
+    return (Math.round(it.cnt*bxOf(it)) - (calc(it).cur||0))===0 ? 'ok' : 'diff';
   }
   function setSv(t){ var e=document.querySelector('#cntAddon .sv'); if(e)e.textContent=t||''; }
 
@@ -11210,16 +11300,56 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     }else if(wrap){ wrap.remove(); }
   },'bar');
 
+  /* 화면이 넓게 잡혀 표로 그려졌더라도, 터치 기기면 카드로 바꿔 준다 */
+  var forceCards=guard(function(){
+    var t=document.getElementById('tCnt');
+    if(!t||t.tagName!=='TABLE'||!coarse()) return;
+    var q=(typeof nz==='function')?nz(qNow()):qNow().toLowerCase();
+    var sel=(document.getElementById('cSel')||{}).value||'all';
+    var R=[];
+    S.items.filter(inWh).forEach(function(it){
+      var v=calc(it);
+      var real=(it.cnt==null)?null:it.cnt*it.bx;
+      var df=(real===null)?null:real-v.cur;
+      if(q){
+        var key=(typeof nz==='function')?nz(it.pn+' '+(it.nm||'')):(it.pn+' '+(it.nm||'')).toLowerCase();
+        if(key.indexOf(q)<0) return;
+      }
+      if(sel==='in'&&real===null) return;
+      if(sel==='diff'&&!(df!==null&&df!==0)) return;
+      R.push({it:it,v:v,real:real,df:df,idx:S.items.indexOf(it)});
+    });
+    t.outerHTML='<div id="tCnt"></div>';
+    document.getElementById('tCnt').innerHTML = R.length
+      ? R.map(function(o){ return mcCnt(o,o.idx); }).join('')
+      : '<div class="empty">해당 품목이 없습니다.</div>';
+  },'forceCards');
+
   var _rCnt=rCnt;
   rCnt=function(){
-    /* 숫자를 입력하는 중에는 다시 그리지 않는다 — 그리면 키패드가 닫힌다 */
-    if(typing()){ afterBlur(function(){ rCnt(); }); return; }
+    /* 카드(휴대폰) 화면에서 숫자를 입력하는 중에는 다시 그리지 않는다 — 그리면 키패드가 닫힌다.
+       PC 표 화면은 즉시 갱신해야 실사(EA)·차이(EA)가 바로 보인다. */
+    if(isCard()&&typing()){ afterBlur(function(){ rCnt(); }); return; }
     refresh();
     try{ _rCnt.apply(this,arguments); }catch(e){ console.error('rCnt',e); }
+    try{ forceCards(); }catch(e){ console.error('forceCards',e); }
     try{
       bar();
       var t=document.getElementById('tCnt');
-      if(!t||t.tagName==='TABLE'||F==='all'||qNow()) return;   /* 검색 중에는 필터 해제 */
+      if(!t||F==='all'||qNow()) return;                        /* 검색 중에는 필터 해제 */
+
+      if(t.tagName==='TABLE'){                                 /* PC 표 화면 */
+        var trs=t.querySelectorAll('tbody tr'), m=0;
+        for(var k=0;k<trs.length;k++){
+          var inp=trs[k].querySelector('input[data-i]');
+          if(!inp) continue;
+          var itr=S.items[+inp.dataset.i]; if(!itr) continue;
+          var okr=stateOf(itr)===F;
+          trs[k].style.display=okr?'':'none';
+          if(okr)m++;
+        }
+        return;
+      }
       var cards=t.querySelectorAll('.mc[data-i]'), n=0;
       for(var i=0;i<cards.length;i++){
         var it=S.items[+cards[i].dataset.i]; if(!it) continue;
@@ -11238,10 +11368,6 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   };
 
   /* ═══ 4. 카드 한 장만 다시 그리기 ═══ */
-  function isCard(){
-    var t=document.getElementById('tCnt');
-    return !!t && t.tagName!=='TABLE';
-  }
   var repaint=guard(function(idx){
     var t=document.getElementById('tCnt');
     if(!t||t.tagName==='TABLE'){ rCnt(); return; }
@@ -11266,8 +11392,8 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var stp=e.target.closest('#tCnt button[data-a]');
     if(!btn&&!stp) return;
     if(!isCard()) return;                       /* PC 표 화면은 원래대로 */
-    var wrap=(btn||stp).closest('[data-i]');
-    var idx=btn?+btn.dataset.i2:(wrap?+wrap.dataset.i:NaN);
+    var idx=btn?+btn.dataset.i2:(function(){
+      var w=stp.closest('[data-i]'); return w?+w.dataset.i:NaN; })();
     var it=S.items[idx]; if(!it) return;
     e.stopPropagation(); e.preventDefault();
 
@@ -11275,12 +11401,12 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
       it.cnt=null;
     }else{
       fixBx(it);
-      var base=baseOf(it,calc(it));
-      if(btn){                                   /* 전산과 같음 → 차이 0 */
-        it.cnt=base;
-      }else{                                     /* ± 는 차이를 1씩 조정 */
-        var now=(it.cnt==null)?base:it.cnt;
-        it.cnt=Math.max(0, now + (stp.dataset.a==='inc'?1:-1));
+      var cur=calc(it).cur||0, bx=bxOf(it);
+      if(btn){                                   /* 전산과 같음 */
+        setCnt(it, Math.floor(cur/bx), cur%bx);
+      }else{                                     /* 남아 있는 ± 버튼(표 전환 직후 등) */
+        var real=realOf(it); if(real==null) real=cur;
+        setCnt(it, 0, real + (stp.dataset.a==='inc'?bx:-bx));
       }
     }
     CU[it.pn]=new Date().toISOString();
@@ -11288,21 +11414,43 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
   },'tap'), true);
 
   document.addEventListener('change',guard(function(e){
-    if(!e.target.matches('#tCnt input')) return;
+    var i=e.target.closest('#tCnt input[data-c]');
+    if(!i) return;
     if(!isCard()) return;
-    var wrap=e.target.closest('[data-i]'); if(!wrap) return;
-    var idx=+wrap.dataset.i, it=S.items[idx]; if(!it) return;
+    var idx=+i.dataset.i2, it=S.items[idx]; if(!it) return;
     e.stopPropagation();
-    var raw=String(e.target.value||'').trim();
-    if(raw===''){ it.cnt=null; }
+
+    var card=i.closest('.mc');
+    var eb=card?card.querySelector('input[data-c="b"]'):null;
+    var ee=card?card.querySelector('input[data-c="e"]'):null;
+    var vb=eb?String(eb.value||'').trim():'';
+    var ve=ee?String(ee.value||'').trim():'';
+
+    if(vb===''&&ve===''){ it.cnt=null; }
     else{
       fixBx(it);
-      var d=parseInt(raw,10); if(!isFinite(d)) d=0;
-      it.cnt=Math.max(0, baseOf(it,calc(it)) + d);      /* 차이 → 실사 총수량 */
+      setCnt(it, parseInt(vb,10)||0, parseInt(ve,10)||0);
     }
     CU[it.pn]=new Date().toISOString();
     save(); repaint(idx); sched();
   },'input'), true);
+
+  /* ═══ 조정전표 수량 정리 ═══
+     낱개를 소수 박스로 환산해 저장하므로, 전표 수량에 소수점 오차가 남을 수 있다. */
+  if(typeof applyCount==='function'){
+    var _ac=applyCount;
+    applyCount=function(){
+      var r=_ac.apply(this,arguments);
+      try{
+        var fixed=0;
+        S.led.forEach(function(x){
+          if(x&&typeof x.q==='number'&&x.q!==Math.round(x.q)){ x.q=Math.round(x.q); fixed++; }
+        });
+        if(fixed){ save(); render(); }
+      }catch(err){ console.error('전표 정리',err); }
+      return r;
+    };
+  }
 
   /* ═══ 5. 실사값 기기 간 공유 ═══ */
   function hdr(pf){
@@ -11376,7 +11524,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  console.log('실사 모바일 애드온 v1.6 적용');
+  console.log('실사 모바일 애드온 v1.9 적용');
 })();
 </script>
 
