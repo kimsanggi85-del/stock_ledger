@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.2 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.3 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v2.5   (2026-08-31)
+   재고실사 모바일 애드온  v2.6   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v2.6 변경 — 삭제 기록을 서버에도 적용
+     · v2.5 는 삭제 기록을 이 기기 목록에만 적용해, 서버에 남아 있던 품목이
+       다른 기기의 업로드로 계속 되살아났다
+     · 이제 삭제 기록에 있는 품번이 서버에 있으면 서버에서도 지운다
+       (앱을 열 때 1회, 품목 동기화 뒤에 확인)
 
    v2.5 변경 — 삭제한 품목이 되살아나지 않게
      · 품목을 지워도 다른 기기(PC·휴대폰)에 남아 있던 목록이 다시 올라와 부활했다
@@ -11660,6 +11666,27 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     return n;
   }
 
+  /* 삭제 기록에 있는 품번이 서버에 남아 있으면 서버에서도 지운다 */
+  var purging=false;
+  function purgeServer(){
+    var keys=Object.keys(DEL);
+    if(!keys.length || purging || typeof IT_TABLE==='undefined') return;
+    purging=true;
+    fetch(SB_URL+'/rest/v1/'+IT_TABLE+'?select=pn&limit=2000',{headers:kvHdr()})
+      .then(function(r){ return r.json(); })
+      .then(function(rows){
+        var hit=(rows||[]).map(function(r){ return r.pn; })
+                          .filter(function(p){ return p && DEL[p]; });
+        if(!hit.length) return null;
+        var q=hit.map(function(p){ return '"'+String(p).replace(/"/g,'')+'"'; }).join(',');
+        return fetch(SB_URL+'/rest/v1/'+IT_TABLE+'?pn=in.('+encodeURIComponent(q)+')',
+                     {method:'DELETE',headers:kvHdr('return=minimal')})
+          .then(function(){ console.log('삭제 기록으로 서버에서 제거',hit.length,'건:',hit.join(', ')); });
+      })
+      .catch(function(){})
+      .then(function(){ purging=false; });
+  }
+
   if(typeof delItem==='function'){
     var _delItem=delItem;
     delItem=function(){
@@ -11676,7 +11703,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     pullItems=function(){
       var r;
       try{ r=_pullItems.apply(this,arguments); }catch(e){ applyDel(); throw e; }
-      return Promise.resolve(r).then(function(v){ applyDel(); return v; },
+      return Promise.resolve(r).then(function(v){ applyDel(); purgeServer(); return v; },
                                      function(e){ applyDel(); throw e; });
     };
   }
@@ -11733,6 +11760,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     DEL=(v&&v.items)||{};
     var n=applyDel();
     if(n) console.log('삭제 기록으로 걷어낸 품목',n,'건');
+    purgeServer();
   }).catch(function(){});
 
   /* ═══ 5. 실사값 기기 간 공유 ═══ */
@@ -11817,7 +11845,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     setTimeout(function(){ try{ t.blur(); }catch(e){} },0);
   }, true);
 
-  console.log('실사 모바일 애드온 v2.5 적용');
+  console.log('실사 모바일 애드온 v2.6 적용');
 })();
 </script>
 
