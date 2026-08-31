@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.7 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.8 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10941,10 +10941,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 · LOT추적 애드온  v3.0   (2026-09-01)
+   재고실사 · LOT추적 애드온  v3.1   (2026-09-01)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v3.1 변경 — 공급업체별 코일 수불: 재고만 보기 · 코일별 펼침
+     · [재고 있는 것만] 스위치(기본 켬) — 재고 0 인 업체·규격 행을 숨긴다
+     · 규격 행을 누르면 그 규격의 재고 코일이 한 줄씩 펼쳐진다
+       (코일 LOT · 입고일 · 입고kg · 잔량kg · 상태 · 설비장착)
+     · 다시 누르면 접힌다. 원본 표·인쇄 양식은 그대로
 
    v3.0 변경 — 머리글을 표 밖으로 (표 안에 넣는 한 계속 깨져서)
      · 앱이 표의 머리글 행을 재가공해 th 로도 td 로도 세로로 쌓였다
@@ -11164,6 +11170,17 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '.trc-more{margin-top:10px}'+
    '.trc-more>summary{cursor:pointer;font-size:12.5px;font-weight:700;color:#5A6875;'+
      'padding:8px 10px;background:#F1F4F6;border-radius:8px}'+
+   '.sup-tg{margin-left:12px;font-size:12px;font-weight:700;color:#2f6e49;cursor:pointer;'+
+     'display:inline-flex;align-items:center;gap:5px;user-select:none}'+
+   '.sup-tg input{width:15px;height:15px;accent-color:#2f6e49}'+
+   '#tRaw .exp-i{color:#2f6e49;font-weight:800}'+
+   '#tRaw tr.coil-x .coil-xin{padding:6px 10px 10px 34px}'+
+   '#tRaw table.xin{table-layout:fixed;width:100%;max-width:760px;border:1px solid #BFD4C6}'+
+   '#tRaw table.xin td{padding:4px 8px;height:auto;white-space:normal;text-align:right}'+
+   '#tRaw table.xin td.l{text-align:left}'+
+   '#tRaw table.xin td.c{text-align:center}'+
+   '#tRaw table.xin tr.xh td{background:#E4EFE7;color:#0B4A2B;font-weight:800;'+
+     'font-family:var(--sans);font-size:10.5px;text-align:center}'+
    '#cntAddon .nb{margin-top:8px;padding:9px 11px;border-radius:9px;background:#FDF3DF;'+
      'border:1px solid #EBD9A8;color:#946200;font-size:12.5px;line-height:1.5}'+
    '#cntAddon .nb button{margin-left:6px;height:30px;padding:0 11px;border:0;border-radius:7px;'+
@@ -11793,6 +11810,115 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     };
   }
 
+  /* ═══ 공급업체별 코일 수불 — 재고만 보기 · 코일별 펼침 ═══ */
+  var LIVEK='tj_sup_live_v1';
+  function liveOn(){ try{ return localStorage.getItem(LIVEK)!=='0'; }catch(e){ return true; } }
+  function setLive(v){ try{ localStorage.setItem(LIVEK,v?'1':'0'); }catch(e){} }
+
+  function supDecorate(){
+    if(typeof RV==='undefined'||RV!=='sup') return;
+    var t=document.getElementById('tRaw'); if(!t) return;
+    var gt=document.getElementById('gt-raw');
+
+    /* 스위치 삽입 */
+    if(gt && !document.getElementById('supLiveTg')){
+      var lb=document.createElement('label');
+      lb.id='supLiveTg'; lb.className='sup-tg noprint';
+      lb.innerHTML='<input type="checkbox"'+(liveOn()?' checked':'')+'> 재고 있는 것만';
+      lb.querySelector('input').addEventListener('change',function(e){
+        setLive(e.target.checked); rRaw();
+      });
+      gt.parentNode.insertBefore(lb, gt.nextSibling);
+    }
+
+    var trs=t.querySelectorAll('tbody tr');
+    for(var i=0;i<trs.length;i++){
+      var tr=trs[i];
+      if(tr.classList.contains('coil-x')) continue;
+      var tds=tr.querySelectorAll(':scope>td');
+      if(tds.length<8) continue;
+      var isGrp=tr.classList.contains('grp');
+      var remTxt=(tds[6].textContent||'').replace(/[^0-9]/g,'');
+      var rem=+remTxt||0;
+      /* 재고만 보기 */
+      if(liveOn() && rem===0){ tr.style.display='none'; continue; }
+      tr.style.display='';
+      /* 규격 행 펼침 표시 */
+      if(!isGrp && rem>0 && !tr.dataset.exp){
+        tr.dataset.exp='1';
+        tds[0].style.cursor='pointer';
+        if(!tds[0].querySelector('.exp-i')){
+          var sp2=document.createElement('span');
+          sp2.className='exp-i'; sp2.textContent=' ▸';
+          tds[0].appendChild(sp2);
+        }
+      }
+    }
+  }
+
+  /* 규격 행 클릭 → 코일 목록 펼침/접힘 */
+  document.addEventListener('click',guard(function(e){
+    if(typeof RV==='undefined'||RV!=='sup') return;
+    var tr=e.target.closest('#tRaw tbody tr');
+    if(!tr||tr.classList.contains('grp')||tr.classList.contains('coil-x')) return;
+    if(e.target.closest('button,input,select,a')) return;
+    var tds=tr.querySelectorAll(':scope>td');
+    if(tds.length<8) return;
+
+    /* 이미 펼쳐져 있으면 접기 */
+    var nx=tr.nextElementSibling;
+    if(nx&&nx.classList.contains('coil-x')){ nx.remove();
+      var ic=tr.querySelector('.exp-i'); if(ic)ic.textContent=' ▸'; return; }
+
+    /* 업체명: 위쪽 가장 가까운 grp 행 */
+    var g=tr.previousElementSibling;
+    while(g&&!g.classList.contains('grp')) g=g.previousElementSibling;
+    if(!g) return;
+    var supName=(g.querySelectorAll(':scope>td')[0].textContent||'').trim();
+    var specTxt=(tds[0].textContent||'').replace(/^└\s*/,'').replace(/\s*▸\s*$/,'').trim();
+
+    var list=(S.coils||[]).filter(function(c){
+      if(typeof isOff==='function'&&isOff(c)) return false;
+      if(typeof supNm==='function'&&supNm(c.sup)!==supName) return false;
+      var nm2=(typeof specNm==='function')?specNm({mt:c.mt,t:+c.t||0,w:+c.w||0}):'';
+      if(nm2!==specTxt) return false;
+      return (typeof remOf==='function'?remOf(c):0)>0.5;
+    }).sort(function(a,b){ return String(a.d||'').localeCompare(String(b.d||'')); });
+
+    var inner = list.length ? list.map(function(c){
+      var r=remOf(c);
+      var st=(typeof coilSt==='function')?coilSt(c):'';
+      var mo=(typeof mountOf==='function')?mountOf(c.cno):null;
+      return '<tr><td class="l" style="font-weight:700">'+esc2(c.cno)+'</td>'
+        +'<td class="c">'+esc2(c.d||'')+'</td>'
+        +'<td>'+nf2(Math.round(+c.wt||0))+'</td>'
+        +'<td style="font-weight:700;color:#0B6B3A">'+nf2(Math.round(r*10)/10)+'</td>'
+        +'<td class="c">'+esc2(st)+'</td>'
+        +'<td class="c">'+(mo?esc2(typeof eqName==='function'?eqName(mo.mc||mo):String(mo)):'-')+'</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="c" style="color:#93A0AB;padding:10px">잔량이 남은 코일이 없습니다</td></tr>';
+
+    var x=document.createElement('tr');
+    x.className='coil-x';
+    x.innerHTML='<td colspan="15" style="padding:0;background:#F7FAF8">'
+      +'<div class="coil-xin"><table class="t xin">'
+      +'<colgroup><col style="width:26%"><col style="width:14%"><col style="width:14%">'
+      +'<col style="width:14%"><col style="width:14%"><col style="width:18%"></colgroup>'
+      +'<tbody><tr class="xh"><td>코일 LOT</td><td>입고일</td><td>입고(kg)</td>'
+      +'<td>잔량(kg)</td><td>상태</td><td>설비 장착</td></tr>'
+      +inner+'</tbody></table></div></td>';
+    tr.parentNode.insertBefore(x,tr.nextSibling);
+    var ic2=tr.querySelector('.exp-i'); if(ic2)ic2.textContent=' ▾';
+  },'supExp'), true);
+
+  if(typeof rRaw==='function'){
+    var _rRaw=rRaw;
+    rRaw=function(){
+      var r=_rRaw.apply(this,arguments);
+      try{ supDecorate(); }catch(e){ console.error('supDecorate',e); }
+      return r;
+    };
+  }
+
   /* ═══ 품목 삭제 기록 — 지운 품목이 다른 기기에서 되살아나지 않게 ═══ */
   var DELK='tj_item_del_v1', DEL={};
   function kvHdr(pf){
@@ -12003,7 +12129,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     setTimeout(function(){ try{ t.blur(); }catch(e){} },0);
   }, true);
 
-  console.log('실사 · LOT추적 애드온 v3.0 적용');
+  console.log('실사 · LOT추적 애드온 v3.1 적용');
 })();
 </script>
 
