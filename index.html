@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.9 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v8.0 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,18 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v2.2   (2026-08-31)
+   재고실사 모바일 애드온  v2.3   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v2.3 변경 — 목록이 끝까지 스크롤되지 않던 문제 · 키보드 확실 차단
+     · v1.7 에서 표를 좌우로 보려고 .sheet 에 가로 스크롤을 걸었는데,
+       CSS 규칙상 가로 스크롤을 켜면 세로도 스크롤 박스가 되어 카드 목록이 그 안에 갇혔다
+       → 표가 들어 있는 화면에만 가로 스크롤을 준다 (카드 화면은 페이지가 그대로 스크롤)
+     · 실사 입력칸을 읽기전용으로 바꿔 휴대폰 키보드를 확실히 막는다
+       (삼성 키보드 등은 inputmode=none 을 무시하는 경우가 있다. 값은 앱 숫자판으로 입력)
+     · 검색창은 한글 전환이 필요하므로, 숫자판이 열리면 포커스만 풀어 키보드를 닫는다
 
    v2.2 변경 — 앱 숫자판만 뜨게 (휴대폰 키보드 중복 제거)
      · 앱은 숫자판을 여는 순간에야 inputmode=none 을 걸어, 그 전에 이미 올라온
@@ -11064,11 +11072,24 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
   /* 앱 숫자판을 쓰는 입력칸에는 휴대폰 키보드가 뜨지 않게 미리 걸어 둔다.
      (앱은 숫자판을 여는 시점에야 걸어서, 이미 올라온 키보드가 함께 남았다) */
+  /* 표가 들어 있는 화면에만 가로 스크롤을 준다.
+     카드 화면에 걸면 세로까지 스크롤 박스가 되어 목록이 끝까지 내려가지 않는다. */
+  function fitSheets(){
+    var l=document.querySelectorAll('.sheet');
+    for(var i=0;i<l.length;i++){
+      var hasT=!!l[i].querySelector('table.t');
+      if(hasT) l[i].classList.add('xscroll'); else l[i].classList.remove('xscroll');
+    }
+  }
+
   function noKeyboard(){
     var l=document.querySelectorAll('.kbi');
     for(var i=0;i<l.length;i++){
       if(l[i].getAttribute('inputmode')!=='text') l[i].setAttribute('inputmode','none');
     }
+    /* 실사 입력칸은 앱 숫자판으로만 넣으므로 읽기전용 — 휴대폰 키보드가 뜨지 않는다 */
+    var c=document.querySelectorAll('#tCnt input[data-c]');
+    for(var j=0;j<c.length;j++){ c[j].readOnly=true; }
   }
 
   /* 터치 기기 판정 — 화면 폭만으로는 태블릿·데스크톱모드에서 표가 나온다 */
@@ -11112,6 +11133,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
      'text-align:center;font-size:19px;font-weight:800;background:#FFFDF2;'+
      'caret-color:#0B6B3A}'+
    '.mc .c2 input:focus{outline:2px solid #0B6B3A;outline-offset:-2px}'+
+   '.mc .c2 input[readonly]{cursor:pointer}'+
    '.mc .c2r{flex:1 1 100%;font-size:13px;color:#16202B;padding-top:2px}'+
    '.mc .c2r .mut{color:#7d8b99}'+
    '.mc .c2r b{font-size:15px}'+
@@ -11141,8 +11163,9 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
      '.fbar button,.fbar .btn{min-height:44px}'+
      '.fbar .rt{display:flex;flex-wrap:wrap;gap:8px;width:100%}'+
      /* 표가 남는 화면은 가로로 끝까지 스크롤 */
-     '.sheet{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-left:8px;padding-right:8px}'+
-     '.sheet>table.t{min-width:720px}'+
+     '.sheet{padding-left:8px;padding-right:8px}'+
+     '.sheet.xscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}'+
+     '.sheet.xscroll>table.t{min-width:720px}'+
      '.mc{margin-bottom:10px}'+
      '.mc-step input{font-size:17px !important;height:52px}'+
      /* 하단 떠 있는 + 버튼에 마지막 카드가 가리지 않게 */
@@ -11254,11 +11277,11 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
     var input='<div class="cnt2">'+
       '<label class="c2"><em>'+unitNm+'</em>'+
-        '<input type="text" class="kbi" inputmode="none" id="cntB'+idx+'" '+
+        '<input type="text" class="kbi" inputmode="none" readonly id="cntB'+idx+'" '+
         'data-c="b" data-i2="'+idx+'" placeholder="0" value="'+box+'"></label>'+
       (bx>1
         ? '<label class="c2"><em>낱개</em>'+
-          '<input type="text" class="kbi" inputmode="none" id="cntE'+idx+'" '+
+          '<input type="text" class="kbi" inputmode="none" readonly id="cntE'+idx+'" '+
           'data-c="e" data-i2="'+idx+'" placeholder="0" value="'+loose+'"></label>'
         : '')+
       '<div class="c2r">'+resHtml(it,cur)+'</div></div>';
@@ -11403,7 +11426,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     refresh();
     try{ _rCnt.apply(this,arguments); }catch(e){ console.error('rCnt',e); }
     try{ forceCards(); }catch(e){ console.error('forceCards',e); }
-    try{ noKeyboard(); }catch(e){}
+    try{ noKeyboard(); fitSheets(); }catch(e){}
     try{
       bar();
       var t=document.getElementById('tCnt');
@@ -11651,15 +11674,17 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  noKeyboard();
+  noKeyboard(); fitSheets();
   document.addEventListener('focusin',function(e){
     var t=e.target;
-    if(t&&t.classList&&t.classList.contains('kbi')&&t.getAttribute('inputmode')!=='text'){
-      t.setAttribute('inputmode','none');
-    }
+    if(!t||!t.classList||!t.classList.contains('kbi')) return;
+    if(t.getAttribute('inputmode')==='text') return;      /* 가나다 전환 중이면 그대로 */
+    t.setAttribute('inputmode','none');
+    /* 앱 숫자판이 값을 넣으므로 포커스는 필요 없다 — 풀어서 키보드를 닫는다 */
+    setTimeout(function(){ try{ t.blur(); }catch(e){} },0);
   }, true);
 
-  console.log('실사 모바일 애드온 v2.2 적용');
+  console.log('실사 모바일 애드온 v2.3 적용');
 })();
 </script>
 
