@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.9 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.0 · 원소재 v11.8</b><span id="tbNow"> · 전체 · 2026-08</span></small></div>
   <span id="tbPage" style="margin-left:auto">✅ 재고실사표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10963,10 +10963,16 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
 
 /* ═══════════════════════════════════════════════════════════════
-   재고실사 모바일 애드온  v1.2   (2026-08-31)
+   재고실사 모바일 애드온  v1.3   (2026-08-31)
 
    붙이는 위치 : 재고수불부 index.html 의 스크립트 맨 끝 (닫는 script 태그 바로 앞)
                 기존 코드는 고치지 않습니다.
+
+   v1.3 변경 — 박스단위 미등록 품목 실사 불가 해결
+     · 박스단위(bx)가 0 인 품목은 실사수량 = 실사박스 × 0 = 0 이라
+       몇 개를 세든 차이가 0 으로 잡혀 조정전표가 발행되지 않았음
+     · 이런 품목은 낱개(EA) 로 입력받고, 입력하는 순간 박스단위를 1(낱개관리)로 설정
+     · 상단에 미등록 품목 수와 [낱개(1)로 일괄 설정] 버튼 표시
 
    v1.2 변경 — 검색 중 버벅임 해결
      · 캐시 확인(서명 계산)을 화면을 다시 그릴 때 1회만 수행
@@ -11014,6 +11020,11 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
    '#cntAddon .ch button.on{background:#1E2A36;border-color:#1E2A36;color:#fff}'+
    '#cntAddon .ch button span{opacity:.6;margin-left:4px}'+
    '#cntAddon .sv{font-size:12px;color:#7d8b99;margin-top:7px}'+
+   '#cntAddon .nb{margin-top:8px;padding:9px 11px;border-radius:9px;background:#FDF3DF;'+
+     'border:1px solid #EBD9A8;color:#946200;font-size:12.5px;line-height:1.5}'+
+   '#cntAddon .nb button{margin-left:6px;height:30px;padding:0 11px;border:0;border-radius:7px;'+
+     'background:#946200;color:#fff;font-size:12px;font-weight:700}'+
+   '.mc .ea-u{color:#946200;font-weight:800}'+
    '.cnt-same{display:block;width:100%;height:52px;margin:10px 0 0;border:0;border-radius:9px;'+
      'background:#0B6B3A;color:#fff;font-size:15.5px;font-weight:800}'+
    '.cnt-same:active{background:#095730}'+
@@ -11055,13 +11066,43 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
 
   /* ═══ 2. 카드에 [전산과 같음] 추가 ═══ */
   var _mc=mcCnt;
+  function noBx(it){ return !(+it.bx>0); }              /* 박스단위 미등록 */
   mcCnt=function(o,idx){
     var html=_mc(o,idx);
-    var box=(o.v&&isFinite(o.v.box))?o.v.box:0;
+    var ea=noBx(o.it);
+    var box=ea ? ((o.v&&isFinite(o.v.cur))?o.v.cur:0)
+               : ((o.v&&isFinite(o.v.box))?o.v.box:0);
+    var unit=ea?'EA':'박스';
     var btn='<button class="cnt-same" data-same="'+idx+'" data-box="'+box+'">'+
-            (o.it.cnt!=null?'전산과 같음으로 변경':'전산과 같음 · '+box+'박스')+'</button>';
-    return html.replace('<div class="mc-step">', btn+'<div class="mc-step">');
+            (o.it.cnt!=null?'전산과 같음으로 변경':'전산과 같음 · '+box+unit)+'</button>';
+    html=html.replace('<div class="mc-step">', btn+'<div class="mc-step">');
+    if(ea){
+      /* 입력 단위를 EA 로 표시하고, 박스단위 미등록임을 알린다 */
+      html=html.replace('<button data-a="inc">＋</button><span>박스</span>',
+                        '<button data-a="inc">＋</button><span class="ea-u">EA</span>');
+      html=html.replace('<div class="mc-sub">',
+        '<div class="mc-sub" style="color:#946200">박스단위 미등록 — 낱개(EA)로 입력하세요</div>'+
+        '<div class="mc-sub">',1);
+    }
+    return html;
   };
+
+  /* ═══ 박스단위 미등록 보정 ═══
+     박스단위가 0 이면 실사수량(박스×단위)이 항상 0 이 되어 차이가 잡히지 않는다.
+     실사값을 넣는 순간 낱개관리(1)로 설정해 정상 계산되게 한다. */
+  function fixBx(it){
+    if(+it.bx>0) return false;
+    it.bx=1;
+    if(typeof touchItem==='function') touchItem(it); else VER++;
+    return true;
+  }
+  function fixAllBx(){
+    var t=S.items.filter(inWh).filter(noBx);
+    if(!t.length){ toast('박스단위 미등록 품목이 없습니다'); return; }
+    if(!confirm('박스단위가 등록되지 않은 '+t.length+'품목을 낱개관리(1 ea/박스)로 설정합니다.\n\n실제 박스단위가 있는 품목은 [품목 마스터]에서 값을 넣어 주세요.')) return;
+    t.forEach(function(it){ it.bx=1; if(typeof touchItem==='function') touchItem(it); });
+    save(); rCnt(); toast(t.length+'품목을 낱개관리로 설정했습니다');
+  }
 
   /* ═══ 3. 진행률 · 필터 ═══ */
   function stateOf(it){
@@ -11094,6 +11135,20 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
               x[1]+'<span>'+x[2]+'</span></button>'; }).join('');
     var g=document.getElementById('gt-cnt');
     if(g) g.innerHTML='재고실사표 · 총 <b>'+list.length+'</b>품목 · 실사입력 <b>'+done+'</b>';
+
+    var nb=list.filter(noBx).length;
+    var wrap=box.querySelector('.nb');
+    if(nb){
+      if(!wrap){
+        wrap=document.createElement('div'); wrap.className='nb';
+        box.insertBefore(wrap, box.querySelector('.sv'));
+        wrap.addEventListener('click',function(e){
+          if(e.target.closest('button')) fixAllBx();
+        });
+      }
+      wrap.innerHTML='박스단위 미등록 <b>'+nb+'</b>품목 — 낱개(EA)로 입력됩니다 '+
+                     '<button>낱개(1)로 일괄 설정</button>';
+    }else if(wrap){ wrap.remove(); }
   },'bar');
 
   var _rCnt=rCnt;
@@ -11153,6 +11208,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var idx=+wrap.dataset.i, it=S.items[idx]; if(!it) return;
     e.stopPropagation(); e.preventDefault();
 
+    fixBx(it);
     if(same){
       var b=+same.dataset.box; it.cnt=isFinite(b)?b:0;
     }else{
@@ -11169,6 +11225,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     var wrap=e.target.closest('[data-i]'); if(!wrap) return;
     var idx=+wrap.dataset.i, it=S.items[idx]; if(!it) return;
     e.stopPropagation();
+    fixBx(it);
     it.cnt=e.target.value===''?null:Math.max(0,parseInt(e.target.value)||0);
     CU[it.pn]=new Date().toISOString();
     save(); repaint(idx); sched();
@@ -11246,7 +11303,7 @@ window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if
     q.oninput=function(){ clearTimeout(qt); qt=setTimeout(function(){ rCnt(); },250); };
   }
 
-  console.log('실사 모바일 애드온 v1.2 적용');
+  console.log('실사 모바일 애드온 v1.3 적용');
 })();
 </script>
 
