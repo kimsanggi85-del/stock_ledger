@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.12</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.14</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9442,7 +9442,7 @@ function mountOf(cno){ return (S.eq||[]).find(e=>e.lot&&e.lot===cno); }
    입고 테이블을 Supabase 로 올려 둔다. 있으면 원단위 추정 대신 이 실제 중량으로 차감한다. */
 let rawMesBusy=false, RCV_REF=new Map();
 const MES_FROM='2026-05-01';                     /* MES 소재 자료 동기화 시작일 (mes_raw_sync.py 첫 소급일과 동일) */
-const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',DK:'동국산업',HK:'해강스틸',BK:'부강스프링',SW:'송원테크',SWTEC:'송원테크',SG:'송원테크',NS:'나스테크',SU:'세동산업(사급)',SD:'세동산업(사급)'};
+const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',HG:'동일스테인레스',DK:'동국산업',HK:'해강스틸',BK:'부강스프링',SW:'송원테크',SWTEC:'송원테크',SG:'송원테크',NS:'나스테크',SU:'세동산업(사급)',SD:'세동산업(사급)',DS:'세동산업(사급)'};
 const vendorNm=v=>{ const k=String(v||'').trim().toUpperCase(); return VENDOR_MAP[k]||supNm(v||''); };
 async function syncRawMes(silent){
   if(rawMesBusy)return null; rawMesBusy=true;
@@ -9520,6 +9520,18 @@ async function syncRawMes(silent){
         if(isLocked(c,'wt'))delete put.wt;
         Object.keys(put).forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(put[k])){c[k]=put[k];} });
         if(mes.st==='1')out.mount++; else if(mes.st==='2')out.done++; else out.wait++;
+      });
+      /* MES 입고 업체칸이 비어 있으면 같은 HEAT(밀시트) 다른 입고건의 업체로 채운다 */
+      const byHeat=new Map();
+      const heatKey=v=>String(v||'').split('-')[0].trim().toUpperCase();
+      const noteHeat=c=>heatKey(c.ms||c.cno);
+      S.coils.forEach(c=>{ const h=noteHeat(c); if(h&&c.sup&&!byHeat.has(h))byHeat.set(h,c.sup); });
+      RCV_REF.forEach(q=>{ const h=heatKey(q.ms||q.cno); if(h&&q.sup&&!byHeat.has(h))byHeat.set(h,q.sup); });
+      S.coils.forEach(c=>{
+        if(c.sup)return;
+        const g=byHeat.get(noteHeat(c)); if(!g)return;
+        c.sup=g; c.n=(c.n||'')+' · 업체 보완: MES 입고 업체칸 공란 → 같은 HEAT 입고건 기준';
+        c.ua=nowIso(); out.supFix=(out.supFix||0)+1; rawDirty=true;
       });
       /* 기준일 이전 입고분: 시트로 넣은 코일에 업체가 비어 있으면 비고의 입고번호로 채운다 */
       S.coils.forEach(c=>{
