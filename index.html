@@ -670,7 +670,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
     <div id="dTabs"><button class="on" onclick="setTab(&#39;sum&#39;)"><i>📊</i>재고수불 총괄표<em>SUMMARY</em></button><button class="" onclick="setTab(&#39;bin&#39;)"><i>📒</i>품목별 수불부<em>BIN CARD</em></button><button class="" onclick="setTab(&#39;io&#39;)"><i>↔</i>입출고 내역<em>IN / OUT</em></button><button class="" onclick="setTab(&#39;cnt&#39;)"><i>✅</i>재고실사표<em>COUNT</em></button><button class="" onclick="setTab(&#39;raw&#39;)"><i>🧱</i>원소재 재고<em>RAW COIL</em></button><button class="" onclick="setTab(&#39;trc&#39;)"><i>🔗</i>LOT 추적<em>TRACEABILITY</em></button><button class="" onclick="setTab(&#39;cfg&#39;)"><i>⚙</i>품목 마스터<em>MASTER</em></button><button class="" onclick="setTab(&#39;help&#39;)"><i>❓</i>사용안내<em>HELP</em></button></div>
-    <div id="l2"><button class="pri" onclick="render()"><i>🔄</i><b>조회</b></button><button class="" onclick="window.print()"><i>🖨</i><b>인쇄</b></button><button class="" onclick="exportXls()"><i>📗</i><b>엑셀</b></button><button class="" onclick="exportCsv(&#39;sum&#39;)"><i>📄</i><b>CSV</b></button><button class="sep" id="l2mes" onclick="syncMes(false)"><i>🔃</i><b>MES 동기화</b></button></div>
+    <div id="l2"><button class="pri" onclick="syncMes(false)"><i>🔃</i><b>최신화</b></button><button class="" onclick="render()"><i>🔄</i><b>조회</b></button><button class="" onclick="window.print()"><i>🖨</i><b>인쇄</b></button><button class="" onclick="exportXls()"><i>📗</i><b>엑셀</b></button><button class="" onclick="exportCsv(&#39;sum&#39;)"><i>📄</i><b>CSV</b></button></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기)</option>
@@ -11926,7 +11926,7 @@ window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고수불 총괄표','SUMMARY'],['bin','📒','품목별 수불부','BIN CARD'],['io','↔','입출고 내역','IN / OUT'],['cnt','✅','재고실사표','COUNT'],['raw','🧱','원소재 재고','RAW COIL'],['trc','🔗','LOT 추적','TRACEABILITY'],['cfg','⚙','품목 마스터','MASTER'],['help','❓','사용안내','HELP']];
 const SUB={
-  sum:[['🔄','조회','render()','pri'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
+  sum:[['🔃','최신화','syncMes(false)','pri'],['🔄','조회','render()'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
@@ -11939,7 +11939,7 @@ function rL2(){
   const el=$('l2'); if(!el)return;
   const cur=document.querySelector('.tabs div.on'); const t=cur?cur.dataset.t:'sum';
   el.innerHTML=(SUB[t]||[]).map(([ic,n,fn,c])=>`<button class="${c||''}" onclick="${fn}"><i>${ic}</i><b>${n}</b></button>`).join('')
-    +`<button class="sep" id="l2mes" onclick="syncMes(false)"><i>🔃</i><b>MES 동기화</b></button>`;
+    +(t==='sum'?'':`<button class="sep" id="l2mes" onclick="syncMes(false)"><i>🔃</i><b>최신화</b></button>`);
 }
 function rDTabs(){
   rL2();
