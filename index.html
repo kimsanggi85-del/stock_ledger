@@ -665,7 +665,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7498,7 +7498,8 @@ function itHeaders(pf){const o={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Co
 function touchItem(it){ if(it)it.ua=new Date().toISOString(); itDirty=true; schedPush(); }
 function schedPush(){ clearTimeout(itTimer); itTimer=setTimeout(()=>pushItems(true),2500); }
 function itRow(it){
-  const o={ua:it.ua||new Date().toISOString(),updated_at:new Date().toISOString()};
+  /* ua 가 없으면 고정 과거값 — 새 시각을 찍으면 밀어올릴 때마다 다른 기기 값을 덮어쓴다 */
+  const o={ua:it.ua||'2000-01-01T00:00:00.000Z',updated_at:new Date().toISOString()};
   IT_COLS.forEach(c=>{
     let v=it[c];
     if(c==='bd') v=(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:null;
@@ -7514,7 +7515,7 @@ async function pushItems(silent){
   try{
     /* 같은 품번이 두 번 있으면 upsert 가 통째로 실패한다 → 최신 것만 남긴다 */
     const seenPn=new Map();
-    S.items.filter(i=>i.pn).forEach(i=>{
+    S.items.filter(i=>i.pn&&!DEL_PNS.has(i.pn)).forEach(i=>{
       const k=String(i.pn).trim(); if(!k)return;
       const ex=seenPn.get(k);
       if(!ex||String(i.ua||'')>String(ex.ua||''))seenPn.set(k,i);
@@ -7536,8 +7537,17 @@ async function pushItems(silent){
 }
 async function pullItems(silent){
   try{
-    const rows=await fetchAll(SB_URL+'/rest/v1/'+IT_TABLE+'?select=*&order=pn.asc',
+    await itPullDel();                                 /* 삭제기록 먼저 */
+    let rows=await fetchAll(SB_URL+'/rest/v1/'+IT_TABLE+'?select=*&order=pn.asc',
       {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
+    await itPurgeServerDel(rows);                      /* 서버에 되살아난 삭제 품번 제거 */
+    rows=rows.filter(r=>!DEL_PNS.has(r.pn));
+    /* 내 로컬에 남은 삭제 품번도 정리 */
+    if(DEL_PNS.size){
+      const b=S.items.length;
+      S.items=S.items.filter(i=>!DEL_PNS.has(i.pn));
+      if(S.items.length!==b)save();
+    }
     if(!rows.length){ await pushItems(true); return {add:0,upd:0}; }
     const loc=new Map(S.items.map(i=>[i.pn,i]));
     let add=0,upd=0;
@@ -7564,6 +7574,36 @@ async function pullItems(silent){
 async function delItemRemote(pn){
   try{ await fetch(SB_URL+'/rest/v1/'+IT_TABLE+'?pn=eq.'+encodeURIComponent(pn),
     {method:'DELETE',headers:itHeaders('return=minimal')}); }catch(e){}
+}
+/* ═══ 품목 삭제기록 — 지운 품목이 다른 기기 업로드로 되살아나는 것을 막는다
+   (애드온 v2.6과 같은 kv_store 키 `tj_item_del_v1` 를 써서 두 빌드가 같이 동작) ═══ */
+const ITEM_DEL_KEY='tj_item_del_v1';
+let DEL_PNS=new Set();
+async function itPullDel(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+ITEM_DEL_KEY+'&select=value',{headers:itHeaders()});
+    if(!r.ok)return;
+    const j=await r.json(); const v=j&&j[0]&&j[0].value;
+    DEL_PNS=new Set(Array.isArray(v&&v.pns)?v.pns:[]);
+  }catch(e){}
+}
+async function itPushDel(){
+  try{
+    await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
+      {method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+       body:JSON.stringify([{key:ITEM_DEL_KEY,value:{pns:[...DEL_PNS],ua:nowIso()},updated_at:nowIso()}])});
+  }catch(e){}
+}
+async function markItemDel(pn){
+  await itPullDel();                       /* 다른 기기 기록과 합친 뒤 저장 */
+  DEL_PNS.add(pn);
+  await itPushDel();
+}
+/* 서버 stock_item 에 남은 삭제 품번 제거 (다른 기기가 되올린 잔존분 정리) */
+async function itPurgeServerDel(rows){
+  const hit=rows.filter(r=>DEL_PNS.has(r.pn)).map(r=>r.pn);
+  for(const pn of hit)await delItemRemote(pn);
+  return hit.length;
 }
 function setItStat(t){ const e=$('itStat'); if(e)e.textContent=t; }
 /* 품명 칸에 숫자만 들어간 항목 정리 (실사 CSV 오등록 복구용) */
@@ -11119,7 +11159,7 @@ function delItem(){
   const i=+$('yIdx').value;
   if(!confirm(S.items[i].pn+' 품목을 삭제할까요?\n(공유 목록에서도 삭제되어 전 기기에 반영됩니다)'))return;
   const pn=S.items[i].pn;
-  S.items.splice(i,1);save();render();closeAll();delItemRemote(pn);toast('삭제되었습니다');
+  S.items.splice(i,1);save();render();closeAll();delItemRemote(pn);markItemDel(pn);toast('삭제되었습니다');
 }
 function sign(e){
   const v=prompt('결재자 성명',e.textContent==='인'?'':e.textContent);
@@ -11634,7 +11674,7 @@ async function pullCfg(){
     let ch=0;
     CFG_FIELDS.forEach(f=>{ if(v[f]!==undefined&&S[f]!==v[f]){S[f]=v[f];ch++;} });
     S.cfgAt=v.ua||nowIso();
-    if(ch){ save(); syncCfgUI(); }
+    if(ch){ purgeExcl(); save(); syncCfgUI(); }
     return {ch};
   }catch(e){ console.warn('공용 설정:',e.message); return null; }
   finally{ cfgBusy=false; }
@@ -11732,9 +11772,10 @@ async function syncMes(silent){
       if(!S.items.some(i=>i.pn===o.pn))unk.add(o.pn);
     });
     /* MES에만 있는 품번은 현장재고로 자동 등록 (박스단위는 품목대장에서 입력) */
-    unk.forEach(pn=>S.items.push({no:0,pn,nm:'',sp:'',un:'EA',bx:0,sf:0,bs:0,
-      bd:'2025-12-31',cu:'',lc:'',wh:'현장',cnt:null}));
-    if(unk.size)S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
+    unk.forEach(pn=>{ if(DEL_PNS.has(pn))return;
+      S.items.push({no:0,pn,nm:'',sp:'',un:'EA',bx:0,sf:0,bs:0,
+      bd:'2025-12-31',cu:'',lc:'',wh:'현장',cnt:null,ua:nowIso()});});
+    if(unk.size){S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));schedPush();}
     if(add||upd||del||unk.size){save();autoBom(false);render();}
     const t=new Date();
     mesStat('MES '+p2(t.getHours())+':'+p2(t.getMinutes())+' 동기화됨 · '+rows.length+'건','#7FD8A4');
