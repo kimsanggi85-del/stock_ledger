@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>재고 검증표 (서버 정본)</title>
+<style>
+:root{--nv:#1F3A5F;--bd:#d9dfe5}
+*{box-sizing:border-box}body{margin:0;font-family:'Malgun Gothic',sans-serif;background:#eef1f4;color:#222}
+.hd{background:var(--nv);color:#fff;padding:12px 14px}
+.hd b{font-size:16px}.hd small{display:block;opacity:.8;font-size:11px;margin-top:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:10px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:10px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:#fff}
+.sum div{padding:10px;border-right:1px solid var(--bd);text-align:center}
+.sum div:last-child{border-right:0}
+.sum span{display:block;font-size:11px;color:#667;background:#f4f6f8;margin:-10px -10px 8px;padding:6px;border-bottom:1px solid var(--bd)}
+.sum b{font-size:20px}
+.sum em{font-style:normal;font-size:11px;color:#889;margin-left:2px}
+table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
+th,td{border:1px solid var(--bd);padding:5px 6px;text-align:right;white-space:nowrap}
+th{background:#f0f3f6;text-align:center;position:sticky;top:0}
+td.l{text-align:left}
+tr:nth-child(even){background:#fafbfc}
+.neg{color:#c22;font-weight:700}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctl input,.ctl select{padding:8px;border:1px solid var(--bd);border-radius:6px;font-size:13px}
+.ctl button{padding:8px 16px;border:0;border-radius:6px;background:var(--nv);color:#fff;font-weight:700;cursor:pointer}
+#st{font-size:12px;color:#667}
+.scroll{max-height:70vh;overflow:auto;border:1px solid var(--bd);border-radius:8px}
+.note{font-size:11.5px;color:#556;background:#f6f8fa;border-left:3px solid var(--nv);padding:8px 10px;border-radius:0 6px 6px 0;margin-bottom:10px}
+@media(max-width:700px){.sum{grid-template-columns:repeat(2,1fr)}.sum div:nth-child(-n+2){border-bottom:1px solid var(--bd)}}
+</style></head><body>
+<div class="hd"><b>재고 검증표</b><small>TAEJIN DITECH · 서버(Supabase) 전표만으로 계산 — 기기 저장값 사용 안 함. 이 표의 수치가 정답이며, 모바일·PC 중 이 표와 같은 쪽이 맞는 것.</small></div>
+<div class="wrap">
+<div class="note">최신화가 끝난 앱의 총괄표와 이 표가 다르면 그 기기의 로컬 저장이 오염된 것입니다. 그 기기에서 [최신화]를 다시 누르면 서버 기준으로 재구성됩니다(v6.8 이상).</div>
+<div class="card ctl">
+  기준월 <input type="month" id="ym" value="2026-09">
+  <select id="wh"><option value="">전체</option><option value="현장">현장재고</option><option value="출하대기">출하대기재고</option></select>
+  <input id="q" placeholder="품번/품명 검색" style="flex:1;min-width:120px">
+  <button onclick="run()">서버 조회</button>
+  <button onclick="csv()" style="background:#556">CSV</button>
+  <span id="st">…</span>
+</div>
+<div class="sum" id="sm"></div>
+<div style="height:10px"></div>
+<div class="scroll"><table id="t"><thead><tr>
+<th>No</th><th>구분</th><th>품번</th><th>품명</th><th>박스단위</th><th>전월이월</th><th>당월입고</th><th>당월출하</th><th>기타출고</th><th>현재고</th><th>박스</th></tr></thead><tbody></tbody></table></div>
+</div>
+<script>
+const SB_URL='https://ebthltdmxpzlkfwvdloz.supabase.co';
+const SB_KEY='sb_publishable_ZSgcZapb7cTgFezGmOV_ow_9MT15SnS';
+const H={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY};
+const KINDS={'생산입고':'I','검사입고':'I','구매입고':'I','반품입고':'I','재고조정(+)':'I'};
+const DEF_EXCL='54610-*,IW/OW-*';
+const nf=n=>Math.round(n||0).toLocaleString('ko-KR');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let ITEMS=[],LED=[],EXCL=DEF_EXCL,R=[];
+async function fetchAll(url){
+  const out=[];const step=1000;
+  for(let off=0;off<200000;off+=step){
+    const r=await fetch(url+'&limit='+step+'&offset='+off,{headers:H});
+    if(!r.ok&&r.status!==206)throw new Error('HTTP '+r.status);
+    const j=await r.json();out.push(...j);
+    if(j.length<step)break;
+  }
+  return out;
+}
+const isExcl=pn=>{const k=String(pn||'').trim();
+  return EXCL.split(',').map(x=>x.trim()).filter(Boolean)
+    .some(p=>p.endsWith('*')?k.toUpperCase().startsWith(p.slice(0,-1).toUpperCase()):k===p);};
+function canonPn(pn){const k=String(pn||'').trim();if(!k)return k;
+  for(const it of ITEMS){if(it.pn===k)return k;
+    if(it.al&&String(it.al).split(',').some(a=>a.trim()===k))return it.pn;}
+  return k;}
+async function run(){
+  const st=document.getElementById('st');
+  st.textContent='서버 읽는 중…';
+  try{
+    const cfg=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.tj_cfg_v1&select=value',{headers:H}).then(r=>r.json()).catch(()=>[]);
+    EXCL=(cfg&&cfg[0]&&cfg[0].value&&cfg[0].value.excl!==undefined)?cfg[0].value.excl:DEF_EXCL;
+    ITEMS=(await fetchAll(SB_URL+'/rest/v1/stock_item?select=*&order=pn.asc')).filter(i=>!isExcl(i.pn));
+    const since='2020-01-01';   /* 앱 v7.0 과 동일한 고정 조회범위 */
+    LED=await fetchAll(SB_URL+'/rest/v1/stock_ledger?select=*&led_date=gte.'+since+'&order=led_date.asc,src_key.asc');
+    LED=LED.filter(x=>x.pn&&x.led_date&&x.kind).map(x=>({d:x.led_date,pn:canonPn(x.pn),k:x.kind,q:+x.qty||0}))
+      .filter(x=>!isExcl(x.pn));
+    calcAll();
+    st.textContent='품목 '+ITEMS.length+' · 전표 '+LED.length+'건 · '+new Date().toLocaleTimeString('ko-KR');
+  }catch(e){st.textContent='오류: '+e.message;}
+}
+function calcAll(){
+  const ym=document.getElementById('ym').value||'2026-09';
+  const wh=document.getElementById('wh').value;
+  const q=document.getElementById('q').value.trim().toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
+  const a=ym+'-01';
+  const[y,m]=ym.split('-').map(Number);
+  const b=ym+'-'+String(new Date(y,m,0).getDate()).padStart(2,'0');
+  const td=new Date();const td0=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+  const byPn=new Map();LED.forEach(r=>{if(!byPn.has(r.pn))byPn.set(r.pn,[]);byPn.get(r.pn).push(r);});
+  let T={n:0,i:0,u:0,c:0,ship:0};R=[];
+  for(const it of ITEMS){
+    if(wh&&(it.wh||'현장')!==wh)continue;
+    let open=+it.bs||0,iq=0,oq=0,sq=0;
+    for(const r of byPn.get(it.pn)||[]){
+      if(r.d<=(it.bd||''))continue;
+      const io=KINDS[r.k]==='I'?r.q:-r.q;
+      if(r.d<a){open+=io;continue;}
+      if(r.d>b)continue;
+      if(io>0)iq+=r.q;else oq+=r.q;
+      if(r.k==='출하')sq+=r.q;
+      if(r.k==='출하'&&r.d===td0)T.ship+=r.q;
+    }
+    const cur=open+iq-oq;
+    T.n++;T.i+=iq;T.u+=sq;T.c+=cur;
+    if(q&&!(it.pn+' '+(it.nm||'')).toLowerCase().replace(/[^a-z0-9가-힣]/g,'').includes(q))continue;
+    R.push({it,open,iq,sq,etc:oq-sq,cur,box:+it.bx?Math.floor(cur/it.bx):0});
+  }
+  document.getElementById('sm').innerHTML=
+    '<div><span>관리품목</span><b>'+nf(T.n)+'</b><em>품목</em></div>'
+   +'<div><span>당월 입고</span><b style="color:#178a4c">'+nf(T.i)+'</b><em>EA</em></div>'
+   +'<div><span>당월 납품(출하)</span><b style="color:#c22">'+nf(T.u)+'</b><em>EA</em></div>'
+   +'<div><span>현재고</span><b>'+nf(T.c)+'</b><em>EA</em></div>';
+  document.querySelector('#t tbody').innerHTML=R.map((r,i)=>
+    '<tr><td>'+(i+1)+'</td><td>'+esc(r.it.wh==='출하대기'?'출하대기':'현장')+'</td>'
+   +'<td class="l"><b>'+esc(r.it.pn)+'</b></td><td class="l">'+esc(r.it.nm||'')+'</td>'
+   +'<td>'+nf(r.it.bx)+'</td><td>'+nf(r.open)+'</td><td>'+nf(r.iq)+'</td><td>'+nf(r.sq)+'</td>'
+   +'<td>'+nf(r.etc)+'</td><td class="'+(r.cur<0?'neg':'')+'"><b>'+nf(r.cur)+'</b></td><td>'+nf(r.box)+'</td></tr>').join('');
+}
+function csv(){
+  const rows=[['구분','품번','품명','박스단위','전월이월','당월입고','당월출하','기타출고','현재고','박스']];
+  R.forEach(r=>rows.push([r.it.wh||'현장',r.it.pn,r.it.nm||'',r.it.bx,r.open,r.iq,r.sq,r.etc,r.cur,r.box]));
+  const t=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv'}));
+  a.download='재고검증표_'+document.getElementById('ym').value+'.csv';a.click();
+}
+document.getElementById('ym').onchange=calcAll;
+document.getElementById('wh').onchange=calcAll;
+document.getElementById('q').oninput=()=>calcAll();
+run();
+</script></body></html>
