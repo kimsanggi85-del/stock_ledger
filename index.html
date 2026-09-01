@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.14</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.16</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9011,7 +9011,7 @@ async function refreshAll(){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
-        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 에 없는 연동 코일 '+rm.cleared+'본 정리':'')
+        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·미존재 코일 '+rm.cleared+'본 정리':'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -9544,7 +9544,8 @@ async function syncRawMes(silent){
         c.ua=nowIso(); rawDirty=true;
       });
       /* MES 에 없는 자동연동 코일(시트·수입검사·설비 보완)은 정리 — 직접 등록·전표 달린 것은 유지 */
-      const rm=S.coils.filter(c=>c.src&&/^(MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)&&!S.mled.some(m=>m.cid===c.id&&!m.auto));
+      /* MESRCV 도 포함 — MES 에서 입고취소·반출(IO_FLAG=2)된 건은 코일도 없어져야 한다 */
+      const rm=S.coils.filter(c=>c.src&&/^(MESRCV|MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)&&!S.mled.some(m=>m.cid===c.id&&!m.auto));
       if(rm.length){ const ids=new Set(rm.map(c=>c.id)); markDel(rm.map(c=>c.cno)); S.mled=S.mled.filter(m=>!ids.has(m.cid)); S.coils=S.coils.filter(c=>!ids.has(c.id)); out.cleared=rm.length; }
       S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
       rawDirty=true;
@@ -10048,13 +10049,17 @@ function saveIO(){
   const o={d:$('xD').value||today(),pn,k:$('xK').value,q,p:$('xP').value.trim(),
     lot:$('xL').value.trim(),n:$('xN').value.trim(),by:S.user};
   const id=+$('xId').value;
-  if(id) Object.assign(S.led.find(x=>x.id===id),o);
-  else S.led.push(Object.assign({id:S.seq++},o));
+  if(id){ const t=S.led.find(x=>x.id===id); Object.assign(t,o);
+    if(t.src&&String(t.src).indexOf('MAN|')===0){ t.src=''; }   /* 다시 올려서 서버값도 고친다 */
+  }else S.led.push(Object.assign({id:S.seq++},o));
   save();autoBom(false);render();closeAll();toast(pn+' '+o.k+' '+nf(q)+' EA 등록');
+  pushManual().catch(()=>{});
 }
 function delIO(){
   if(!confirm('이 전표를 삭제할까요?'))return;
-  S.led=S.led.filter(x=>x.id!==+$('xId').value);save();autoBom(false);render();closeAll();toast('삭제되었습니다');
+  const id=+$('xId').value, row=S.led.find(x=>x.id===id);
+  if(row&&row.src&&String(row.src).indexOf('MAN|')===0)delManual(row.src);
+  S.led=S.led.filter(x=>x.id!==id);save();autoBom(false);render();closeAll();toast('삭제되었습니다');
 }
 function wireBoxPair(bF,eF){
   const bx=()=>+$('yBx').value||0;
@@ -10587,6 +10592,41 @@ async function fetchAll(url,hd,cap){
   }
   return out;
 }
+/* ═══════ 손으로 넣은 전표(재고조정·수기 입출고)를 기기끼리 공유 ═══════
+   MES·출하의뢰서 전표는 src_key 가 있어 자동으로 공유되지만, 사람이 직접 넣은 전표는
+   그 기기 안에만 남아 총괄표가 기기마다 달라졌다. 같은 stock_ledger 에 MAN| 키로 올린다. */
+function devId(){
+  if(!S.dev)S.dev='D'+Math.random().toString(36).slice(2,7)+Date.now().toString(36).slice(-4);
+  return S.dev;
+}
+const MAN_DEL_KEY='tj_led_del_v1';
+async function pushManual(){
+  const rows=S.led.filter(l=>!l.src&&l.pn&&l.d&&l.k&&l.q>0);
+  if(!rows.length)return 0;
+  const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  const recs=rows.map(l=>{
+    l.src='MAN|'+devId()+'|'+l.id;
+    return {src_key:l.src,led_date:l.d,pn:l.pn,kind:l.k,qty:l.q,party:l.p||'',lot:l.lot||'',
+            note:(l.n||'').slice(0,200),by_name:l.by||S.user||'',updated_at:nowIso()};
+  });
+  for(let i=0;i<recs.length;i+=200){
+    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?on_conflict=src_key',
+      {method:'POST',headers:Object.assign({},sh,{Prefer:'return=minimal,resolution=merge-duplicates'}),
+       body:JSON.stringify(recs.slice(i,i+200))});
+    if(!r.ok)throw new Error('수기전표 공유 HTTP '+r.status);
+  }
+  save();
+  return recs.length;
+}
+/* 수기전표를 지우면 서버에서도 지운다 (안 그러면 다음 최신화에 되살아난다) */
+async function delManual(src){
+  if(!src||String(src).indexOf('MAN|')!==0)return;
+  const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  try{
+    await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?src_key=eq.'+encodeURIComponent(src),
+      {method:'DELETE',headers:Object.assign({},sh,{Prefer:'return=minimal'})});
+  }catch(e){ console.warn('수기전표 삭제:',e.message); }
+}
 async function syncMes(silent){
   if(mesBusy)return {ok:false,skip:true};
   mesBusy=true;
@@ -10596,6 +10636,7 @@ async function syncMes(silent){
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{ await syncIqc(true); }catch(e){ console.warn('수입검사 연동:',e.message); }
   try{ await syncEq(true); }catch(e){ console.warn('MES 설비 연동:',e.message); }
+  try{ await pushManual(); }catch(e){ console.warn('수기전표 공유:',e.message); }
   try{
     /* 전체 누적: 기초일자 이후 전 기간 */
     const sinceIso=syncSince();
