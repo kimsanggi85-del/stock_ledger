@@ -654,7 +654,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.11</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.12</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9011,7 +9011,7 @@ async function refreshAll(){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
-        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.cleared?' · MES 에 없는 연동 코일 '+rm.cleared+'본 정리':'')
+        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 에 없는 연동 코일 '+rm.cleared+'본 정리':'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -9520,6 +9520,16 @@ async function syncRawMes(silent){
         if(isLocked(c,'wt'))delete put.wt;
         Object.keys(put).forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(put[k])){c[k]=put[k];} });
         if(mes.st==='1')out.mount++; else if(mes.st==='2')out.done++; else out.wait++;
+      });
+      /* 기준일 이전 입고분: 시트로 넣은 코일에 업체가 비어 있으면 비고의 입고번호로 채운다 */
+      S.coils.forEach(c=>{
+        if(c.rno||!c.src||c.src.indexOf('MESSTK|')!==0)return;
+        const m=String(c.n||'').match(/입고번호\s*([0-9]+)/); if(!m)return;
+        const q=RCV_REF.get(m[1]); if(!q)return;
+        c.rno=m[1];
+        if(!c.sup&&q.sup){ c.sup=q.sup; out.supFix=(out.supFix||0)+1; }
+        if(!c.mt&&q.mt)c.mt=q.mt; if(!+c.t&&q.t)c.t=q.t; if(!+c.w&&q.w)c.w=q.w;
+        c.ua=nowIso(); rawDirty=true;
       });
       /* MES 에 없는 자동연동 코일(시트·수입검사·설비 보완)은 정리 — 직접 등록·전표 달린 것은 유지 */
       const rm=S.coils.filter(c=>c.src&&/^(MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)&&!S.mled.some(m=>m.cid===c.id&&!m.auto));
