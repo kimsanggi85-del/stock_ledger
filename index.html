@@ -421,6 +421,17 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   #p-sum .fbar .kbi{flex:1 1 0;min-width:0}
   #p-sum .fbar .fsel{flex:0 0 auto;min-width:96px;width:auto}
   #p-cnt .fbar,#p-io .fbar,#p-cfg .fbar{flex-wrap:wrap}
+  /* ── 재고실사표(휴대폰): 조작줄 화면 고정 + 버튼이 화면 밖으로 나가지 않게 ── */
+  #p-cnt .fbar{position:sticky;top:44px;z-index:30;margin:0 0 6px;padding:5px 6px;gap:4px;row-gap:4px;
+    border-radius:0 0 10px 10px;box-shadow:0 3px 8px rgba(20,40,70,.14)}
+  #p-cnt .fbar input,#p-cnt .fbar select{height:32px;padding:5px 7px;font-size:12.5px;min-width:0;flex:1 1 calc(50% - 3px)}
+  #p-cnt .fbar .kbi{flex:1 1 100%}
+  #p-cnt .fbar .fsel{height:32px;min-width:0}
+  #p-cnt .fbar .rt{width:100%;flex:1 1 100%;margin-left:0;flex-wrap:wrap;gap:4px}
+  #p-cnt .fbar .rt .btn{flex:1 1 calc(50% - 2px);min-width:0;max-width:100%;height:34px;padding:0 6px;
+    font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 요약 4칸도 같이 붙여서 목록이 더 넓어 보이게 */
+  #p-cnt .sum{margin-top:0;margin-bottom:6px}
   .btn{padding:10px 12px;font-size:13px}
   .modal{max-height:92vh;border-radius:14px 14px 0 0}
   .mask{align-items:flex-end}
@@ -654,7 +665,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.16</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.17</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
