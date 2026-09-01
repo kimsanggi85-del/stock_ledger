@@ -665,7 +665,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.18</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v6.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -679,7 +679,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <label style="font-size:12px">기준월</label>
   <input type="month" id="ym">
   <div class="sp">
-    <span id="mesSt" style="font-size: 10.5px; color: rgb(127, 216, 164); align-self: center;">MES 14:00 동기화됨 · 5431건</span>
+    <span id="mesSt" style="font-size: 10.5px; color: rgb(127, 216, 164); align-self: center;">MES 15:50 동기화됨 · 5526건</span>
     <button onclick="syncMes(false)" id="mesBtn">MES 동기화</button>
     <button onclick="openImp()" class="k" style="background:#0B6B3A;border-color:#0B6B3A">엑셀 실적 불러오기</button>
     <button onclick="openIO()" class="k">＋ 입출고 등록</button>
@@ -695,23 +695,23 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div data-t="bin" class=""><span class="lg">품목별 수불부</span><span class="sm">수불부</span></div>
   <div data-t="io"><span class="lg">입출고 내역</span><span class="sm">입출고</span></div>
   <div data-t="cnt" class=""><span class="lg">재고실사표</span><span class="sm">실사</span></div>
-  <div data-t="raw"><span class="lg">원소재 재고(코일)</span><span class="sm">원소재</span></div>
+  <div data-t="raw" class=""><span class="lg">원소재 재고(코일)</span><span class="sm">원소재</span></div>
   <div data-t="trc"><span class="lg">LOT 추적</span><span class="sm">추적</span></div>
   <div data-t="cfg"><span class="lg">품목 마스터</span><span class="sm">품목</span></div>
   <div data-t="help"><span class="lg">사용안내</span><span class="sm">안내</span></div>
-  <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-09-01 14:02:19</span></span>
+  <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-09-01 15:53:50</span></span>
 </div>
 
 <!-- ══ 총괄표 ══ -->
 <div class="page on" id="p-sum">
   <div class="pt"><h2>재고수불 총괄표</h2><span class="sub">STOCK SUMMARY · 품목별 월간 수불 집계</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
   <div class="sum" style="grid-template-columns:repeat(7,1fr)">
-    <div><span>관리품목</span><b id="q1">164</b><em>품목</em></div>
-    <div class="g"><span>당월 입고</span><b id="q2">51,155</b><em>EA</em></div>
+    <div><span>관리품목</span><b id="q1">175</b><em>품목</em></div>
+    <div class="g"><span>당월 입고</span><b id="q2">58,916</b><em>EA</em></div>
     <div class="d"><span>당월 납품(출하)</span><b id="q3">75,600</b><em>EA</em></div>
     <div class="d"><span>오늘 출하</span><b id="q7">75,600</b><em>EA</em></div>
-    <div><span>현재고</span><b id="q4">13,660,074</b><em>EA</em></div>
-    <div class="d"><span>안전재고 미달</span><b id="q5">37</b><em>품목</em></div>
+    <div><span>현재고</span><b id="q4">13,594,771</b><em>EA</em></div>
+    <div class="d"><span>안전재고 미달</span><b id="q5">40</b><em>품목</em></div>
     <div class="w"><span>장기 미불출</span><b id="q6">7</b><em>품목</em></div>
   </div>
   <div class="fbar">
@@ -732,10 +732,10 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
     <div class="doc-info">
       <span><b>기준월</b><i id="i1">2026-09</i></span><span><b>재고구분</b><i id="iw1">전체 (현장재고 + 출하대기재고)</i></span>
-      <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-01 14:00</i></span>
+      <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-01 15:51</i></span>
       <span><b>단위</b>EA</span>
     </div>
-    <div class="gw"><div class="gt"><span id="gt-sum">재고수불 총괄표 · 총 <b>164</b>품목 · 기준월 2026-09</span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tSum"><thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>규격</th><th>단위</th><th>전월이월</th><th>당월입고</th><th>당월출하(납품)</th><th>기타출고</th><th>현재고</th><th>박스</th><th>안전재고</th><th>과부족</th><th>재고일수</th><th>회전율</th><th>최종수불</th><th>비고</th></tr></thead><tbody><tr>
+    <div class="gw"><div class="gt"><span id="gt-sum">재고수불 총괄표 · 총 <b>175</b>품목 · 기준월 2026-09</span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tSum"><thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>규격</th><th>단위</th><th>전월이월</th><th>당월입고</th><th>당월출하(납품)</th><th>기타출고</th><th>현재고</th><th>박스</th><th>안전재고</th><th>과부족</th><th>재고일수</th><th>회전율</th><th>최종수불</th><th>비고</th></tr></thead><tbody><tr>
        <td class="c">1</td>
        <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1G26-014&#39;)">1G26-014</td>
@@ -923,13 +923,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>4,783</td>
-       <td class="pos">35</td>
+       <td class="pos">55</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">4,818</td>
+       <td style="font-weight:700">4,838</td>
        <td>8</td>
        <td>0</td>
-       <td class="">+4,818</td>
+       <td class="">+4,838</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -1228,14 +1228,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>-10,000</td>
+       <td>6,000</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">-10,000</td>
-       <td>-10</td>
+       <td style="font-weight:700">6,000</td>
+       <td>6</td>
        <td>0</td>
-       <td class="neg">-10,000</td>
+       <td class="">+6,000</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
@@ -1373,14 +1373,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>54,010</td>
-       <td class="pos">8,211</td>
+       <td class="pos">9,271</td>
        <td class="neg" style="font-weight:700">3,500</td>
        <td class="wn">20</td>
-       <td style="font-weight:700">58,701</td>
-       <td>117</td>
+       <td style="font-weight:700">59,761</td>
+       <td>119</td>
        <td>7,000</td>
-       <td class="">+51,701</td>
-       <td class="">500.3</td>
+       <td class="">+52,761</td>
+       <td class="">509.3</td>
        <td>0.06</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
@@ -1480,14 +1480,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">6908BA</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>4,000</td>
+       <td>14,000</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">4,000</td>
-       <td>4</td>
+       <td style="font-weight:700">14,000</td>
+       <td>14</td>
        <td>7,000</td>
-       <td class="neg">-3,000</td>
+       <td class="">+7,000</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
@@ -1732,14 +1732,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">MP(가공품)</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>28,000</td>
+       <td>-132,605</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">28,000</td>
-       <td>40</td>
+       <td style="font-weight:700">-132,605</td>
+       <td>-190</td>
        <td>9,800</td>
-       <td class="">+18,200</td>
+       <td class="neg">-142,405</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
@@ -2056,15 +2056,15 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">DUST CAP V30</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>79,777</td>
+       <td>79,926</td>
        <td class="">-</td>
        <td class="neg" style="font-weight:700">4,200</td>
        <td class="">-</td>
-       <td style="font-weight:700">75,577</td>
-       <td>251</td>
+       <td style="font-weight:700">75,726</td>
+       <td>252</td>
        <td>10,500</td>
-       <td class="">+65,077</td>
-       <td class="">539.8</td>
+       <td class="">+65,226</td>
+       <td class="">540.9</td>
        <td>0.05</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
@@ -2272,16 +2272,16 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">JA_WPS4K</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>69,253</td>
-       <td class="pos">5,706</td>
+       <td>9,927</td>
+       <td class="pos">6,203</td>
        <td class="neg" style="font-weight:700">14,000</td>
        <td class="">-</td>
-       <td style="font-weight:700">60,959</td>
-       <td>60</td>
+       <td style="font-weight:700">2,130</td>
+       <td>2</td>
        <td>14,000</td>
-       <td class="">+46,959</td>
-       <td class="">130.6</td>
-       <td>0.22</td>
+       <td class="neg">-11,870</td>
+       <td class="wn">4.6</td>
+       <td>2.32</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
        <td class="c">87</td>
@@ -2290,14 +2290,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">JA_WPS4K</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>35,000</td>
+       <td>69,035</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">35,000</td>
-       <td>35</td>
+       <td style="font-weight:700">69,035</td>
+       <td>69</td>
        <td>0</td>
-       <td class="">+35,000</td>
+       <td class="">+69,035</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
@@ -2362,14 +2362,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">MX-FRT</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>0</td>
-       <td class="pos">22</td>
+       <td>49,000</td>
+       <td class="pos">358</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">22</td>
+       <td style="font-weight:700">49,358</td>
+       <td>49</td>
        <td>0</td>
-       <td>0</td>
-       <td class="">+22</td>
+       <td class="">+49,358</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -2398,14 +2398,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">MD-FRT (2호)</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>92,848</td>
+       <td>38,400</td>
        <td class="pos">23</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">92,871</td>
-       <td>116</td>
+       <td style="font-weight:700">38,423</td>
+       <td>48</td>
        <td>0</td>
-       <td class="">+92,871</td>
+       <td class="">+38,423</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -2506,14 +2506,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)">CN7 (실린더)</td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>24,500</td>
+       <td>14,553</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">24,500</td>
-       <td>35</td>
+       <td style="font-weight:700">14,553</td>
+       <td>20</td>
        <td>0</td>
-       <td class="">+24,500</td>
+       <td class="">+14,553</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
@@ -2687,15 +2687,15 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>23,209</td>
-       <td class="pos">7,214</td>
+       <td class="pos">8,398</td>
        <td class="neg" style="font-weight:700">21,000</td>
        <td class="">-</td>
-       <td style="font-weight:700">9,423</td>
-       <td>18</td>
+       <td style="font-weight:700">10,607</td>
+       <td>21</td>
        <td>10,500</td>
-       <td class="neg">-1,077</td>
-       <td class="">13.5</td>
-       <td>1.29</td>
+       <td class="">+107</td>
+       <td class="">15.2</td>
+       <td>1.24</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
        <td class="c">110</td>
@@ -3245,13 +3245,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>144,539</td>
-       <td class="pos">4,818</td>
+       <td class="pos">5,164</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">149,357</td>
+       <td style="font-weight:700">149,703</td>
        <td>0</td>
        <td>0</td>
-       <td class="">+149,357</td>
+       <td class="">+149,703</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -3317,13 +3317,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>64,675</td>
-       <td class="pos">2,196</td>
+       <td class="pos">2,979</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">66,871</td>
-       <td>202</td>
+       <td style="font-weight:700">67,654</td>
+       <td>205</td>
        <td>11,550</td>
-       <td class="">+55,321</td>
+       <td class="">+56,104</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -3335,13 +3335,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>64,675</td>
-       <td class="pos">2,196</td>
+       <td class="pos">2,979</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">66,871</td>
-       <td>202</td>
+       <td style="font-weight:700">67,654</td>
+       <td>205</td>
        <td>11,550</td>
-       <td class="">+55,321</td>
+       <td class="">+56,104</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -3479,14 +3479,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>797,663</td>
-       <td class="pos">8,181</td>
+       <td class="pos">9,337</td>
        <td class="" style="font-weight:700">-</td>
        <td class="wn">22</td>
-       <td style="font-weight:700">805,822</td>
+       <td style="font-weight:700">806,978</td>
        <td>0</td>
        <td>0</td>
-       <td class="">+805,822</td>
-       <td class="">1098848.2</td>
+       <td class="">+806,978</td>
+       <td class="">1100424.5</td>
        <td>0.00</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
@@ -3497,13 +3497,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>1,633,191</td>
-       <td class="pos">8,327</td>
+       <td class="pos">9,453</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">1,641,518</td>
+       <td style="font-weight:700">1,642,644</td>
        <td>0</td>
        <td>0</td>
-       <td class="">+1,641,518</td>
+       <td class="">+1,642,644</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">2026-09-01</td>
@@ -3607,12 +3607,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td>448,146</td>
        <td class="pos">443</td>
        <td class="" style="font-weight:700">-</td>
-       <td class="wn">22</td>
-       <td style="font-weight:700">448,567</td>
+       <td class="wn">44</td>
+       <td style="font-weight:700">448,545</td>
        <td>0</td>
        <td>0</td>
-       <td class="">+448,567</td>
-       <td class="">611682.3</td>
+       <td class="">+448,545</td>
+       <td class="">305826.1</td>
        <td>0.00</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
@@ -3641,14 +3641,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
        <td>773,484</td>
-       <td class="pos">2,891</td>
+       <td class="pos">3,361</td>
        <td class="" style="font-weight:700">-</td>
        <td class="wn">30</td>
-       <td style="font-weight:700">776,345</td>
+       <td style="font-weight:700">776,815</td>
        <td>0</td>
        <td>0</td>
-       <td class="">+776,345</td>
-       <td class="">776345.0</td>
+       <td class="">+776,815</td>
+       <td class="">776815.0</td>
        <td>0.00</td>
        <td class="c">2026-09-01</td>
        <td class="c "></td></tr><tr>
@@ -3676,19 +3676,217 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="l" style="font-family:var(--sans)"></td>
        <td class="c">EA</td>
-       <td>18,000</td>
+       <td>60,000</td>
        <td class="">-</td>
        <td class="" style="font-weight:700">-</td>
        <td class="">-</td>
-       <td style="font-weight:700">18,000</td>
-       <td>60</td>
+       <td style="font-weight:700">60,000</td>
+       <td>200</td>
        <td>10,500</td>
-       <td class="">+7,500</td>
+       <td class="">+49,500</td>
        <td class="">-</td>
        <td>-</td>
        <td class="c">-</td>
-       <td class="c "></td></tr></tbody><tfoot><tr><td colspan="6" class="c">합　계 (164품목)</td>
-     <td>13,684,637</td><td>51,155</td><td>75,600</td><td>118</td><td>13,660,074</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">165</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">출하대기재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1657-130-2&#39;)">1657-130-2</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>2,000</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">2,000</td>
+       <td>5</td>
+       <td>2,400</td>
+       <td class="neg">-400</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">166</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1856-627(628)-1&#39;)">1856-627(628)-1</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>0</td>
+       <td class="">0</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">167</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1856-627(628)-2&#39;)">1856-627(628)-2</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>0</td>
+       <td class="">0</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">168</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1856-628-1&#39;)">1856-628-1</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>3,000</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">3,000</td>
+       <td>3</td>
+       <td>4,000</td>
+       <td class="neg">-1,000</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">169</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1858-618&#39;)">1858-618</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>0</td>
+       <td class="">0</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">170</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1858-619&#39;)">1858-619</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>0</td>
+       <td class="">0</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">171</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">출하대기재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1958-0016-21&#39;)">1958-0016-21</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>3,000</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">3,000</td>
+       <td>5</td>
+       <td>12,600</td>
+       <td class="neg">-9,600</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">172</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">출하대기재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1958-365-2&#39;)">1958-365-2</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>22,400</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">22,400</td>
+       <td>28</td>
+       <td>16,800</td>
+       <td class="">+5,600</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">173</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1968-0016-02&#39;)">1968-0016-02</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>0</td>
+       <td class="">0</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">174</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;1968-364&#39;)">1968-364</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>0</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">0</td>
+       <td>0</td>
+       <td>18,900</td>
+       <td class="neg">-18,900</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr><tr>
+       <td class="c">175</td>
+       <td class="c" style="font-family:var(--sans);font-size:10.5px">출하대기재고</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin(&#39;9BUX GREASE CAP&#39;)">9BUX GREASE CAP</td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="l" style="font-family:var(--sans)"></td>
+       <td class="c">EA</td>
+       <td>29,700</td>
+       <td class="">-</td>
+       <td class="" style="font-weight:700">-</td>
+       <td class="">-</td>
+       <td style="font-weight:700">29,700</td>
+       <td>90</td>
+       <td>11,550</td>
+       <td class="">+18,150</td>
+       <td class="">-</td>
+       <td>-</td>
+       <td class="c">-</td>
+       <td class="c "></td></tr></tbody><tfoot><tr><td colspan="6" class="c">합　계 (175품목)</td>
+     <td>13,611,595</td><td>58,916</td><td>75,600</td><td>140</td><td>13,594,771</td>
      <td colspan="7"></td></tr></tfoot></table></div></div>
     <div class="hint noprint">· 현재고 = 전월이월 + 당월입고 − 당월출고 · 과부족 = 현재고 − 안전재고 · 재고일수 = 현재고 ÷ 일평균출고 · 회전율 = 당월출고 ÷ 평균재고<br>· 품번을 클릭하면 해당 품목의 수불부로 이동합니다.</div>
   </div>
@@ -5278,14 +5476,14 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="pa"><button class="btn" onclick="rRaw()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportRaw()">엑셀</button></div></div>
 
   <div class="sum" style="grid-template-columns:repeat(8,1fr)">
-    <div><span>남은 코일</span><b id="r1">0</b><em>코일</em></div>
-    <div><span>현재고 중량</span><b id="r2">0</b><em>kg</em></div>
-    <div class="g"><span>이번 달 입고</span><b id="r3">0</b><em>kg</em></div>
-    <div class="d"><span>이번 달 사용</span><b id="r4">0</b><em>kg</em></div>
+    <div><span>남은 코일</span><b id="r1">80</b><em>코일</em></div>
+    <div><span>현재고 중량</span><b id="r2">58,559</b><em>kg</em></div>
+    <div class="g"><span>이번 달 입고</span><b id="r3">8,012</b><em>kg</em></div>
+    <div class="d"><span>이번 달 사용</span><b id="r4">25,305</b><em>kg</em></div>
     <div class="d"><span>재고 부족 규격</span><b id="r5">0</b><em>규격</em></div>
-    <div><span>프레스에 물린</span><b id="r6">0</b><em>코일</em></div>
+    <div><span>프레스에 물린</span><b id="r6">21</b><em>코일</em></div>
     <div class="w"><span>검사 등록 빠짐</span><b id="r8">0</b><em>코일</em></div>
-    <div class="w"><span>사용연한 임박·초과</span><b id="r7">0</b><em>코일</em></div>
+    <div class="w"><span>사용연한 임박·초과</span><b id="r7">3</b><em>코일</em></div>
   </div>
 
   <div class="guide">
@@ -5297,8 +5495,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
   <div class="fbar">
     <button class="btn k big" id="btnRefresh" onclick="refreshAll()" title="생산·출하 실적 → 수입검사 코일 → MES 설비 → 사용량 차감 을 순서대로 실행합니다">🔄 최신화</button>
-    <span style="font-size:11px;color:#7d8b99" id="refreshInfo">마지막 최신화 2026-09-01 13:45</span>
-    <span style="font-size:11px;color:#5B4B8A;font-weight:700" id="freeInfo"></span>
+    <span style="font-size:11px;color:#7d8b99" id="refreshInfo">마지막 최신화 2026-09-01 15:50</span>
+    <span style="font-size:11px;color:#5B4B8A;font-weight:700" id="freeInfo">🏷 사급 1코일은 재고에서 제외 <a href="https://kimsanggi85-del.github.io/stock_ledger/#" onclick="openFree();return false" style="color:#5B4B8A">관리</a></span>
 
     <div class="rt">
       <label style="font-size:11px">재고 시작일</label>
@@ -5365,18 +5563,827 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     </div>
   </div>
 
-  <div id="rawWarn" style="display:none;max-width:1400px;margin:0 auto 10px;background:#FBE9E7;border:1px solid #E0A9A2;
-    border-radius:3px;padding:9px 12px;font-size:11.5px;color:#8A2B22"></div>
+  <div id="rawWarn" style="display: block; max-width: 1400px; margin: 0px auto 10px; background: rgb(251, 233, 231); border: 1px solid rgb(224, 169, 162); border-radius: 3px; padding: 9px 12px; font-size: 11.5px; color: rgb(138, 43, 34);"><div class="wh" onclick="tglWarn()">⚠ 확인할 사항<span class="cnt">7건</span><span class="tags"><i>목록에 없는 코일 1</i><i>쓸 코일 없음 8</i><i>중복 20</i></span><span class="arw">▼</span></div><div class="wb">⚠ <b>코일 잔량 부족</b> — 당월 생산투입 중 5건 / <b>413.5 kg</b> 이 전표 LOT 코일의 잔량을 넘었습니다. 코일 중량(성적서 총중량 균등배분)이 실제와 다르거나 LOT 이 잘못 찍힌 경우입니다. (AB3248-SC-01, IW/OW-BDA-1179-1, IW/OW-BDA-1179-2, IW/OW-BDA-1106-2, 1958-365-2(2호))<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>프레스에 물려 있는데 목록에 없는 코일 1건</b> — 현장에서는 쓰고 있는데 수입검사 등록이 빠진 코일입니다. 아래 버튼을 누르면 MES 정보로 자동 등록됩니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixMesLots()">🩹 미등록 LOT 보완 등록</button><div style="margin-top:5px"><b>*</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>쓸 코일이 없는 제품 8종</b> — 소요량은 등록돼 있는데 맞는 코일이 재고에 없습니다. <b>1781-0001-00</b>: 규격은 맞으나 104본 모두 소진 — 입고 60,022.0kg / 투입 60,022.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1945-349-1</b>: 규격은 맞으나 4본 모두 소진 — 입고 1,384.0kg / 투입 1,384.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2(2호)</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 외 4종<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">ℹ <b>재고 시작일 2026-08-28</b> — 그 이전 생산분 2638건 / 24,333,797 EA 가 <b>차감되지 않습니다</b>. 재고는 <b>2026-08-28 MES 소재재고 기준</b>으로 맞춰져 있어 그 전 생산분은 이미 반영된 것입니다.<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⏳ <b>사용연한 관리</b> · <b style="color:#B3261E">초과 3본 / 5,431.5 kg</b> — SPCC 60일 · 430 계열 180일 · 304 계열 360일 기준입니다. 초과분은 재검토 후 사용하세요.<div style="margin-top:5px"><b>26C12060-21-022A (2026-07-06), 26C12152-21-011A (2026-07-06), AT45049C-01-2 (2026-08-15)</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>입고일이 실제와 다른 코일 862본</b> — 수입검사 성적서에 입고일이 비어 있어 <b>등록한 날짜</b>가 들어갔습니다. 검사 발행분에 실제 입고일이 있으니 바로잡을 수 있습니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixDates()">📅 지금 바로잡기</button><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>같은 코일이 두 번 등록됨 20건</b> — 재고가 실제보다 많게 잡힙니다. <b>[🔄 최신화]</b>를 한 번 더 누르면 자동으로 합쳐집니다.<div style="margin-top:5px"><b>26A12B20-11-011A2A, 26A12D27-11-011A4A, 26A12B20-11-011A3A, 26A12D27-11-011A1A, 26A12B64-21-011A1B, 26A12264-21-011A2B, 26A12264-21-011A1B, 26A12264-21-011A3B 외 12건</b></div></div></div>
 
   <div class="sheet">
     <div class="doc-hd"><div class="doc-no">문서번호 <b>TJP-QP-0806</b><br>개정번호 <b>Rev.0</b></div>
-      <h1 id="rawTtl">원 소 재 수 불 부</h1>
+      <h1 id="rawTtl">공 급 업 체 별 코 일 수 불 현 황</h1>
       <table class="appr"><tbody><tr><td class="v" rowspan="2">결<br>재</td><td class="t">담당</td><td class="t">검토</td><td class="t">승인</td></tr>
         <tr><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td></tr></tbody></table></div>
-    <div class="doc-info"><span><b>기준월</b><i id="r_ym">-</i></span><span><b>작성</b><i id="r_by">-</i></span><span><b>출력일시</b><i id="r_dt">-</i></span></div>
-    <div class="gw"><div class="gt"><span id="gt-raw"></span><span class="r">행 클릭 시 상세</span></div>
-      <div class="scroll"><table class="t" id="tRaw"></table></div></div>
-    <div class="hint noprint" id="rawHint"></div>
+    <div class="doc-info"><span><b>기준월</b><i id="r_ym">2026-09</i></span><span><b>작성</b><i id="r_by">-</i></span><span><b>출력일시</b><i id="r_dt">2026-09-01 15:50</i></span></div>
+    <div class="gw"><div class="gt"><span id="gt-raw">공급업체별 코일 수불 · <b>8</b>개사 · 보유 <b>80</b>코일 / 58,558.7 kg · 기준월 2026-09</span><span class="r">행 클릭 시 상세</span></div>
+      <div class="scroll"><table class="t w-sup" id="tRaw"><thead><tr><th>공급업체 / 규격</th><th>입고<br>코일</th><th>입고(kg)</th>
+      <th>반출<br>(소진)</th><th>투입(kg)</th><th>소진율</th>
+      <th>재고<br>코일</th><th>재고(kg)</th><th>사용중</th><th>미개봉</th><th>보류</th><th>설비<br>장착</th>
+      <th>당월입고<br>코일/kg</th><th>당월투입<br>(kg)</th><th>최근입고</th></tr></thead><tbody><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">정민스틸</td>
+         <td style="font-weight:700">622</td><td>758,873.0</td>
+         <td class="neg">599</td><td class="neg">728,841.6</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:96%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">96%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">23</td>
+         <td style="font-weight:700">30,031.4</td>
+         <td>1</td><td>22</td>
+         <td class="">-</td>
+         <td class="zebra-in" style="font-weight:700">3</td>
+         <td class="">-</td>
+         <td class="neg">7,951.8</td>
+         <td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 132W</td>
+           <td>141</td><td>153,269.0</td>
+           <td class="neg">130</td>
+           <td class="neg">140,675.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:92%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">92%</span></div></td>
+           <td style="font-weight:700">11</td><td>12,594.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1t × 141W</td>
+           <td>94</td><td>106,608.0</td>
+           <td class="neg">87</td>
+           <td class="neg">97,804.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:92%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">92%</span></div></td>
+           <td style="font-weight:700">7</td><td>8,804.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 248W</td>
+           <td>84</td><td>172,919.0</td>
+           <td class="neg">79</td>
+           <td class="neg">164,285.6</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:95%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">95%</span></div></td>
+           <td style="font-weight:700">5</td><td>8,633.4</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-21</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55C 1.01t × 141W</td>
+           <td>28</td><td>30,840.0</td>
+           <td class="neg">28</td>
+           <td class="neg">30,840.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-04-20</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55C 1.01t × 134W</td>
+           <td>10</td><td>11,098.0</td>
+           <td class="neg">10</td>
+           <td class="neg">11,098.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-04-20</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1.01t × 134W</td>
+           <td>2</td><td>2,246.0</td>
+           <td class="neg">2</td>
+           <td class="neg">2,246.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-04-20</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1t × 125W</td>
+           <td>162</td><td>166,234.0</td>
+           <td class="neg">162</td>
+           <td class="neg">166,234.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 137W</td>
+           <td>94</td><td>107,994.0</td>
+           <td class="neg">94</td>
+           <td class="neg">107,994.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-27</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55C 1t × 134W</td>
+           <td>3</td><td>3,618.0</td>
+           <td class="neg">3</td>
+           <td class="neg">3,618.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-22</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1t × 134W</td>
+           <td>4</td><td>4,047.0</td>
+           <td class="neg">4</td>
+           <td class="neg">4,047.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-06-04</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">태경스틸</td>
+         <td style="font-weight:700">414</td><td>202,483.0</td>
+         <td class="neg">383</td><td class="neg">188,990.9</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:93%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">93%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">31</td>
+         <td style="font-weight:700">13,492.1</td>
+         <td>8</td><td>23</td>
+         <td class="">-</td>
+         <td class="zebra-in" style="font-weight:700">8</td>
+         <td class="pos">13 / 6,054.0</td>
+         <td class="neg">4,049.6</td>
+         <td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 76W</td>
+           <td>85</td><td>32,865.0</td>
+           <td class="neg">75</td>
+           <td class="neg">28,905.9</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:88%;height:100%;background:#9A6400"></div></div>
+        <span style="font-size:10px;color:#9A6400;font-weight:700;width:30px;text-align:right">88%</span></div></td>
+           <td style="font-weight:700">10</td><td>3,959.1</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 112W</td>
+           <td>73</td><td>41,908.0</td>
+           <td class="neg">67</td>
+           <td class="neg">38,634.8</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:92%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">92%</span></div></td>
+           <td style="font-weight:700">6</td><td>3,273.3</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 102W</td>
+           <td>70</td><td>37,443.0</td>
+           <td class="neg">66</td>
+           <td class="neg">35,091.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:94%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">94%</span></div></td>
+           <td style="font-weight:700">4</td><td>2,352.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 94W</td>
+           <td>14</td><td>6,278.0</td>
+           <td class="neg">11</td>
+           <td class="neg">5,084.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:81%;height:100%;background:#9A6400"></div></div>
+        <span style="font-size:10px;color:#9A6400;font-weight:700;width:30px;text-align:right">81%</span></div></td>
+           <td style="font-weight:700">3</td><td>1,194.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 90W</td>
+           <td>51</td><td>21,936.0</td>
+           <td class="neg">48</td>
+           <td class="neg">20,819.6</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:95%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">95%</span></div></td>
+           <td style="font-weight:700">3</td><td>1,116.4</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 110W</td>
+           <td>28</td><td>14,494.0</td>
+           <td class="neg">26</td>
+           <td class="neg">13,703.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:95%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">95%</span></div></td>
+           <td style="font-weight:700">2</td><td>791.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-27</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.8t × 120W</td>
+           <td>6</td><td>4,152.0</td>
+           <td class="neg">5</td>
+           <td class="neg">3,602.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:87%;height:100%;background:#9A6400"></div></div>
+        <span style="font-size:10px;color:#9A6400;font-weight:700;width:30px;text-align:right">87%</span></div></td>
+           <td style="font-weight:700">1</td><td>550.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-29</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 92W</td>
+           <td>15</td><td>6,760.0</td>
+           <td class="neg">14</td>
+           <td class="neg">6,602.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:98%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">98%</span></div></td>
+           <td style="font-weight:700">1</td><td>158.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-24</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 86W</td>
+           <td>1</td><td>384.0</td>
+           <td class="">-</td>
+           <td class="neg">285.6</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:74%;height:100%;background:#9A6400"></div></div>
+        <span style="font-size:10px;color:#9A6400;font-weight:700;width:30px;text-align:right">74%</span></div></td>
+           <td style="font-weight:700">1</td><td>98.4</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 28W</td>
+           <td>3</td><td>429.0</td>
+           <td class="neg">3</td>
+           <td class="neg">429.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2025-02-27</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.8t × 94W</td>
+           <td>15</td><td>6,962.0</td>
+           <td class="neg">15</td>
+           <td class="neg">6,962.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-18</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 114W</td>
+           <td>27</td><td>16,392.0</td>
+           <td class="neg">27</td>
+           <td class="neg">16,392.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-21</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.8t × 108W</td>
+           <td>15</td><td>8,320.0</td>
+           <td class="neg">15</td>
+           <td class="neg">8,320.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-21</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 74W</td>
+           <td>7</td><td>2,776.0</td>
+           <td class="neg">7</td>
+           <td class="neg">2,776.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-10</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 68W</td>
+           <td>4</td><td>1,384.0</td>
+           <td class="neg">4</td>
+           <td class="neg">1,384.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-27</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">동일스테인레스</td>
+         <td style="font-weight:700">201</td><td>104,384.0</td>
+         <td class="neg">182</td><td class="neg">97,824.8</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:94%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">94%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">19</td>
+         <td style="font-weight:700">6,559.2</td>
+         <td>5</td><td>14</td>
+         <td class="">-</td>
+         <td class="zebra-in" style="font-weight:700">5</td>
+         <td class="pos">5 / 1,958.0</td>
+         <td class="neg">1,282.3</td>
+         <td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.6t × 74W</td>
+           <td>5</td><td>1,958.0</td>
+           <td class="">-</td>
+           <td class="">-</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:0%;height:100%;background:#2f6e49"></div></div>
+        <span style="font-size:10px;color:#2f6e49;font-weight:700;width:30px;text-align:right">0%</span></div></td>
+           <td style="font-weight:700">5</td><td>1,958.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304 2t × 74W</td>
+           <td>5</td><td>1,958.0</td>
+           <td class="">-</td>
+           <td class="neg">49.4</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:3%;height:100%;background:#2f6e49"></div></div>
+        <span style="font-size:10px;color:#2f6e49;font-weight:700;width:30px;text-align:right">3%</span></div></td>
+           <td style="font-weight:700">5</td><td>1,908.6</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-09-01</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 70W</td>
+           <td>36</td><td>12,638.0</td>
+           <td class="neg">32</td>
+           <td class="neg">11,333.9</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:90%;height:100%;background:#9A6400"></div></div>
+        <span style="font-size:10px;color:#9A6400;font-weight:700;width:30px;text-align:right">90%</span></div></td>
+           <td style="font-weight:700">4</td><td>1,304.1</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.5t × 118W</td>
+           <td>30</td><td>16,886.0</td>
+           <td class="neg">27</td>
+           <td class="neg">15,686.4</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:93%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">93%</span></div></td>
+           <td style="font-weight:700">3</td><td>1,199.6</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 112W</td>
+           <td>1</td><td>108.0</td>
+           <td class="">-</td>
+           <td class="">-</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:0%;height:100%;background:#2f6e49"></div></div>
+        <span style="font-size:10px;color:#2f6e49;font-weight:700;width:30px;text-align:right">0%</span></div></td>
+           <td style="font-weight:700">1</td><td>108.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-15</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 80W</td>
+           <td>28</td><td>10,842.0</td>
+           <td class="neg">27</td>
+           <td class="neg">10,761.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:99%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">99%</span></div></td>
+           <td style="font-weight:700">1</td><td>81.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.5t × 130W</td>
+           <td>5</td><td>3,044.0</td>
+           <td class="neg">5</td>
+           <td class="neg">3,044.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-04-27</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.6t × 80W</td>
+           <td>9</td><td>3,988.0</td>
+           <td class="neg">9</td>
+           <td class="neg">3,988.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-07</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.5t × 126W</td>
+           <td>13</td><td>7,146.0</td>
+           <td class="neg">13</td>
+           <td class="neg">7,146.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-24</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304J1-2B 0.5t × 126W</td>
+           <td>17</td><td>8,220.0</td>
+           <td class="neg">17</td>
+           <td class="neg">8,220.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-15</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 86W</td>
+           <td>19</td><td>7,093.0</td>
+           <td class="neg">19</td>
+           <td class="neg">7,093.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 132W</td>
+           <td>6</td><td>6,614.0</td>
+           <td class="neg">6</td>
+           <td class="neg">6,614.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-19</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 137W</td>
+           <td>17</td><td>19,856.0</td>
+           <td class="neg">17</td>
+           <td class="neg">19,856.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-19</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 90W</td>
+           <td>5</td><td>1,900.0</td>
+           <td class="neg">5</td>
+           <td class="neg">1,900.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-27</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430-2B 0.6t × 84W</td>
+           <td>3</td><td>1,260.0</td>
+           <td class="neg">3</td>
+           <td class="neg">1,260.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-06-26</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430 2B 0.6t × 80W</td>
+           <td>1</td><td>346.0</td>
+           <td class="neg">1</td>
+           <td class="neg">346.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304 2B 0.6t × 80W</td>
+           <td>1</td><td>527.0</td>
+           <td class="neg">1</td>
+           <td class="neg">527.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-07</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">해강스틸</td>
+         <td style="font-weight:700">49</td><td>56,572.0</td>
+         <td class="neg">44</td><td class="neg">52,073.2</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:92%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">92%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">5</td>
+         <td style="font-weight:700">4,498.8</td>
+         <td>1</td><td>4</td>
+         <td class="">-</td>
+         <td class="zebra-in" style="font-weight:700">2</td>
+         <td class="">-</td>
+         <td class="neg">4,085.2</td>
+         <td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1t × 125W</td>
+           <td>44</td><td>47,255.0</td>
+           <td class="neg">39</td>
+           <td class="neg">42,756.2</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:90%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">90%</span></div></td>
+           <td style="font-weight:700">5</td><td>4,498.8</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-28</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 430J1L-BB 0.5t × 116W</td>
+           <td>1</td><td>406.0</td>
+           <td class="neg">1</td>
+           <td class="neg">406.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2024-06-14</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ - 1.25t × 70W</td>
+           <td>4</td><td>8,911.0</td>
+           <td class="neg">4</td>
+           <td class="neg">8,911.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-08</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">세동산업(사급)</td>
+         <td style="font-weight:700">26</td><td>78,778.0</td>
+         <td class="neg">25</td><td class="neg">76,070.2</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:97%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">97%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">1</td>
+         <td style="font-weight:700">2,707.8</td>
+         <td>1</td><td>-</td>
+         <td class="">-</td>
+         <td class="zebra-in" style="font-weight:700">1</td>
+         <td class="">-</td>
+         <td class="neg">7,522.2</td>
+         <td class="c">2026-08-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPFH590 3.6t × 283W</td>
+           <td>22</td><td>65,638.0</td>
+           <td class="neg">21</td>
+           <td class="neg">62,930.2</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:96%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">96%</span></div></td>
+           <td style="font-weight:700">1</td><td>2,707.8</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-31</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPFH590 3.2t × 284W</td>
+           <td>4</td><td>13,140.0</td>
+           <td class="neg">4</td>
+           <td class="neg">13,140.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-10</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">부강스프링</td>
+         <td style="font-weight:700">59</td><td>45,828.0</td>
+         <td class="neg">58</td><td class="neg">44,558.5</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:97%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">97%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="pos">1</td>
+         <td style="font-weight:700">1,269.5</td>
+         <td>-</td><td>1</td>
+         <td class="">-</td>
+         <td class="" style="font-weight:400">-</td>
+         <td class="">-</td>
+         <td class="">-</td>
+         <td class="c">2026-07-08</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 1.6t × 160W</td>
+           <td>16</td><td>14,322.0</td>
+           <td class="neg">15</td>
+           <td class="neg">13,052.5</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:91%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">91%</span></div></td>
+           <td style="font-weight:700">1</td><td>1,269.5</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-06-26</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.8t × 102W</td>
+           <td>10</td><td>6,020.0</td>
+           <td class="neg">10</td>
+           <td class="neg">6,020.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-05-07</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 1.4t × 190W</td>
+           <td>12</td><td>12,732.0</td>
+           <td class="neg">12</td>
+           <td class="neg">12,732.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-06-16</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 1t × 94W</td>
+           <td>13</td><td>8,864.0</td>
+           <td class="neg">13</td>
+           <td class="neg">8,864.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-08</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 1t × 126W</td>
+           <td>8</td><td>3,890.0</td>
+           <td class="neg">8</td>
+           <td class="neg">3,890.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-08</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">송원테크</td>
+         <td style="font-weight:700">77</td><td>43,630.0</td>
+         <td class="neg">77</td><td class="neg">43,630.0</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="">0</td>
+         <td style="font-weight:700">0.0</td>
+         <td>-</td><td>-</td>
+         <td class="">-</td>
+         <td class="" style="font-weight:400">-</td>
+         <td class="">-</td>
+         <td class="">-</td>
+         <td class="c">2026-08-10</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ SPCC 0.6t × 114W</td>
+           <td>77</td><td>43,630.0</td>
+           <td class="neg">77</td>
+           <td class="neg">43,630.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-10</td></tr><tr class="grp">
+         <td class="l" style="font-family:var(--sans);font-weight:800;font-size:12px">나스테크</td>
+         <td style="font-weight:700">59</td><td>65,400.0</td>
+         <td class="neg">59</td><td class="neg">65,400.0</td>
+         <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+         <td style="font-weight:800;font-size:12.5px" class="">0</td>
+         <td style="font-weight:700">0.0</td>
+         <td>-</td><td>-</td>
+         <td class="">-</td>
+         <td class="" style="font-weight:400">-</td>
+         <td class="">-</td>
+         <td class="">-</td>
+         <td class="c">2026-08-11</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 132W</td>
+           <td>8</td><td>8,922.0</td>
+           <td class="neg">8</td>
+           <td class="neg">8,922.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-25</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ C67S 1.25t × 137W</td>
+           <td>41</td><td>48,606.0</td>
+           <td class="neg">41</td>
+           <td class="neg">48,606.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-30</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ S55CM 1t × 125W</td>
+           <td>4</td><td>4,282.0</td>
+           <td class="neg">4</td>
+           <td class="neg">4,282.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-07-25</td></tr><tr>
+           <td class="l" style="font-family:var(--sans);padding-left:20px;color:#4a5968">└ 304-2B 0.5t × 126W</td>
+           <td>6</td><td>3,590.0</td>
+           <td class="neg">6</td>
+           <td class="neg">3,590.0</td>
+           <td style="padding:0 6px"><div style="display:flex;align-items:center;gap:5px">
+        <div style="flex:1;height:9px;background:#E3E7EB;border-radius:5px;overflow:hidden;min-width:52px">
+          <div style="width:100%;height:100%;background:#B3261E"></div></div>
+        <span style="font-size:10px;color:#B3261E;font-weight:700;width:30px;text-align:right">100%</span></div></td>
+           <td style="font-weight:700">0</td><td>0.0</td>
+           <td colspan="2"></td>
+           <td class="">-</td>
+           <td colspan="3"></td><td class="c">2026-08-11</td></tr></tbody><tfoot><tr><td class="c">합　계 (8개사)</td>
+       <td>1507</td><td>1,355,948.0</td><td>1427</td><td>1,297,389.3</td><td></td>
+       <td>80</td><td>58,558.7</td><td colspan="2"></td>
+       <td></td><td>19</td><td>8,012.0</td><td>24,891.1</td><td></td></tr></tfoot></table></div></div>
+    <div class="hint noprint" id="rawHint">· <b>입고</b>는 원소재 기초일자 이후 등록된 코일, <b>반출(소진)</b>은 잔량 0.5kg 이하가 된 코일입니다.<br>· <b>재고</b>는 잔량이 남은 코일이며, 그 중 <b>사용중</b>은 일부 투입된 코일, <b>미개봉</b>은 아직 투입 이력이 없는 코일입니다.<br>· 업체 행 아래는 규격별 소계입니다. 보류는 검사대기·불합격으로 투입이 막힌 코일입니다.</div>
   </div>
 </div>
 
@@ -5427,7 +6434,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
     <input id="cfgQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label style="margin-left:8px">관리제외</label>
-    <span id="itStat" style="font-size:11px;color:#888;margin-left:6px;cursor:pointer" onclick="pushItems(false)" title="품목 마스터 공유 상태 (클릭=지금 공유 저장)">🟢 품목 공유 163건</span>
+    <span id="itStat" style="font-size:11px;color:#888;margin-left:6px;cursor:pointer" onclick="pushItems(false)" title="품목 마스터 공유 상태 (클릭=지금 공유 저장)">🟢 품목 공유 174건</span>
     <label style="margin-left:8px">기초일자 일괄</label>
     <input type="date" id="cfgBd" style="width:140px" title="전 품목의 기초일자를 한 번에 변경합니다">
     <button class="btn" onclick="bulkBd()" title="기초일자 이전 전표는 계산에서 제외됩니다">적용</button>
@@ -5747,12 +6754,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <div class="fld"><label>입고일자</label><input type="date" id="cD"></div>
       <div class="fld"><label>코일 No. (Heat/Coil No.)</label><input id="cNo" placeholder="예: K5A2371-01"></div></div>
     <div class="g3">
-      <div class="fld"><label>재질</label><input id="cMt" list="dlMt" style="font-family:var(--sans)" placeholder="SPCC"><datalist id="dlMt"><option value="SPCC"></option><option value="SPHC"></option><option value="SPHD"></option><option value="SAPH440"></option><option value="SPFH590"></option><option value="SPFC590"></option><option value="SGARC"></option><option value="STS304"></option><option value="STS430"></option><option value="STS316"></option><option value="C67S"></option><option value="S55CM"></option><option value="S45C"></option><option value="SK5"></option><option value="430J1L-BB"></option><option value="S55C"></option><option value="304-2B"></option><option value="430-2B"></option><option value="304J1-2B"></option><option value="430 2B"></option><option value="304 2B"></option></datalist></div>
+      <div class="fld"><label>재질</label><input id="cMt" list="dlMt" style="font-family:var(--sans)" placeholder="SPCC"><datalist id="dlMt"><option value="SPCC"></option><option value="SPHC"></option><option value="SPHD"></option><option value="SAPH440"></option><option value="SPFH590"></option><option value="SPFC590"></option><option value="SGARC"></option><option value="STS304"></option><option value="STS430"></option><option value="STS316"></option><option value="C67S"></option><option value="S55CM"></option><option value="S45C"></option><option value="SK5"></option><option value="430J1L-BB"></option><option value="S55C"></option><option value="304-2B"></option><option value="430-2B"></option><option value="304J1-2B"></option><option value="430 2B"></option><option value="304 2B"></option><option value="304"></option></datalist></div>
       <div class="fld"><label>두께 t (mm)</label><input type="number" step="0.01" id="cT" inputmode="decimal"></div>
       <div class="fld"><label>폭 W (mm)</label><input type="number" step="1" id="cW" inputmode="numeric"></div></div>
     <div class="g2">
       <div class="fld"><label>입고중량 (kg)</label><input type="number" step="0.1" id="cWt" inputmode="decimal"></div>
-      <div class="fld"><label>공급업체</label><input id="cSup" list="dlSup" style="font-family:var(--sans)"><datalist id="dlSup"><option value="태경스틸"></option><option value="정민스틸"></option><option value="㈜동일스테인레스"></option><option value="포스코"></option><option value="현대제철"></option><option value="동국제강"></option><option value="세아제강"></option><option value="KG스틸"></option><option value="해강스틸"></option><option value="동일스테인레스"></option><option value="동국산업"></option><option value="부강스프링"></option><option value="SU"></option><option value="SG"></option><option value="SWTEC"></option><option value="나스테크"></option><option value="SD"></option><option value="㈜동일스테인레스_SUS"></option></datalist></div></div>
+      <div class="fld"><label>공급업체</label><input id="cSup" list="dlSup" style="font-family:var(--sans)"><datalist id="dlSup"><option value="태경스틸"></option><option value="정민스틸"></option><option value="㈜동일스테인레스"></option><option value="포스코"></option><option value="현대제철"></option><option value="동국제강"></option><option value="세아제강"></option><option value="KG스틸"></option><option value="해강스틸"></option><option value="부강스프링"></option><option value="동일스테인레스"></option><option value="동국산업"></option><option value="세동산업(사급)"></option><option value="송원테크"></option><option value="나스테크"></option></datalist></div></div>
     <div class="g2">
       <div class="fld"><label>MILL SHEET / 성적서 No.</label><input id="cMs"></div>
       <div class="fld"><label>수입검사</label><select id="cIq" style="font-family:var(--sans)">
@@ -5785,7 +6792,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>일자</label><input type="date" id="mD"></div>
       <div class="fld"><label>구분</label><select id="mK" style="font-family:var(--sans)"><option value="구매입고">▲ 입고 · 구매입고</option><option value="반품입고">▲ 입고 · 반품입고</option><option value="잔재반납">▲ 입고 · 잔재반납</option><option value="재고조정(+)">▲ 입고 · 재고조정(+)</option><option value="생산투입">▼ 출고 · 생산투입</option><option value="스크랩폐기">▼ 출고 · 스크랩폐기</option><option value="반품출고">▼ 출고 · 반품출고</option><option value="재고조정(-)">▼ 출고 · 재고조정(-)</option></select></div></div>
-    <div class="fld"><label>코일 No.</label><input id="mCno" list="dlCno" autocomplete="off"><datalist id="dlCno"><option value="26C12060-21-022A">C67S 1.25t × 248W · 잔량 1,981.0kg</option><option value="26C12152-21-011A">C67S 1.25t × 248W · 잔량 2,181.0kg</option><option value="111">C67S 0.6t × 245W · 잔량 111.0kg</option><option value="C261500297-1">430-2B 0.6t × 112W · 잔량 108.0kg</option><option value="20260608-">SPFH590 3.6t × 283W · 잔량 2,418.0kg</option><option value="20260608-#0608-491">SPFH590 3.6t × 283W · 잔량 2,418.0kg</option><option value="20260608-#0608-494">SPFH590 3.6t × 283W · 잔량 2,418.0kg</option><option value="20260608-#0608-495">SPFH590 3.6t × 283W · 잔량 2,418.0kg</option><option value="20260608-#0608-493">SPFH590 3.6t × 283W · 잔량 2,418.0kg</option><option value="AT45049C-01-2">SPCC 1.6t × 160W · 잔량 1,269.5kg</option><option value="TEST">S55CM 1t × 141W · 잔량 1.0kg</option><option value="AT44821B-03-4">SPCC 1t × 126W · 잔량 486.5kg</option><option value="AT59721A-03-1">SPCC 1t × 94W · 잔량 474.3kg</option><option value="AT59721A-03-2">SPCC 1t × 94W · 잔량 474.3kg</option><option value="AT59721A-03-4">SPCC 1t × 94W · 잔량 474.3kg</option><option value="AT59721A-03-5">SPCC 1t × 94W · 잔량 474.3kg</option><option value="AT59721A-01-6">SPCC 1t × 94W · 잔량 23.2kg</option><option value="AT44821B-03-1#0708-867">SPCC 1t × 126W · 잔량 486.5kg</option><option value="AT44821B-03-2#0708-868">SPCC 1t × 126W · 잔량 486.5kg</option><option value="AT59721A-03-3#0708-873">SPCC 1t × 94W · 잔량 474.3kg</option><option value="SP36079-1">SPCC 0.6t × 90W · 잔량 139.1kg</option><option value="ZAH2509-02">S55CM 1.01t × 125W · 잔량 1,067.0kg</option><option value="ZBH2320-02">S55CM 1.01t × 125W · 잔량 1,074.0kg</option><option value="ZBH2320-03">S55CM 1.01t × 125W · 잔량 1,073.0kg</option><option value="ZAH2509-01#0725-150">S55CM 1.01t × 125W · 잔량 1,068.0kg</option><option value="SQ12634-1">SPCC 0.8t × 94W · 잔량 353.6kg</option><option value="V52561-1">SPCC 0.8t × 120W · 잔량 550.0kg</option><option value="SP36079-1#0731-274">SPCC 0.6t × 90W · 잔량 489.0kg</option><option value="SP36079-2#0731-275">SPCC 0.6t × 90W · 잔량 489.0kg</option><option value="C256100108-2#0731-277">430-2B 0.6t × 70W · 잔량 86.1kg</option><option value="C265102871-A6#0731-290">430-2B 0.6t × 80W · 잔량 81.0kg</option><option value="25G12A98-11-131A">C67S 1.25t × 132W · 잔량 1,062.0kg</option><option value="25G12A98-11-031A">C67S 1.25t × 132W · 잔량 1,101.0kg</option><option value="SP38425-1#0818-382">SPCC 0.6t × 112W · 잔량 465.9kg</option><option value="SP38425-2#0818-383">SPCC 0.6t × 112W · 잔량 590.0kg</option><option value="SP38425-3#0818-384">SPCC 0.6t × 112W · 잔량 99.5kg</option><option value="SP38425-1#0818-391">SPCC 0.6t × 76W · 잔량 364.4kg</option><option value="SP38425-1#0821-398">SPCC 0.6t × 76W · 잔량 451.0kg</option><option value="SP38425-2#0821-399">SPCC 0.6t × 76W · 잔량 134.6kg</option><option value="SB49516-5#0821-409">SPCC 0.6t × 114W · 잔량 87.8kg</option><option value="26E12297-11-015B">C67S 1.25t × 248W · 잔량 1,226.3kg</option><option value="26E12297-11-023B">C67S 1.25t × 248W · 잔량 2,118.0kg</option><option value="26E12297-11-024B">C67S 1.25t × 248W · 잔량 2,108.0kg</option><option value="SB49516-4#0824-426">SPCC 0.6t × 92W · 잔량 183.8kg</option><option value="SP38425-1#0824-427">SPCC 0.6t × 76W · 잔량 444.0kg</option><option value="SP38425-2#0824-428">SPCC 0.6t × 76W · 잔량 452.0kg</option><option value="SP38425-3#0824-429">SPCC 0.6t × 76W · 잔량 452.0kg</option><option value="26E12127-11-021A">S55CM 1t × 141W · 잔량 1,238.0kg</option><option value="26E12127-11-022A">S55CM 1t × 141W · 잔량 1,238.0kg</option><option value="26E12127-11-027A">S55CM 1t × 141W · 잔량 1,250.0kg</option><option value="SB49516-1#0827-456">SPCC 0.6t × 110W · 잔량 581.0kg</option><option value="SB49516-2#0827-457">SPCC 0.6t × 110W · 잔량 581.0kg</option><option value="SB49516-3#0827-458">SPCC 0.6t × 110W · 잔량 132.1kg</option><option value="26E12339-11-015B">C67S 1.25t × 132W · 잔량 1,183.0kg</option><option value="26E12339-11-016B">C67S 1.25t × 132W · 잔량 1,183.0kg</option><option value="26E12339-11-018B">C67S 1.25t × 132W · 잔량 1,161.0kg</option><option value="26E12339-11-019B">C67S 1.25t × 132W · 잔량 1,161.0kg</option><option value="SP36079-1#0828-483">SPCC 0.6t × 86W · 잔량 100.0kg</option><option value="SP38425-1#0828-484">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-2#0828-485">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-3#0828-486">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-4#0828-487">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="26E12339-11-039B">C67S 1.25t × 132W · 잔량 1,069.0kg</option><option value="26E12339-11-013B">C67S 1.25t × 132W · 잔량 1,179.0kg</option><option value="26E12339-11-014B">C67S 1.25t × 132W · 잔량 1,179.0kg</option><option value="26E12339-11-011B">C67S 1.25t × 132W · 잔량 1,153.0kg</option><option value="26E12339-11-012B">C67S 1.25t × 132W · 잔량 1,153.0kg</option><option value="26E12339-11-037B">C67S 1.25t × 132W · 잔량 1,087.0kg</option><option value="26E12339-11-038B">C67S 1.25t × 132W · 잔량 1,086.0kg</option><option value="26E12127-11-013B">S55CM 1t × 141W · 잔량 1,280.0kg</option><option value="26E12127-11-014B">S55CM 1t × 141W · 잔량 1,280.0kg</option><option value="26E12127-11-011B">S55CM 1t × 141W · 잔량 1,259.0kg</option><option value="26E12127-11-012B">S55CM 1t × 141W · 잔량 1,259.0kg</option><option value="ZE21149-0101">S55CM 1t × 125W · 잔량 1,082.0kg</option><option value="ZE21149-0102">S55CM 1t × 125W · 잔량 1,083.0kg</option><option value="ZE21149-0103">S55CM 1t × 125W · 잔량 1,090.0kg</option><option value="ZE21149-0201">S55CM 1t × 125W · 잔량 1,104.0kg</option><option value="ZE21154-0103">S55CM 1t × 125W · 잔량 789.1kg</option><option value="ZE21153-0101">S55CM 1t × 125W · 잔량 1,066.0kg</option><option value="ZE21153-0102">S55CM 1t × 125W · 잔량 238.8kg</option><option value="CUG0606B-3">SPFH590 3.6t × 283W · 잔량 3,250.4kg</option><option value="CUG0606B-4">SPFH590 3.6t × 283W · 잔량 3,410.0kg</option><option value="QGD0481-A3">304-2B 0.6t × 74W · 잔량 391.0kg</option><option value="QGD0481-A4">304-2B 0.6t × 74W · 잔량 391.0kg</option><option value="QGD0481-A5">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QGD0481-A6">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QGD0481-A7">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QFG0788-C1">304-2B 0.5t × 118W · 잔량 81.0kg</option><option value="QFG0788-C2">304-2B 0.5t × 118W · 잔량 560.0kg</option><option value="QFG0788-C6">304-2B 0.5t × 118W · 잔량 560.0kg</option><option value="QFD0765-A5">304-2B 0.5t × 118W · 잔량 276.8kg</option><option value="C265102871-A2#0831-527">430-2B 0.6t × 70W · 잔량 406.0kg</option><option value="C265102871-A3#0831-528">430-2B 0.6t × 70W · 잔량 406.0kg</option><option value="C265102871-A5">430-2B 0.6t × 70W · 잔량 406.0kg</option></datalist>
+    <div class="fld"><label>코일 No.</label><input id="mCno" list="dlCno" autocomplete="off"><datalist id="dlCno"><option value="26C12060-21-022A">C67S 1.25t × 248W · 잔량 1,981.0kg</option><option value="26C12152-21-011A">C67S 1.25t × 248W · 잔량 2,181.0kg</option><option value="C261500297-1">430-2B 0.6t × 112W · 잔량 108.0kg</option><option value="AT45049C-01-2">SPCC 1.6t × 160W · 잔량 1,269.5kg</option><option value="AT59721A-01-6">SPCC 1t × 94W · 잔량 23.2kg</option><option value="SP36079-1">SPCC 0.6t × 90W · 잔량 138.4kg</option><option value="V52561-1">SPCC 0.8t × 120W · 잔량 550.0kg</option><option value="SP36079-1#0731-274">SPCC 0.6t × 90W · 잔량 489.0kg</option><option value="SP36079-2#0731-275">SPCC 0.6t × 90W · 잔량 489.0kg</option><option value="C256100108-2#0731-277">430-2B 0.6t × 70W · 잔량 86.1kg</option><option value="C265102871-A6#0731-290">430-2B 0.6t × 80W · 잔량 81.0kg</option><option value="SP38425-2#0818-383">SPCC 0.6t × 112W · 잔량 508.2kg</option><option value="SP38425-1#0818-391">SPCC 0.6t × 76W · 잔량 364.4kg</option><option value="SP38425-1#0821-398">SPCC 0.6t × 76W · 잔량 396.7kg</option><option value="26E12297-11-015B">C67S 1.25t × 248W · 잔량 245.4kg</option><option value="26E12297-11-023B">C67S 1.25t × 248W · 잔량 2,118.0kg</option><option value="26E12297-11-024B">C67S 1.25t × 248W · 잔량 2,108.0kg</option><option value="SB49516-4#0824-426">SPCC 0.6t × 92W · 잔량 158.0kg</option><option value="SP38425-1#0824-427">SPCC 0.6t × 76W · 잔량 444.0kg</option><option value="SP38425-2#0824-428">SPCC 0.6t × 76W · 잔량 452.0kg</option><option value="SP38425-3#0824-429">SPCC 0.6t × 76W · 잔량 452.0kg</option><option value="26E12127-11-021A">S55CM 1t × 141W · 잔량 1,238.0kg</option><option value="26E12127-11-022A">S55CM 1t × 141W · 잔량 1,238.0kg</option><option value="26E12127-11-027A">S55CM 1t × 141W · 잔량 1,250.0kg</option><option value="SB49516-1#0827-456">SPCC 0.6t × 110W · 잔량 581.0kg</option><option value="SB49516-2#0827-457">SPCC 0.6t × 110W · 잔량 210.0kg</option><option value="26E12339-11-015B">C67S 1.25t × 132W · 잔량 1,183.0kg</option><option value="26E12339-11-016B">C67S 1.25t × 132W · 잔량 1,183.0kg</option><option value="26E12339-11-018B">C67S 1.25t × 132W · 잔량 1,161.0kg</option><option value="26E12339-11-019B">C67S 1.25t × 132W · 잔량 1,161.0kg</option><option value="SP36079-1#0828-483">SPCC 0.6t × 86W · 잔량 98.4kg</option><option value="SP38425-1#0828-484">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-2#0828-485">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-3#0828-486">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="SP38425-4#0828-487">SPCC 0.6t × 102W · 잔량 588.0kg</option><option value="26E12339-11-039B">C67S 1.25t × 132W · 잔량 1,069.0kg</option><option value="26E12339-11-013B">C67S 1.25t × 132W · 잔량 1,179.0kg</option><option value="26E12339-11-014B">C67S 1.25t × 132W · 잔량 1,179.0kg</option><option value="26E12339-11-011B">C67S 1.25t × 132W · 잔량 1,153.0kg</option><option value="26E12339-11-012B">C67S 1.25t × 132W · 잔량 1,153.0kg</option><option value="26E12339-11-037B">C67S 1.25t × 132W · 잔량 1,087.0kg</option><option value="26E12339-11-038B">C67S 1.25t × 132W · 잔량 1,086.0kg</option><option value="26E12127-11-013B">S55CM 1t × 141W · 잔량 1,280.0kg</option><option value="26E12127-11-014B">S55CM 1t × 141W · 잔량 1,280.0kg</option><option value="26E12127-11-011B">S55CM 1t × 141W · 잔량 1,259.0kg</option><option value="26E12127-11-012B">S55CM 1t × 141W · 잔량 1,259.0kg</option><option value="ZE21149-0101">S55CM 1t × 125W · 잔량 1,082.0kg</option><option value="ZE21149-0102">S55CM 1t × 125W · 잔량 1,083.0kg</option><option value="ZE21149-0103">S55CM 1t × 125W · 잔량 1,090.0kg</option><option value="ZE21149-0201">S55CM 1t × 125W · 잔량 1,104.0kg</option><option value="ZE21153-0101">S55CM 1t × 125W · 잔량 139.8kg</option><option value="CUG0606B-4">SPFH590 3.6t × 283W · 잔량 2,707.8kg</option><option value="QGD0481-A3">304-2B 0.6t × 74W · 잔량 391.0kg</option><option value="QGD0481-A4">304-2B 0.6t × 74W · 잔량 391.0kg</option><option value="QGD0481-A5">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QGD0481-A6">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QGD0481-A7">304-2B 0.6t × 74W · 잔량 392.0kg</option><option value="QFG0788-C1">304-2B 0.5t × 118W · 잔량 81.0kg</option><option value="QFG0788-C2">304-2B 0.5t × 118W · 잔량 558.6kg</option><option value="QFG0788-C6">304-2B 0.5t × 118W · 잔량 560.0kg</option><option value="C265102871-A2#0831-527">430-2B 0.6t × 70W · 잔량 406.0kg</option><option value="C265102871-A3#0831-528">430-2B 0.6t × 70W · 잔량 406.0kg</option><option value="C265102871-A5">430-2B 0.6t × 70W · 잔량 406.0kg</option><option value="SP40018-1">SPCC 0.6t × 76W · 잔량 370.0kg</option><option value="SP40018-2">SPCC 0.6t × 76W · 잔량 370.0kg</option><option value="SP40018-3">SPCC 0.6t × 76W · 잔량 370.0kg</option><option value="SP40018-4">SPCC 0.6t × 76W · 잔량 370.0kg</option><option value="SP40018-5">SPCC 0.6t × 76W · 잔량 370.0kg</option><option value="SP40018-1#0901-535">SPCC 0.6t × 94W · 잔량 398.0kg</option><option value="SP40018-2#0901-536">SPCC 0.6t × 94W · 잔량 398.0kg</option><option value="SP40018-3#0901-537">SPCC 0.6t × 94W · 잔량 398.0kg</option><option value="SQ06431-1#0901-538">SPCC 0.6t × 112W · 잔량 355.1kg</option><option value="SQ06431-2#0901-539">SPCC 0.6t × 112W · 잔량 600.0kg</option><option value="SQ06431-3#0901-540">SPCC 0.6t × 112W · 잔량 600.0kg</option><option value="SQ06431-4#0901-541">SPCC 0.6t × 112W · 잔량 605.0kg</option><option value="SQ06431-5#0901-542">SPCC 0.6t × 112W · 잔량 605.0kg</option><option value="DI0507A6">304 2t × 74W · 잔량 342.6kg</option><option value="DI0507A7">304 2t × 74W · 잔량 392.0kg</option><option value="DI0507A4">304 2t × 74W · 잔량 391.0kg</option><option value="DI0507A5">304 2t × 74W · 잔량 392.0kg</option><option value="DI0507A3">304 2t × 74W · 잔량 391.0kg</option></datalist>
       <div class="hint" id="mInfo" style="margin-top:4px"></div></div>
     <div class="g2">
       <div class="fld"><label>수량 (kg)</label><input type="number" step="0.1" id="mQ" inputmode="decimal"></div>
@@ -5839,7 +6846,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <div class="fld"><label>일자</label><input type="date" id="xD"></div>
       <div class="fld"><label>구분</label><select id="xK"><option value="생산입고">▲ 입고 · 생산입고</option><option value="검사입고">▲ 입고 · 검사입고</option><option value="구매입고">▲ 입고 · 구매입고</option><option value="반품입고">▲ 입고 · 반품입고</option><option value="재고조정(+)">▲ 입고 · 재고조정(+)</option><option value="출하">▼ 출고 · 출하</option><option value="생산투입">▼ 출고 · 생산투입</option><option value="불량폐기">▼ 출고 · 불량폐기</option><option value="검사폐기">▼ 출고 · 검사폐기</option><option value="선별제외">▼ 출고 · 선별제외</option><option value="반품출고">▼ 출고 · 반품출고</option><option value="재고조정(-)">▼ 출고 · 재고조정(-)</option></select></div>
     </div>
-    <div class="fld"><label>품번</label><input id="xPn" list="dlPn" autocomplete="off"><datalist id="dlPn"><option value="1G26-014"></option><option value="1G34-015"></option><option value="1G35-013"></option><option value="1G36-012"></option><option value="1GE0-0009-01"></option><option value="1GE0-0009-1"></option><option value="1515-196"></option><option value="1520-172"></option><option value="1547-102-1"></option><option value="1547-102-2"></option><option value="1549-156"></option><option value="1549-157"></option><option value="1551-189"></option><option value="1553-101-1"></option><option value="1553-101-2"></option><option value="1560-006"></option><option value="1560-0018-01"></option><option value="1561-0017-00"></option><option value="1570-54-1"></option><option value="1570-56-1"></option><option value="1583-176(1883-626)"></option><option value="1642-118-1"></option><option value="1648-115-1"></option><option value="1654-119-1"></option><option value="1654-119-2"></option><option value="1657-127"></option><option value="1657-130"></option><option value="1660-131"></option><option value="1660-132"></option><option value="1664-128-1"></option><option value="1664-128-2"></option><option value="1752-293-1"></option><option value="1752-297"></option><option value="1753-295-1"></option><option value="1755-296"></option><option value="1781-0001-00"></option><option value="1807-653"></option><option value="1816-0010-00"></option><option value="1837-0033-01"></option><option value="1839-629"></option><option value="1853-515-1"></option><option value="1853-515-2"></option><option value="1853-586"></option><option value="1856-627-1"></option><option value="1856-627-2"></option><option value="1858-618-1"></option><option value="1858-619-2"></option><option value="1859-650-1"></option><option value="1861-596"></option><option value="1861-597"></option><option value="1862-0041-21"></option><option value="1862-0041(0042)-01"></option><option value="1862-0042-21"></option><option value="1862-604"></option><option value="1862-624"></option><option value="1862-651"></option><option value="1863-607-1"></option><option value="1863-607-2"></option><option value="1866-599"></option><option value="1866-617-1"></option><option value="1866-617-2"></option><option value="1867-608-1"></option><option value="1869-621"></option><option value="1870-602-1"></option><option value="1870-602-2"></option><option value="1871-0043-01"></option><option value="1871-0043-21"></option><option value="1872-625-1"></option><option value="1873-0044"></option><option value="1873-0044-21"></option><option value="1873-0045-01"></option><option value="1874-623"></option><option value="1883-626"></option><option value="1888-0005"></option><option value="1939-357-1"></option><option value="1945-349-1"></option><option value="1945-349-2"></option><option value="1946-0053-01"></option><option value="1947-353"></option><option value="1950-354-1"></option><option value="1950-354-2"></option><option value="1950-358-1"></option><option value="1950-358-2"></option><option value="1950-374-1"></option><option value="1951-386"></option><option value="1952-0056-01"></option><option value="1952-0056-21"></option><option value="1952-346-1"></option><option value="1952-346-2"></option><option value="1952-347-1"></option><option value="1952-367-2"></option><option value="1958-365-1"></option><option value="1958-365-2(2호)"></option><option value="1958-373-1"></option><option value="1959-0024-01"></option><option value="1959-0024-21"></option><option value="1959-360-1"></option><option value="1960-0031-01"></option><option value="1960-0031-21"></option><option value="1960-361"></option><option value="1962-0030"></option><option value="1963-0055-01"></option><option value="1963-0055-02"></option><option value="1963-0055-21"></option><option value="1965-326-1"></option><option value="1965-326-2"></option><option value="1967-0052-01"></option><option value="1967-0052-21"></option><option value="1967-391"></option><option value="1967-392"></option><option value="1968-0016-01"></option><option value="1968-0016-21"></option><option value="1968-362"></option><option value="1968-364-1"></option><option value="1968-364-2"></option><option value="1969-0030-01"></option><option value="1970-363"></option><option value="1970-372-1"></option><option value="1970-372-2"></option><option value="1972-383"></option><option value="1972-383(2호금형)"></option><option value="1973-325"></option><option value="1973-370"></option><option value="1974-0023-01"></option><option value="1974-0023-21"></option><option value="1976-0004-01"></option><option value="1979-0051-01"></option><option value="1982-371"></option><option value="45524-26210"></option><option value="45624-2F010-L"></option><option value="45624-2F010-U"></option><option value="45631-26010A"></option><option value="45631-26010B"></option><option value="45631-26010C"></option><option value="48338-2H010"></option><option value="54610-C1000-(TR)"></option><option value="54610-C1001-(BK)"></option><option value="54610-D3000-(TR)"></option><option value="54610-D3500-(TR)"></option><option value="54610-D3501-(BK)"></option><option value="116080-ST0"></option><option value="116090-ST2"></option><option value="AB3038-SC"></option><option value="AB3248-SC-01"></option><option value="AB3248-SC-01"></option><option value="AT3037-GC-00"></option><option value="C873-622-2"></option><option value="DUST CAP V30"></option><option value="IJ12041-SD-00"></option><option value="IJ223101-SC"></option><option value="IJZZ3127-DD"></option><option value="IW/OW-BDA-1106-1"></option><option value="IW/OW-BDA-1106-2"></option><option value="IW/OW-BDA-1106-3"></option><option value="IW/OW-BDA-1113-1"></option><option value="IW/OW-BDA-1113-2"></option><option value="IW/OW-BDA-1113D"></option><option value="IW/OW-BDA-1159B"></option><option value="IW/OW-BDA-1165A"></option><option value="IW/OW-BDA-1179-1"></option><option value="IW/OW-BDA-1179-2"></option><option value="IW/OW-BDA-1179-3"></option><option value="SEALING CAP"></option><option value="T1XX GREASE CAP"></option></datalist>
+    <div class="fld"><label>품번</label><input id="xPn" list="dlPn" autocomplete="off"><datalist id="dlPn"><option value="1G26-014"></option><option value="1G34-015"></option><option value="1G35-013"></option><option value="1G36-012"></option><option value="1GE0-0009-01"></option><option value="1GE0-0009-1"></option><option value="1515-196"></option><option value="1520-172"></option><option value="1547-102-1"></option><option value="1547-102-2"></option><option value="1549-156"></option><option value="1549-157"></option><option value="1551-189"></option><option value="1553-101-1"></option><option value="1553-101-2"></option><option value="1560-006"></option><option value="1560-0018-01"></option><option value="1561-0017-00"></option><option value="1570-54-1"></option><option value="1570-56-1"></option><option value="1583-176(1883-626)"></option><option value="1642-118-1"></option><option value="1648-115-1"></option><option value="1654-119-1"></option><option value="1654-119-2"></option><option value="1657-127"></option><option value="1657-130"></option><option value="1660-131"></option><option value="1660-132"></option><option value="1664-128-1"></option><option value="1664-128-2"></option><option value="1752-293-1"></option><option value="1752-297"></option><option value="1753-295-1"></option><option value="1755-296"></option><option value="1781-0001-00"></option><option value="1807-653"></option><option value="1816-0010-00"></option><option value="1837-0033-01"></option><option value="1839-629"></option><option value="1853-515-1"></option><option value="1853-515-2"></option><option value="1853-586"></option><option value="1856-627-1"></option><option value="1856-627-2"></option><option value="1858-618-1"></option><option value="1858-619-2"></option><option value="1859-650-1"></option><option value="1861-596"></option><option value="1861-597"></option><option value="1862-0041-21"></option><option value="1862-0041(0042)-01"></option><option value="1862-0042-21"></option><option value="1862-604"></option><option value="1862-624"></option><option value="1862-651"></option><option value="1863-607-1"></option><option value="1863-607-2"></option><option value="1866-599"></option><option value="1866-617-1"></option><option value="1866-617-2"></option><option value="1867-608-1"></option><option value="1869-621"></option><option value="1870-602-1"></option><option value="1870-602-2"></option><option value="1871-0043-01"></option><option value="1871-0043-21"></option><option value="1872-625-1"></option><option value="1873-0044"></option><option value="1873-0044-21"></option><option value="1873-0045-01"></option><option value="1874-623"></option><option value="1883-626"></option><option value="1888-0005"></option><option value="1939-357-1"></option><option value="1945-349-1"></option><option value="1945-349-2"></option><option value="1946-0053-01"></option><option value="1947-353"></option><option value="1950-354-1"></option><option value="1950-354-2"></option><option value="1950-358-1"></option><option value="1950-358-2"></option><option value="1950-374-1"></option><option value="1951-386"></option><option value="1952-0056-01"></option><option value="1952-0056-21"></option><option value="1952-346-1"></option><option value="1952-346-2"></option><option value="1952-347-1"></option><option value="1952-367-2"></option><option value="1958-365-1"></option><option value="1958-365-2(2호)"></option><option value="1958-373-1"></option><option value="1959-0024-01"></option><option value="1959-0024-21"></option><option value="1959-360-1"></option><option value="1960-0031-01"></option><option value="1960-0031-21"></option><option value="1960-361"></option><option value="1962-0030"></option><option value="1963-0055-01"></option><option value="1963-0055-02"></option><option value="1963-0055-21"></option><option value="1965-326-1"></option><option value="1965-326-2"></option><option value="1967-0052-01"></option><option value="1967-0052-21"></option><option value="1967-391"></option><option value="1967-392"></option><option value="1968-0016-01"></option><option value="1968-0016-21"></option><option value="1968-362"></option><option value="1968-364-1"></option><option value="1968-364-2"></option><option value="1969-0030-01"></option><option value="1970-363"></option><option value="1970-372-1"></option><option value="1970-372-2"></option><option value="1972-383"></option><option value="1972-383(2호금형)"></option><option value="1973-325"></option><option value="1973-370"></option><option value="1974-0023-01"></option><option value="1974-0023-21"></option><option value="1976-0004-01"></option><option value="1979-0051-01"></option><option value="1982-371"></option><option value="45524-26210"></option><option value="45624-2F010-L"></option><option value="45624-2F010-U"></option><option value="45631-26010A"></option><option value="45631-26010B"></option><option value="45631-26010C"></option><option value="48338-2H010"></option><option value="54610-C1000-(TR)"></option><option value="54610-C1001-(BK)"></option><option value="54610-D3000-(TR)"></option><option value="54610-D3500-(TR)"></option><option value="54610-D3501-(BK)"></option><option value="116080-ST0"></option><option value="116090-ST2"></option><option value="AB3038-SC"></option><option value="AB3248-SC-01"></option><option value="AB3248-SC-01"></option><option value="AT3037-GC-00"></option><option value="C873-622-2"></option><option value="DUST CAP V30"></option><option value="IJ12041-SD-00"></option><option value="IJ223101-SC"></option><option value="IJZZ3127-DD"></option><option value="IW/OW-BDA-1106-1"></option><option value="IW/OW-BDA-1106-2"></option><option value="IW/OW-BDA-1106-3"></option><option value="IW/OW-BDA-1113-1"></option><option value="IW/OW-BDA-1113-2"></option><option value="IW/OW-BDA-1113D"></option><option value="IW/OW-BDA-1159B"></option><option value="IW/OW-BDA-1165A"></option><option value="IW/OW-BDA-1179-1"></option><option value="IW/OW-BDA-1179-2"></option><option value="IW/OW-BDA-1179-3"></option><option value="SEALING CAP"></option><option value="T1XX GREASE CAP"></option><option value="1657-130-2"></option><option value="1856-627(628)-1"></option><option value="1856-627(628)-2"></option><option value="1856-628-1"></option><option value="1858-618"></option><option value="1858-619"></option><option value="1958-0016-21"></option><option value="1958-365-2"></option><option value="1968-0016-02"></option><option value="1968-364"></option><option value="9BUX GREASE CAP"></option></datalist>
       <div class="hint" id="xInfo" style="margin-top:4px"></div></div>
     <div class="g2">
       <div class="fld"><label>수량 (박스)</label><input type="number" id="xB" inputmode="numeric" placeholder="박스수 입력"></div>
@@ -5966,7 +6973,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   </div>
 </div></div>
 
-<div class="bst"><span>사용자: <b id="bsUser">-</b></span><span>재고구분: <b id="bsWh">전체</b></span><span>기준월: <b id="bsYm">2026-09</b></span><span class="right" id="bsSt">MES 14:00 동기화됨 · 5431건</span></div>
+<div class="bst"><span>사용자: <b id="bsUser">-</b></span><span>재고구분: <b id="bsWh">전체</b></span><span>기준월: <b id="bsYm">2026-09</b></span><span class="right" id="bsSt">MES 15:50 동기화됨 · 5526건</span></div>
 <button class="fab" onclick="openIO()" title="입출고 등록">＋</button>
 <div class="toast" id="toast">자동전표 10건 반영</div>
 
@@ -8695,7 +9702,7 @@ async function syncIqc(silent){
     const JG={}, SP=S.spec||{}, LD=S.lotDate||{};
     let insN=0;
     try{
-      const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc',
+      const ins=await fetchAll(IQC_URL+'/rest/v1/iqc_inspections?select=*&order=updated_at.desc,id.desc',
         {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
       insN=ins.length;
       const putS=(k,v)=>{const key=String(k||'').trim(); if(key&&!SP[key])SP[key]=v;};
@@ -8732,7 +9739,7 @@ async function syncIqc(silent){
     };
 
     /* ② 소재입고(코일별 원본) */
-    const rows=await fetchAll(IQC_URL+'/rest/v1/'+IQC_TABLE+'?select=*&order=created_at.desc',
+    const rows=await fetchAll(IQC_URL+'/rest/v1/'+IQC_TABLE+'?select=*&order=created_at.desc,id.desc',
       {apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY});
     /* 최신 행 우선 + LOT@입고일 커버리지로 이중 적재 차단 (검사앱 v3.5 로직과 동일) */
     rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
@@ -9462,7 +10469,7 @@ async function syncRawMes(silent){
     const H={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY};
     /* ① 실사용 이력 (추적 화면·월 사용량 표시용) */
     const use=await fetchAll(SB_URL+'/rest/v1/raw_use?select=use_key,use_date,machine_code,item_code,item_name,raw_item_code,heat_no,receipt_no,unit_per_qty,use_weight,shot_qty,normal_shot,abnormal_shot'
-      +'&use_date=gte.'+MES_FROM+'&order=use_date.asc',H);
+      +'&use_date=gte.'+MES_FROM+'&order=use_date.asc,use_key.asc',H);
     S.ru=use.filter(x=>x.use_date&&(+x.use_weight||0)>0).map(x=>({
       k:x.use_key,d:String(x.use_date).slice(0,10),mc:x.machine_code||'',pn:canonPn(String(x.item_code||'').trim()),nm:x.item_name||'',
       rc:x.raw_item_code||'',lot:String(x.heat_no||'').trim(),rno:String(x.receipt_no||'').trim(),
@@ -9470,7 +10477,7 @@ async function syncRawMes(silent){
     out.use=S.ru.length; out.useKg=S.ru.reduce((a,x)=>a+x.kg,0);
     /* ② 입고 = 코일 1본 (입고번호+항번). LOT 이름은 업체가 재사용하므로 코일의 정체는 입고번호다 */
     const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag'
-      +'&receipt_date=gte.2026-01-01&order=receipt_date.asc,receipt_no.asc',H);
+      +'&receipt_date=gte.2026-01-01&order=receipt_date.asc,receipt_no.asc,seq.asc',H);
     /* 기준일 이전 입고분은 재고에 넣지 않고 추적 참고용으로만 보관 */
     RCV_REF=new Map();
     rcv.filter(r=>String(r.receipt_date||'')<MES_FROM&&String(r.io_flag||'1')==='1').forEach(r=>{
@@ -9483,7 +10490,7 @@ async function syncRawMes(silent){
     });
     /* ③ 투입 현황: 입고번호+항번별 상태(1 장착중 / 2 완료)·사용중량 */
     const inv=await fetchAll(SB_URL+'/rest/v1/raw_inventory?select=receipt_no,receipt_seq,heat_no,stock_status,put_on_date,put_out_date,issue_date,unit_weight,use_weight,item_code,machine_code,shot_qty'
-      +'&order=put_on_date.asc',H);
+      +'&order=put_on_date.asc,receipt_no.asc,receipt_seq.asc',H);
     const IV=new Map();
     inv.forEach(x=>{
       const k=String(x.receipt_no||'').trim()+'|'+Math.round(+x.receipt_seq||1);
@@ -10662,16 +11669,18 @@ async function pushManual(){
   const rows=S.led.filter(l=>!l.src&&l.pn&&l.d&&l.k&&l.q>0);
   if(!rows.length)return 0;
   const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
-  const recs=rows.map(l=>{
-    l.src='MAN|'+devId()+'|'+l.id;
-    return {src_key:l.src,led_date:l.d,pn:l.pn,kind:l.k,qty:l.q,party:l.p||'',lot:l.lot||'',
-            note:(l.n||'').slice(0,200),by_name:l.by||S.user||'',updated_at:nowIso()};
-  });
+  /* src 는 업로드가 성공한 뒤에만 붙인다 — 먼저 붙이면 업로드 실패 시
+     다음 동기화의 정리 단계(!seen.has)가 이 전표를 지워 버린다 */
+  const recs=rows.map(l=>({_l:l,src_key:'MAN|'+devId()+'|'+l.id,
+    led_date:l.d,pn:l.pn,kind:l.k,qty:l.q,party:l.p||'',lot:l.lot||'',
+    note:(l.n||'').slice(0,200),by_name:l.by||S.user||'',updated_at:nowIso()}));
   for(let i=0;i<recs.length;i+=200){
+    const ch=recs.slice(i,i+200);
     const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?on_conflict=src_key',
       {method:'POST',headers:Object.assign({},sh,{Prefer:'return=minimal,resolution=merge-duplicates'}),
-       body:JSON.stringify(recs.slice(i,i+200))});
+       body:JSON.stringify(ch.map(({_l,...o})=>o))});
     if(!r.ok)throw new Error('수기전표 공유 HTTP '+r.status);
+    ch.forEach(c=>{c._l.src=c.src_key;});
   }
   save();
   return recs.length;
@@ -10700,7 +11709,7 @@ async function syncMes(silent){
     /* 전체 누적: 기초일자 이후 전 기간 */
     const sinceIso=syncSince();
     let rows=await fetchAll(SB_URL+'/rest/v1/'+SB_TABLE
-      +'?select=*&led_date=gte.'+sinceIso+'&order=led_date.asc',
+      +'?select=*&led_date=gte.'+sinceIso+'&order=led_date.asc,src_key.asc',
       {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
     rows=rows.filter(x=>!isExcl(canonPn(x.pn)));
     let add=0,upd=0,del=0; const unk=new Set();
@@ -11110,6 +12119,7 @@ function init(){
 load();init();
 window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if(rawDirty)pushRaw(true);});
 </script>
+
 
 
 
