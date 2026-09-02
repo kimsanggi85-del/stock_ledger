@@ -688,7 +688,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11725,6 +11725,7 @@ async function syncMes(silent){
     syncBanner(); delete S._retried;
     syncBar('✅ 동기화 완료 · 서버전표 '+nf(rawN)+'건(제외 '+nf(exclN)+') · 품목 '+S.items.length+' · '+S.lastSync.slice(11),'#178a4c');
     syncDot('ok');
+    try{ lastAuto=Date.now(); }catch(e){}
     setTimeout(()=>syncBar(),3500);
     syncInfo();
     const t=new Date();
@@ -12216,11 +12217,39 @@ function init(){
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.map(p=>`<option value="${esc(p)}">`).join('');
   rDTabs(); render();
-  syncMes(true);
 }
 load();
 S.lastSync='';S.lastSyncN=0;      /* 이 세션에서 동기화 성공 전까지는 '미동기화' 로 표시 */
 init();
+syncDot('busy','최신 자료를 가져오는 중…');   /* 열자마자 자동으로 받아온다 — 새로고침 누를 필요 없음 */
+
+/* ══ 자동 최신화 ══
+   지금까지는 열 때마다 [새로고침]을 눌러야 최신이 보였다.
+   ① 열면 바로 받아오고 실패해도 몇 번 더 시도한다
+   ② 다른 창을 보다 돌아오거나, 인터넷이 끊겼다 붙으면 다시 받아온다 */
+let autoTry=0;
+async function autoSync(reason){
+  if(document.hidden) return;
+  if(mesBusy) return;
+  try{
+    const r=await syncMes(true);
+    if(r&&r.ok){ autoTry=0; render(); return; }
+  }catch(e){}
+  if(++autoTry<=3){                       /* 5초 → 15초 → 45초 */
+    setTimeout(()=>autoSync('재시도'), 5000*Math.pow(3,autoTry-1));
+  }
+}
+autoSync('기동');
+
+let lastAuto=Date.now();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) return;
+  if(Date.now()-lastAuto < 60000) return;   /* 1분 안에 이미 받았으면 건너뜀 */
+  lastAuto=Date.now(); autoTry=0; autoSync('화면 복귀');
+});
+window.addEventListener('online',()=>{ autoTry=0; autoSync('통신 복구'); });
+window.addEventListener('pageshow',e=>{ if(e.persisted){ autoTry=0; autoSync('뒤로가기 복귀'); } });
+
 syncInfo();
 window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if(rawDirty)pushRaw(true);});
 </script>
