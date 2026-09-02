@@ -688,7 +688,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고현황(SKF씰/일진)<small>TAEJIN DITECH · STOCK LEDGER · <b style="color:#8FD4A8">v7.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고현황(SKF씰/일진)<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11628,6 +11628,39 @@ function devId(){
   return S.dev;
 }
 const MAN_DEL_KEY='tj_led_del_v1';
+/* ═══════ 출하(일반) → 재고 차감 ═══════
+   일진글로벌·부강스프링 등은 출하의뢰서가 아니라 [출하(일반)] 앱에 등록된다.
+   지금까지 그 자료는 LOT 추적에만 쓰여 재고가 줄지 않았다.
+   여기서 stock_ledger 에 GN| 키로 올려 총괄표·수불부에 자동 반영한다. */
+async function syncGenShip(){
+  let H;
+  try{ H=await loadShipHist(true); }catch(e){ console.warn('출하(일반):',e.message); return 0; }
+  const G=(H||[]).filter(x=>String(x.src||'').indexOf('GN|')===0 && x.pn && x.d && x.q>0);
+  if(!G.length) return 0;
+
+  /* 품목대장에 없는 품번은 올리지 않는다 (오타·신규기종이 재고를 흔들지 않게) */
+  const have=new Set(S.items.map(i=>i.pn));
+  const use=G.filter(x=>have.has(x.pn));
+  const miss=[...new Set(G.filter(x=>!have.has(x.pn)).map(x=>x.pn))];
+  if(miss.length) console.warn('출하(일반) 품목대장에 없는 품번:',miss.join(', '));
+  if(!use.length) return 0;
+
+  /* 이미 서버에 있는 것과 같은 src_key 라 중복되지 않는다 */
+  const sh={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  const recs=use.map(x=>({src_key:x.src,led_date:x.d,pn:x.pn,kind:'출하',qty:x.q,
+    party:x.p||'',lot:x.lot||'',note:(x.n||'출하(일반)').slice(0,200),
+    by_name:x.by||'출하일반',updated_at:nowIso()}));
+  let up=0;
+  for(let i=0;i<recs.length;i+=200){
+    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?on_conflict=src_key',
+      {method:'POST',headers:Object.assign({},sh,{Prefer:'return=minimal,resolution=merge-duplicates'}),
+       body:JSON.stringify(recs.slice(i,i+200))});
+    if(!r.ok){ console.warn('출하(일반) 업로드 HTTP',r.status); break; }
+    up+=recs.slice(i,i+200).length;
+  }
+  return up;
+}
+
 async function pushManual(){
   /* 서버 삭제가 안 끝난 수기전표 먼저 재시도 */
   if(S.ledDel)for(const k of Object.keys(S.ledDel)){
@@ -11686,6 +11719,11 @@ async function syncMes(silent){
   try{ await syncIqc(true); }catch(e){ console.warn('수입검사 연동:',e.message); }
   try{ await syncEq(true); }catch(e){ console.warn('MES 설비 연동:',e.message); }
   try{ await pushManual(); }catch(e){ console.warn('수기전표 공유:',e.message); }
+  /* 출하(일반) 앱 등록분을 전표로 올린다 — 아래에서 서버 전표를 받아올 때 함께 반영된다 */
+  try{
+    const gn=await syncGenShip();
+    if(gn) console.log('출하(일반) '+gn+'건 반영');
+  }catch(e){ console.warn('출하(일반) 반영:',e.message); }
   try{
     /* 전체 누적: 기초일자 이후 전 기간 */
     mesStat('서버 전표 수신 중…','#F5C065');
