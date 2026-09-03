@@ -712,13 +712,27 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .mc-fix{margin-left:auto;height:30px;padding:0 11px;border:1px solid #E0D9A8;border-radius:7px;
   background:#FFFDE7;color:#946200;font-size:11.5px;font-weight:800;font-family:inherit}
 .mc-fix:active{background:#F4E9C8}
+
+/* 재고실사 진행률 */
+.cnt-pg{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#5A6875;
+  padding:9px 12px;background:#F4F7F9;border:1px solid #E3E7EB;border-radius:9px;margin-bottom:8px}
+.cnt-pg:empty{display:none}
+.cnt-pg b{color:#16202B;font-size:13.5px}
+.cnt-pg .cp-bar{flex:1;height:8px;background:#E3E7EB;border-radius:99px;overflow:hidden;min-width:80px}
+.cnt-pg .cp-bar i{display:block;height:100%;background:#1DB954;border-radius:99px;transition:width .3s}
+@media (max-width:760px){
+  #p-cnt .fbar{flex-wrap:wrap;gap:7px}
+  #p-cnt #cCu{flex:1 1 100%;min-height:44px;font-size:16px;font-weight:700}
+  #p-cnt #cntQ{flex:1 1 58%;min-height:44px}
+  #p-cnt #cSel{flex:1 1 36%;min-height:44px}
+}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -3714,6 +3728,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <option value="검사폐기">검사폐기</option>
       <option value="선별제외">선별제외</option></select>
     <input id="cntQ" placeholder="품번 검색" class="kbi" style="width:130px">
+    <label>고객사</label>
+    <select id="cCu" class="fsel" style="font-family:var(--sans)"><option value="">전체</option></select>
     <label>필터</label>
     <select id="cSel" class="fsel"><option value="all">전체</option><option value="in">입력분</option><option value="diff">차이발생</option></select>
     <div class="rt">
@@ -3735,6 +3751,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <table class="appr"><colgroup><col style="width:20px"><col><col><col></colgroup><tbody><tr><td class="v" rowspan="2">결<br>재</td><td class="t">실사자</td><td class="t">입회자</td><td class="t">승인</td></tr><tr><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td></tr></tbody></table></div>
     <div class="doc-info"><span><b>실사일자</b><i id="i4">2026-09-02</i></span><span><b>재고구분</b><i id="iw2">전체 (현장재고 + 출하대기재고)</i></span>
       <span><b>실사방법</b>전수 실사</span></div>
+    <div id="cntPg" class="cnt-pg"></div>
     <div class="gw"><div class="gt"><span id="gt-cnt">재고 실사 · 총 <b>165</b>품목 · 실사입력 <b>0</b></span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tCnt"><thead><tr><th>No</th><th>품번</th><th>품명</th><th>보관위치</th><th>박스단위</th>
     <th>전산재고(EA)</th><th>전산(박스)</th><th>실사(박스)</th><th>실사(EA)</th><th>차이(EA)</th><th>정확도</th><th>확인</th></tr></thead><tbody><tr>
       <td class="c">1</td><td class="l" style="font-weight:700">1G26-014</td>
@@ -7209,7 +7226,21 @@ function rIo(){
 }
 
 /* ═══════ 재고 실사 ═══════ */
+/* 고객사 선택 목록 (품목수 표시) */
+function fillCntCu(){
+  const sel=$('cCu'); if(!sel)return;
+  const cnt={}; const base=S.items.filter(inWh);
+  base.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; cnt[c]=(cnt[c]||0)+1; });
+  const keys=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b,'ko'));
+  const cur=sel.value;
+  sel.innerHTML='<option value="">전체 ('+base.length+')</option>'
+    +keys.map(c=>`<option value="${esc(c)}">${esc(c)} (${cnt[c]})</option>`).join('');
+  if(cur&&(cur===''||keys.includes(cur))) sel.value=cur;
+  else if(S.cntCu&&keys.includes(S.cntCu)) sel.value=S.cntCu;
+}
 function rCnt(){
+  fillCntCu();
+  const cu=($('cCu')&&$('cCu').value)||'';
   const q=$('cntQ').value.trim().toLowerCase();
   let n=0,nd=0,sd=0,tc=0;
   const rows=S.items.filter(inWh).map(it=>{
@@ -7219,13 +7250,31 @@ function rCnt(){
     if(real!==null){n++;tc+=v.cur;if(df)nd++;sd+=Math.abs(df);}
     return {it,v,real,df};
   });
+  if(cu){                                  /* 고객사를 고르면 그 범위로만 집계 */
+    n=0;nd=0;sd=0;tc=0;
+    rows.forEach(({it,v,real,df})=>{
+      const c=(it.cu||'').trim()||'(미지정)'; if(c!==cu)return;
+      if(real!==null){n++;tc+=v.cur;if(df)nd++;sd+=Math.abs(df);}
+    });
+  }
   anim('c1',n);anim('c2',nd);anim('c3',sd);
   $('c4').textContent=tc>0?(100-sd/tc*100).toFixed(1):'—';
   const R=rows.filter(({it,real,df})=>{
+    if(cu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==cu) return false; }
     if(q&&!nz(it.pn+' '+it.nm).includes(nz(q)))return false;
     if(C==='in')return real!==null;
     if(C==='diff')return df!==null&&df!==0;
     return true;});
+  /* 진행률 */
+  const done=R.filter(o=>o.real!==null).length, tot=R.length;
+  const pct=tot?Math.round(done/tot*100):0;
+  const pg=$('cntPg');
+  if(pg) pg.innerHTML=tot
+    ? '<div class="cp-bar"><i style="width:'+pct+'%"></i></div>'
+      +'<b>'+done+' / '+tot+'</b>품목'+(cu?' · '+esc(cu):'')
+      +(done<tot?' · 남은 '+(tot-done)+'개':' · <span style="color:#0B6B3A;font-weight:800">완료</span>')
+    : '';
+
   if(isMob()&&CARD){
     $('tCnt').outerHTML='<div id="tCnt"></div>';
     $('tCnt').innerHTML=R.length?R.map((o)=>mcCnt(o,S.items.indexOf(o.it))).join('')
@@ -12351,6 +12400,7 @@ $('whSel').onchange=e=>{WH=e.target.value;render();};
 $('ym').onchange=()=>{ym=$('ym').value;$('i1').textContent=ym;
   $('ioF').value=mStart();$('ioT').value=mEnd();render();};
 $('fq').oninput=rSum; $('cfgQ').oninput=rCfg; $('cntQ').oninput=rCnt;
+$('cCu').onchange=()=>{ S.cntCu=$('cCu').value; save(); rCnt(); window.scrollTo(0,0); };
 $('cfgEx').onchange=e=>{
   const old=S.excl; S.excl=e.target.value.trim();setTimeout(pushCfg,0);
   const t=purgeExcl();
