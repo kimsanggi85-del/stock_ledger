@@ -754,7 +754,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v10.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v10.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6688,8 +6688,12 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>고객사</label><input id="yCu" style="font-family:var(--sans)"></div>
       <div class="fld"><label>보관위치</label><input id="yLc" style="font-family:var(--sans)"></div></div>
-    <div class="fld"><label>세트 배수 (생산입고 ×N — SBC 레이스웨이는 Inner+Outer 세트라 2)</label>
-      <input type="number" id="ySetx" placeholder="기본: IW/OW 품번 2, 그 외 1" min="1" step="1"></div>
+    <div class="g2">
+      <div class="fld"><label>세트 부모 품번 (이 품번의 전표를 그대로 물려받음)</label>
+        <input id="ySetp" placeholder="예) IW/OW-BDA-1106" style="font-family:var(--sans)"></div>
+      <div class="fld"><label>재고 화면 숨김 (세트 부모처럼 집계 전용)</label>
+        <select id="yHide"><option value="">표시</option><option value="1">숨김</option></select></div></div>
+    <input type="hidden" id="ySetx">
     <div class="fld"><label>품번 별칭 (출하앱·MES 표기가 다를 때, 쉼표 구분)</label>
       <input id="yAl" placeholder="예) 1856-627(628)-1"></div>
     <div class="fld" id="yCurBox" style="background:#FFFDE7;border:1px solid #E0D9A8;border-radius:7px;padding:9px 11px">
@@ -6964,7 +6968,7 @@ const whDp=w=>(WHS.find(x=>x[0]===w)||WHS[0])[2];
 let S={user:'',items:[],led:[],seq:1,party:PARTY.split(','),
        coils:[],mled:[],bom:[],msf:{},cseq:1,mseq:1};
 let tab='sum', ym='', F='all', C='all', WH='';
-const inWh=it=>!WH||(it.wh||'현장')===WH;
+const inWh=it=>!it.hide&&(!WH||(it.wh||'현장')===WH);
 const whOf=pn=>{const i=S.items.find(x=>x.pn===pn);return i?(i.wh||'현장'):'현장';};
 /* 관리제외 품번: 목록에 있으면 마스터·전표에서 제외하고 유입도 차단 ( * 접두 와일드카드 ) */
 const DEF_EXCL='54610-*';
@@ -7045,7 +7049,16 @@ const mEnd=()=>{const[y,m]=ym.split('-').map(Number);return ym+'-'+p2(new Date(y
 function setxOf(it){
   if(!it) return 1;
   if(it.setx!=null && +it.setx>0) return +it.setx;
-  return /^IW\/?OW/i.test(String(it.pn||'')) ? 2 : 1;
+  return 1;
+}
+/* ═══════ 세트 구성품 (SBC 레이스웨이 Inner / Outer) ═══════
+   Progressive 금형 1타발 = Inner 1 + Outer 1. MES 는 타발수를 세트 품번(IW/OW-…)으로 보낸다.
+   Inner(IW-…)·Outer(OW-…) 품목은 setp 로 세트 부모를 가리키며,
+   부모에 붙은 전표를 각자 그대로 물려받는다. (타발 12,000 → Inner 12,000 · Outer 12,000)
+   출하·검사는 Inner/Outer 표기가 있으면 해당 품목에만 붙는다. */
+function ledgerOf(it){
+  const p=it.setp?String(it.setp):'';
+  return S.led.filter(r=>r.pn===it.pn||(p&&r.pn===p));
 }
 /* 전표의 실제 EA 수량 — 생산입고에만 세트 배수를 적용한다 */
 function effQ(r,it){
@@ -7059,8 +7072,9 @@ const dlt=(r,it)=>kindIO(r.k)==='I'?effQ(r,it):-effQ(r,it);
 function calc(it){
   const a=mStart(), b=mEnd();
   let open=it.bs, iq=0, oq=0, sq=0, last='';
+  const setp=it.setp?String(it.setp):'';
   S.led.forEach(r=>{
-    if(r.pn!==it.pn||r.d<=it.bd) return;
+    if(!(r.pn===it.pn||(setp&&r.pn===setp))||r.d<=it.bd) return;
     if(r.d<a){ open+=dlt(r,it); return; }
     if(r.d>b) return;
     const q=effQ(r,it);
@@ -7078,10 +7092,10 @@ function calc(it){
 }
 /* 전체 기간 기준 최종 출고일 (장기 미불출 판정) */
 function lastOut(it){
-  let d='';S.led.forEach(r=>{if(r.pn===it.pn&&kindIO(r.k)==='O'&&r.d>d)d=r.d;});return d;
+  let d='';ledgerOf(it).forEach(r=>{if(kindIO(r.k)==='O'&&r.d>d)d=r.d;});return d;
 }
 function isDead(it){
-  if(!S.led.some(r=>r.pn===it.pn)) return false;   /* 입출고 이력 없는 신규품목은 제외 */
+  if(!ledgerOf(it).length) return false;   /* 입출고 이력 없는 신규품목은 제외 */
   const l=lastOut(it); if(!l) return false;
   return (new Date(mEnd())-new Date(l))/864e5>90;
 }
@@ -7284,9 +7298,8 @@ function rIo(){
        <td class="l" style="font-weight:700">${esc(r.pn)}</td>
        <td class="l" style="font-family:var(--sans)">${esc(it.nm)}</td>
        <td class="l" style="font-family:var(--sans)">${esc(r.p||'')}</td><td class="l">${esc(r.lot||'')}</td>
-       <td class="${io==='I'?'pos':''}">${io==='I'?(effQ(r,it)!==r.q
-            ?nf(effQ(r,it))+'<div style="font-size:9.5px;color:#7d8b99;font-weight:400">세트 '+nf(r.q)+' ×'+setxOf(it)+'</div>'
-            :nf(r.q)):'-'}</td>
+       <td class="${io==='I'?'pos':''}">${io==='I'?(nf(r.q)+(S.items.some(x=>x.setp===r.pn)
+            ?'<div style="font-size:9.5px;color:#7d8b99;font-weight:400">타발 → Inner·Outer 각 '+nf(r.q)+'</div>':'')):'-'}</td>
        <td class="${io==='O'?'neg':''}">${io==='O'?nf(r.q):'-'}</td>
        <td class="c">${it.bx?(r.q/it.bx).toFixed(1):'-'}</td>
        <td class="l" style="font-family:var(--sans)">${esc(r.n||'')}</td>
@@ -7401,7 +7414,7 @@ function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실�
 /* ═══════ 품목대장 ═══════ */
 /* ═══════ 품목 관리 공유 동기화 (stock_item) ═══════ */
 const IT_TABLE='stock_item';
-const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al','setx'];
+const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al','setx','setp','hide'];
 const SESSION_T0=new Date().toISOString();
 /* ═══ 박스단위 일괄 교정 (박스단위_20260901.xlsx, SKF씰 기준) ═══
    수량 0(미정) 품번은 제외. 품목을 찾을 때 별칭(canonPn)으로 표기 차이 흡수.
@@ -11218,6 +11231,8 @@ function openItem(i){
   [['yPn','pn'],['yNm','nm'],['ySp','sp'],['yUn','un'],['yBx','bx'],['ySf','sf'],['yBs','bs'],['yBd','bd'],['yCu','cu'],['yLc','lc'],['yAl','al']]
     .forEach(([f,k])=>$(f).value=it[k]==null?'':it[k]);
   if($('ySetx')) $('ySetx').value=(it.setx!=null&&+it.setx>0)?it.setx:'';
+  if($('ySetp')) $('ySetp').value=it.setp||'';
+  if($('yHide')) $('yHide').value=it.hide?'1':'';
   const bxv=+it.bx||0;
   $('ySfB').value=bxv&&it.sf?+(it.sf/bxv).toFixed(2):'';
   $('yBsB').value=bxv&&it.bs?+(it.bs/bxv).toFixed(2):'';
@@ -11245,7 +11260,9 @@ function saveItem(){
     bx:+$('yBx').value||0,sf:+$('ySf').value||0,bs:+$('yBs').value||0,bd:$('yBd').value||today(),
     cu:$('yCu').value.trim(),lc:$('yLc').value.trim(),wh:$('yWh').value,
     al:$('yAl').value.trim(),
-    setx:(+($('ySetx')&&$('ySetx').value)||0)||null};
+    setx:(+($('ySetx')&&$('ySetx').value)||0)||null,
+    setp:($('ySetp')&&$('ySetp').value.trim())||null,
+    hide:!!($('yHide')&&$('yHide').value)};
   let tgt;
   if(i<0){tgt=Object.assign({cnt:null},o);S.items.push(tgt);}
   else{Object.assign(S.items[i],o);tgt=S.items[i];}
@@ -11683,13 +11700,20 @@ function modelToPn(m){
     const hit=MODEL_MAP[s.toUpperCase()] || MODEL_MAP[s.replace(/\s+/g,'').toUpperCase()];
     if(hit) return canonPn(hit);
   }
-  /* ② 매핑에 없으면 글자를 다듬어 별칭으로 찾는다
-        '1106CB Inner' / '1179TInner' / '1179T Outer' → 1106CB / 1179T → 별칭 → 기종 품번 */
-  s=s.split(/[（(]/)[0].trim();
-  s=s.replace(/\s*(Inner|Outer|IN|OUT)\s*$/i,'').trim();
-  s=s.split(/\s+/)[0];
-  s=s.replace(/[^A-Za-z0-9\-\/]+$/,'');
-  return canonPn(s);
+  /* ② 별칭으로 찾는다. 먼저 원문 그대로('1106CB Inner'), 그 다음 Inner/Outer 를 떼고 세트 부모 */
+  const raw=s.split(/[（(]/)[0].trim();
+  const c1=canonPn(raw);
+  if(S.items.some(i=>i.pn===c1)) return c1;
+  const side=/inner|\bIN\b/i.test(raw)?'IW':(/outer|\bOUT\b/i.test(raw)?'OW':'');
+  let base=raw.replace(/\s*(Inner|Outer|IN|OUT)\s*$/i,'').trim().split(/\s+/)[0].replace(/[^A-Za-z0-9\-\/]+$/,'');
+  const cp=canonPn(base);
+  const par=S.items.find(i=>i.pn===cp);
+  if(par&&side){
+    /* 세트 부모를 찾았고 Inner/Outer 표기가 있으면 해당 구성품으로 */
+    const kid=S.items.find(i=>i.setp===par.pn&&String(i.pn).toUpperCase().startsWith(side+'-'));
+    if(kid) return kid.pn;
+  }
+  return cp;
 }
 async function syncInsp(){
   if(S.inspOn===false) return {n:0,skip:[],off:true};
