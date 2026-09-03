@@ -748,13 +748,20 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   #p-sum #sCu{flex:1 1 100%;min-height:44px;font-size:16px;font-weight:700}
   #p-sum #fq{flex:1 1 100%;min-height:44px}
 }
+
+/* 재고현황 표 — 박스·낱개 입력 */
+.bxin{display:inline-flex;align-items:center;gap:3px;padding:2px 4px}
+.bxin input{width:58px;border:1px solid #E0D9A8;border-radius:3px;padding:4px 5px;text-align:right;
+  background:#FFFDE7;font-weight:700;font-family:inherit}
+.bxin input:focus{outline:2px solid #C2620C;outline-offset:-2px;background:#fff}
+.bxin i{font-style:normal;font-size:10px;color:#7d8b99;margin-right:4px}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v10.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v10.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -798,7 +805,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <!-- ══ 총괄표 ══ -->
 <div class="page on" id="p-sum">
   <button class="m-only" onclick="syncMes(false)" style="width:100%;padding:13px;margin:0 0 10px;border:0;border-radius:10px;background:#1F3A5F;color:#fff;font-size:15px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.15)">🔃 새로고침</button>
-  <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
+  <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="printCountSheet()" style="background:#1E2A36;color:#fff;border-color:#1E2A36">📋 재고조사표</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
   <div class="sum" style="grid-template-columns:repeat(7,1fr)">
     <div><span>관리품목</span><b id="q1">158</b><em>품목</em></div>
     <div class="g"><span>당월 입고</span><b id="q2">120,487</b><em>EA</em></div>
@@ -7192,11 +7199,11 @@ function rSum(){
        <td class="${v.iq?'pos':''}">${v.iq?nf(v.iq):'-'}</td>
        <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}</td>
        <td class="${v.oq-v.sq?'wn':''}">${v.oq-v.sq?nf(v.oq-v.sq):'-'}</td>
-       <td style="padding:0"><input type="number" class="sumCur" data-pn="${esc(it.pn)}"
-          value="${v.cur}" title="실사 수량을 넣으면 차이만큼 재고조정 전표가 발행됩니다"
-          style="font-weight:700;text-align:right;background:#FFFDE7;width:100%;
-                 border:1px solid #E0D9A8;border-radius:3px;padding:5px 6px"></td>
-       <td>${v.box}</td>
+       <td style="font-weight:700">${nf(v.cur)}</td>
+       <td style="padding:0;white-space:nowrap">${it.bx>0
+         ? `<span class="bxin"><input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="b" value="${Math.floor(v.cur/it.bx)}" title="박스"><i>박스</i>
+            <input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="e" value="${((v.cur%it.bx)+it.bx)%it.bx}" title="낱개"><i>낱개</i></span>`
+         : `<span class="bxin"><input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="e" value="${v.cur}" title="수량(EA)"><i>EA</i></span>`}</td>
        <td>${nf(it.sf)}</td>
        <td class="${v.gap<0?'neg':''}">${v.gap>0?'+':''}${nf(v.gap)}</td>
        <td class="${v.doi!==null&&v.doi<7?'wn':''}">${v.doi===null?'-':v.doi.toFixed(1)}</td>
@@ -12418,7 +12425,10 @@ function rDTabs(){
   rL2();
   const el=$('dTabs'); if(!el)return;
   const t=tab||'sum';
-  el.innerHTML=TABN.map(([k,ic,n,d])=>`<button class="${k===t?'on':''}" onclick="setTab('${k}')"><i>${ic}</i>${n}<em>${d}</em></button>`).join('');
+  /* 휴대폰에서는 [재고 실사] 를 숨긴다 — 재고 현황 카드에서 바로 맞출 수 있다.
+     (실사 탭에 들어가 있는 동안에는 남겨 둔다) */
+  const list=TABN.filter(([k])=>!(k==='cnt'&&isMob()&&t!=='cnt'));
+  el.innerHTML=list.map(([k,ic,n,d])=>`<button class="${k===t?'on':''}" onclick="setTab('${k}')"><i>${ic}</i>${n}<em>${d}</em></button>`).join('');
 }
 function tglDrawer(f){
   const t=$('tbTools'), s=$('scrim');
@@ -12548,6 +12558,85 @@ document.addEventListener('click',e=>{
   const it=S.items[+b.closest('[data-i]').dataset.i];
   const cur=it.cnt==null?boxOf(it,calc(it).cur):it.cnt;
   it.cnt=Math.max(0,cur+(b.dataset.a==='inc'?1:-1));save();rCnt();});
+/* ═══════ 재고조사표 출력 ═══════
+   현장에 들고 가서 손으로 적는 양식. 지금 화면의 고객사·재고구분·검색 조건을 그대로 따른다. */
+function printCountSheet(){
+  const scu=($('sCu')&&$('sCu').value)||'';
+  const q=nz(($('fq').value||'').trim());
+  const rows=S.items.filter(inWh).filter(it=>{
+    if(scu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==scu) return false; }
+    if(q&&!nz(it.pn+' '+(it.nm||'')).includes(q)) return false;
+    return true;
+  }).sort((a,b)=>String(a.wh||'').localeCompare(String(b.wh||''),'ko')
+      || String(a.lc||'').localeCompare(String(b.lc||''),'ko')
+      || a.pn.localeCompare(b.pn,'en',{numeric:true}));
+  if(!rows.length){ toast('출력할 품목이 없습니다'); return; }
+  const showCur=confirm('전산 재고를 함께 인쇄할까요?\n\n[확인] 전산재고 표시 — 대조하며 빠르게 확인\n[취소] 빈 양식 — 선입견 없이 실제 수량만 기록');
+
+  const td=today();
+  const tr=rows.map((it,i)=>{
+    const v=calc(it), b=+it.bx||0;
+    const cb=b?Math.floor(v.cur/b):0, cl=b?((v.cur%b)+b)%b:v.cur;
+    return '<tr>'
+      +'<td class="c">'+(i+1)+'</td>'
+      +'<td class="c s">'+esc(whNm(it.wh))+'</td>'
+      +'<td class="pn">'+esc(it.pn)+'</td>'
+      +'<td class="s">'+esc(it.nm||'')+'</td>'
+      +'<td class="c s">'+esc(it.lc||'')+'</td>'
+      +'<td class="r">'+(b?nf(b):'-')+'</td>'
+      +(showCur
+        ? '<td class="r">'+(b?nf(cb)+(cl?'+'+nf(cl):''):'-')+'</td><td class="r">'+nf(v.cur)+'</td>'
+        : '<td class="r"></td><td class="r"></td>')
+      +'<td class="w"></td><td class="w"></td><td class="w"></td><td class="w2"></td></tr>';
+  }).join('');
+
+  const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>재고조사표</title><style>'
+   +'*{box-sizing:border-box}body{margin:0;padding:10mm 8mm;font-family:"맑은 고딕",Malgun Gothic,sans-serif;color:#111}'
+   +'.hd{display:flex;align-items:stretch;border:1.4px solid #111;margin-bottom:6px}'
+   +'.hd .no{width:120px;padding:6px 8px;font-size:10px;line-height:1.6;border-right:1.4px solid #111}'
+   +'.hd h1{flex:1;margin:0;font-size:22px;letter-spacing:12px;text-align:center;align-self:center;font-weight:800}'
+   +'.hd .ap{display:flex;border-left:1.4px solid #111}'
+   +'.hd .ap div{width:66px;border-right:1px solid #111;font-size:10px;text-align:center}'
+   +'.hd .ap div:last-child{border-right:0}'
+   +'.hd .ap b{display:block;padding:3px 0;border-bottom:1px solid #111;font-weight:600;background:#F2F4F6}'
+   +'.hd .ap i{display:block;height:44px}'
+   +'.meta{display:flex;gap:14px;font-size:11px;margin-bottom:5px;flex-wrap:wrap}'
+   +'.meta b{font-weight:700}'
+   +'table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed}'
+   +'th,td{border:1px solid #666;padding:3px 4px;height:22px;overflow:hidden}'
+   +'th{background:#EDF0F3;font-size:10px;font-weight:700}'
+   +'td.c{text-align:center}td.r{text-align:right;font-variant-numeric:tabular-nums}'
+   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px}'
+   +'td.s{font-size:9.5px;color:#333}'
+   +'td.w{background:#FFFDF0}td.w2{background:#fff}'
+   +'tfoot td{border:0;padding-top:8px;font-size:10px;color:#444}'
+   +'@media print{body{padding:8mm 6mm}thead{display:table-header-group}tr{page-break-inside:avoid}}'
+   +'</style></head><body>'
+   +'<div class="hd"><div class="no">문서번호<br><b>TJP-QP-0803</b><br>개정번호 <b>Rev.0</b></div>'
+   +'<h1>재고조사표</h1><div class="ap"><div><b>담당</b><i></i></div><div><b>검토</b><i></i></div><div><b>승인</b><i></i></div></div></div>'
+   +'<div class="meta"><span><b>조사일자</b> '+td+'</span><span><b>조사자</b> ____________</span>'
+   +'<span><b>고객사</b> '+esc(scu||'전체')+'</span>'
+   +'<span><b>재고구분</b> '+esc(WH||'전체 (현장재고 + 출하대기재고)')+'</span>'
+   +'<span><b>대상</b> '+rows.length+'품목</span>'
+   +(q?'<span><b>검색</b> '+esc($('fq').value.trim())+'</span>':'')+'</div>'
+   +'<table><colgroup><col style="width:26px"><col style="width:52px"><col style="width:104px"><col>'
+   +'<col style="width:60px"><col style="width:48px"><col style="width:56px"><col style="width:62px">'
+   +'<col style="width:46px"><col style="width:46px"><col style="width:58px"><col style="width:90px"></colgroup>'
+   +'<thead><tr><th>No</th><th>재고구분</th><th>품 번</th><th>품 명</th><th>보관위치</th><th>박스<br>단위</th>'
+   +'<th>전산<br>(박스)</th><th>전산<br>(EA)</th><th>실사<br>박스</th><th>실사<br>낱개</th><th>실사 합계<br>(EA)</th><th>비 고</th></tr></thead>'
+   +'<tbody>'+tr+'</tbody>'
+   +'<tfoot><tr><td colspan="12">· 실사는 박스 수를 먼저 세고, 박스에 담기지 않은 낱개를 따로 적습니다. '
+   +'· 차이가 나면 비고에 사유(파손·미등록 입출고·위치이동 등)를 적어 주세요. '
+   +'· 조사 후 앱 [재고 현황]에서 박스·낱개를 입력하면 조정전표가 자동 발행됩니다.</td></tr></tfoot>'
+   +'</table></body></html>';
+
+  const wn=window.open('','_blank');
+  if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
+  wn.document.write(html); wn.document.close();
+  wn.onload=()=>{ wn.focus(); wn.print(); };
+  setTimeout(()=>{ try{ wn.focus(); wn.print(); }catch(e){} },350);
+}
+
 /* 휴대폰 재고현황 카드에서 바로 재고를 맞춘다 (실사 탭을 거치지 않는다) */
 function fxId(pn){ return 'fx_'+String(pn).replace(/[^A-Za-z0-9]/g,'_'); }
 function openFix(pn){
@@ -12584,18 +12673,23 @@ function openFix(pn){
 /* 재고현황(총괄표)에서 재고를 바로 고친다 */
 $('tSum').addEventListener('change',e=>{
   const t=e.target;
-  if(!t.classList||!t.classList.contains('sumCur'))return;
+  if(!t.classList||!t.classList.contains('sumBx'))return;
   const pn=t.dataset.pn, it=S.items.find(x=>x.pn===pn);
   if(!it){ rSum(); return; }
-  fixStock(it, t.value);
+  /* 같은 행의 박스·낱개 칸을 모아 EA 로 환산한다 */
+  const wrap=t.closest('.bxin'); let ea=0;
+  wrap.querySelectorAll('input').forEach(i=>{
+    ea += i.dataset.k==='b' ? (+i.value||0)*(+it.bx||0) : (+i.value||0);
+  });
+  fixStock(it, ea);
 });
-/* 입력 중에는 자동 새로고침이 값을 되돌리지 못하게 한다 */
+/* 입력 중에는 자동 새로고침이 값을 되돌리지 못하게 한다 (박스→낱개 칸 이동도 편집 중으로 본다) */
 $('tSum').addEventListener('focusin',e=>{
-  if(e.target.classList&&e.target.classList.contains('sumCur')) sumEdit=true;
+  if(e.target.classList&&e.target.classList.contains('sumBx')) sumEdit=true;
 });
 $('tSum').addEventListener('focusout',e=>{
-  if(e.target.classList&&e.target.classList.contains('sumCur'))
-    setTimeout(()=>{ sumEdit=false; },150);
+  if(!(e.target.classList&&e.target.classList.contains('sumBx'))) return;
+  setTimeout(()=>{ if(!(document.activeElement&&document.activeElement.classList.contains('sumBx'))) sumEdit=false; },150);
 });
 
 $('tCfg').addEventListener('change',e=>{
@@ -12618,15 +12712,21 @@ async function fixStock(it, val){
   const cur=Math.round(calc(it).cur||0);
   const df=want-cur;
   if(!df){ toast('재고가 이미 '+nf(want)+' EA 입니다'); rCfg(); return; }
-  if(!confirm(it.pn+'\n\n전산 '+nf(cur)+' EA → 실사 '+nf(want)+' EA\n'
-      +'차이 '+(df>0?'+':'')+nf(df)+' EA 를 재고조정 전표로 등록합니다.\n\n계속할까요?')){
+  const b0=+it.bx||0;
+  const bx=(n)=>b0?(Math.floor(n/b0)+'박스'+(((n%b0)+b0)%b0?'+'+nf(((n%b0)+b0)%b0):'')+' = '+nf(n)+' EA'):(nf(n)+' EA');
+  if(!confirm(it.pn+'\n\n전산 '+bx(cur)+'\n실사 '+bx(want)+'\n'
+      +'차이 '+(df>0?'+':'')+nf(df)+' EA'+(b0?' ('+(df>0?'+':'')+(df/b0).toFixed(1)+'박스)':'')
+      +' 를 재고조정 전표로 등록합니다.\n\n계속할까요?')){
     rCfg(); return;
   }
   const d=today();
   /* src 를 미리 붙이지 않는다 — pushManual 이 src 없는 전표를 올리면서 키를 부여한다 */
+  /* 박스 단위 품목은 박스 수도 함께 남긴다 — SKF씰은 박스로 세고 박스로 확인한다 */
+  const bxs=(n)=>{ const b=+it.bx||0; if(!b) return nf(n)+' EA';
+    const q=Math.floor(n/b), r=((n%b)+b)%b; return q+'박스'+(r?'+'+nf(r):'')+' ('+nf(n)+' EA)'; };
   const rec={ id:S.seq++, d:d, pn:it.pn, k:(df>0?'재고조정(+)':'재고조정(-)'),
     q:Math.abs(df), p:'', lot:'',
-    n:'재고 직접수정 · 전산 '+nf(cur)+' → 실사 '+nf(want),
+    n:'재고 직접수정 · 전산 '+bxs(cur)+' → 실사 '+bxs(want),
     by:S.user||'' };
   S.led.push(rec);
   save(); render();
