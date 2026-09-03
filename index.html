@@ -707,13 +707,18 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 /* 품목대장 현재고 직접 수정칸 */
 #tCfg input.curIn{width:100%;border:1px solid #E0D9A8;border-radius:3px;padding:5px 6px}
 #tCfg input.curIn:focus{outline:2px solid #C2620C;outline-offset:-2px;background:#fff}
+
+/* 재고현황 카드 — 재고수정 버튼 */
+.mc-fix{margin-left:auto;height:30px;padding:0 11px;border:1px solid #E0D9A8;border-radius:7px;
+  background:#FFFDE7;color:#946200;font-size:11.5px;font-weight:800;font-family:inherit}
+.mc-fix:active{background:#F4E9C8}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7036,7 +7041,9 @@ function sortRows(rows){
   });
 }
 function setSort(k){ if(SORT.k===k)SORT.d=-SORT.d; else SORT={k,d:1}; rSum(); }
+let sumEdit=false;
 function rSum(){
+  if(sumEdit) return;      /* 재고 칸을 고치는 중이면 화면을 다시 그리지 않는다 */
   const q=$('fq').value.trim().toLowerCase();
   let T={o:0,i:0,u:0,c:0}, nShort=0, nDead=0;
   const rows=S.items.filter(inWh).map(it=>({it,v:calc(it)}));
@@ -7085,7 +7092,10 @@ function rSum(){
        <td class="${v.iq?'pos':''}">${v.iq?nf(v.iq):'-'}</td>
        <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}</td>
        <td class="${v.oq-v.sq?'wn':''}">${v.oq-v.sq?nf(v.oq-v.sq):'-'}</td>
-       <td style="font-weight:700">${nf(v.cur)}</td>
+       <td style="padding:0"><input type="number" class="sumCur" data-pn="${esc(it.pn)}"
+          value="${v.cur}" title="실사 수량을 넣으면 차이만큼 재고조정 전표가 발행됩니다"
+          style="font-weight:700;text-align:right;background:#FFFDE7;width:100%;
+                 border:1px solid #E0D9A8;border-radius:3px;padding:5px 6px"></td>
        <td>${v.box}</td>
        <td>${nf(it.sf)}</td>
        <td class="${v.gap<0?'neg':''}">${v.gap>0?'+':''}${nf(v.gap)}</td>
@@ -12185,7 +12195,9 @@ function mcSum(it,v){
       <span class="mc-tag ${it.wh==='출하대기'?'w':''}">${esc(whNm(it.wh))}</span></div>
     <div class="mc-sub">${nf(it.bx)} ea/박스 · 안전 ${it.bx?Math.round(it.sf/it.bx):0}박스${v.last?' · 최종 '+v.last.slice(5):''}</div>
     <div class="mc-big"><b class="${v.cur<0?'neg':''}">${nf(v.cur)}</b><span>EA / ${v.box}박스</span>
-      <span class="mc-chip ${gc}">과부족 ${v.gap>0?'+':''}${nf(v.gap)}</span></div>
+      <span class="mc-chip ${gc}">과부족 ${v.gap>0?'+':''}${nf(v.gap)}</span>
+      <button class="mc-fix" data-pn="${esc(it.pn)}"
+        onclick="event.stopPropagation();askFix('${esc(it.pn)}')">재고수정</button></div>
     <div class="mc-flow">
       <div><em>전월이월</em><b>${nf(v.open)}</b></div>
       <div class="i"><em>당월입고</em><b>${v.iq?nf(v.iq):'-'}</b></div>
@@ -12386,6 +12398,32 @@ document.addEventListener('click',e=>{
   const it=S.items[+b.closest('[data-i]').dataset.i];
   const cur=it.cnt==null?boxOf(it,calc(it).cur):it.cnt;
   it.cnt=Math.max(0,cur+(b.dataset.a==='inc'?1:-1));save();rCnt();});
+/* 휴대폰 카드에서 재고 수정 */
+function askFix(pn){
+  const it=S.items.find(x=>x.pn===pn); if(!it)return;
+  const cur=Math.round(calc(it).cur||0);
+  const v=prompt(pn+'\n실사로 확인한 수량(EA)을 넣으세요.\n\n전산 '+nf(cur)+' EA', cur);
+  if(v===null)return;
+  fixStock(it, v);
+}
+
+/* 재고현황(총괄표)에서 재고를 바로 고친다 */
+$('tSum').addEventListener('change',e=>{
+  const t=e.target;
+  if(!t.classList||!t.classList.contains('sumCur'))return;
+  const pn=t.dataset.pn, it=S.items.find(x=>x.pn===pn);
+  if(!it){ rSum(); return; }
+  fixStock(it, t.value);
+});
+/* 입력 중에는 자동 새로고침이 값을 되돌리지 못하게 한다 */
+$('tSum').addEventListener('focusin',e=>{
+  if(e.target.classList&&e.target.classList.contains('sumCur')) sumEdit=true;
+});
+$('tSum').addEventListener('focusout',e=>{
+  if(e.target.classList&&e.target.classList.contains('sumCur'))
+    setTimeout(()=>{ sumEdit=false; },150);
+});
+
 $('tCfg').addEventListener('change',e=>{
   if(e.target.classList.contains('whs')){
     const it=S.items[+e.target.dataset.i];
