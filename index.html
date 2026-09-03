@@ -713,7 +713,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v9.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6643,6 +6643,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <div class="fld"><label>보관위치</label><input id="yLc" style="font-family:var(--sans)"></div></div>
     <div class="fld"><label>품번 별칭 (출하앱·MES 표기가 다를 때, 쉼표 구분)</label>
       <input id="yAl" placeholder="예) 1856-627(628)-1"></div>
+    <div class="fld" id="yCurBox" style="background:#FFFDE7;border:1px solid #E0D9A8;border-radius:7px;padding:9px 11px">
+      <label style="color:#946200">현재고 수정 (실사 수량 입력 → 차이만큼 조정전표 발행)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="yCur" style="flex:1" placeholder="실사 수량(EA)">
+        <span id="yCurNow" style="font-size:11.5px;color:#7d8b99;white-space:nowrap"></span>
+      </div>
+    </div>
     <div class="itBtns">
       <button class="btn k" onclick="saveItem()">저장</button>
       <button class="btn r" id="yDel" onclick="delItem()">삭제</button>
@@ -11084,6 +11091,17 @@ function openItem(i){
   $('ySfB').value=bxv&&it.sf?+(it.sf/bxv).toFixed(2):'';
   $('yBsB').value=bxv&&it.bs?+(it.bs/bxv).toFixed(2):'';
   wireBoxPair('ySfB','ySf'); wireBoxPair('yBsB','yBs');
+  /* 현재고 — 신규 등록 때는 숨긴다 */
+  const cb=$('yCurBox');
+  if(cb){
+    if(n){ cb.style.display='none'; $('yCur').value=''; }
+    else{
+      cb.style.display='';
+      const cv=Math.round(calc(it).cur||0);
+      $('yCur').value=cv;
+      $('yCurNow').textContent='전산 '+nf(cv)+' EA';
+    }
+  }
   $('yBx').oninput=()=>{[['ySfB','ySf'],['yBsB','yBs']].forEach(([f,e])=>{
     if($(f).value!==''&&+$('yBx').value)$(e).value=Math.round(+$(f).value*+$('yBx').value);});};
   $('yDel').style.display=n?'none':'block';
@@ -11101,7 +11119,14 @@ function saveItem(){
   else{Object.assign(S.items[i],o);tgt=S.items[i];}
   touchItem(tgt);
   S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
-  save();render();closeAll();pushItems(true);toast('저장되었습니다');
+  save();
+  /* 현재고를 고쳤으면 차이만큼 조정전표를 만든다 */
+  const cv=$('yCur');
+  if(i>=0 && cv && String(cv.value).trim()!==''){
+    const want=Math.round(+cv.value||0), cur=Math.round(calc(tgt).cur||0);
+    if(want!==cur){ closeAll(); fixStock(tgt, want); pushItems(true); return; }
+  }
+  render();closeAll();pushItems(true);toast('저장되었습니다');
 }
 function delItem(){
   const i=+$('yIdx').value;
