@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.14 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.15 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.14 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.15 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12769,9 +12769,14 @@ function mcIo(r){
     ${(r.p||r.lot||r.n)?`<div class="mc-sub" style="margin-top:5px">${[partyNm(r.p,r.k,r.pn),r.lot?'LOT '+r.lot:'',r.n].filter(Boolean).map(esc).join(' · ')}</div>`:''}
   </div>`;
 }
-let _wasMob=isMob();
+let _wasMob=isMob(), _wasW=window.innerWidth;
+/* 휴대폰 자판이 열리면 세로만 줄어드는 resize 가 오는데, 그때 render() 하면 입력칸이 새로 그려져 자판이 바로 닫힌다.
+   → 가로폭·모바일 여부가 바뀔 때만 다시 그리고, 입력 중이면 건너뛴다 (v12.15) */
 window.addEventListener('resize',()=>{clearTimeout(window._rz);
-  window._rz=setTimeout(()=>{ const m=isMob(); if(m!==_wasMob){_wasMob=m;} render(); },250);});
+  window._rz=setTimeout(()=>{ const m=isMob(), w=window.innerWidth;
+    if(m===_wasMob&&w===_wasW)return;                     /* 높이만 변함 = 자판 열림/닫힘 */
+    const ae=document.activeElement; if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;   /* 편집 중 */
+    _wasMob=m; _wasW=w; render(); },250);});
 window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목대장','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
