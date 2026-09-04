@@ -761,11 +761,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v10.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
-    <div id="dTabs"><button class="on" onclick="setTab(&#39;sum&#39;)"><i>📊</i>재고 현황<em>SUMMARY</em></button><button class="" onclick="setTab(&#39;bin&#39;)"><i>📒</i>품목별 입출고 이력<em>BIN CARD</em></button><button class="" onclick="setTab(&#39;io&#39;)"><i>↔</i>입출고 내역<em>IN / OUT</em></button><button class="" onclick="setTab(&#39;cnt&#39;)"><i>✅</i>재고 실사<em>COUNT</em></button><button class="" onclick="setTab(&#39;raw&#39;)"><i>🧱</i>원소재 재고<em>RAW COIL</em></button><button class="" onclick="setTab(&#39;trc&#39;)"><i>🔗</i>LOT 추적<em>TRACEABILITY</em></button><button class="" onclick="setTab(&#39;cfg&#39;)"><i>⚙</i>품목 관리<em>MASTER</em></button><button class="" onclick="setTab(&#39;help&#39;)"><i>❓</i>사용안내<em>HELP</em></button></div>
+    <div id="dTabs"><button class="on" onclick="setTab(&#39;sum&#39;)"><i>📊</i>재고 현황<em>SUMMARY</em></button><button class="" onclick="setTab(&#39;bin&#39;)"><i>📒</i>품목별 입출고 이력<em>BIN CARD</em></button><button class="" onclick="setTab(&#39;io&#39;)"><i>↔</i>입출고 내역<em>IN / OUT</em></button><button class="" onclick="setTab(&#39;cnt&#39;)"><i>✅</i>재고 실사<em>COUNT</em></button><button class="" onclick="setTab(&#39;raw&#39;)"><i>🧱</i>원소재 재고<em>RAW COIL</em></button><button class="" onclick="setTab(&#39;trc&#39;)"><i>🔗</i>LOT 추적<em>TRACEABILITY</em></button><button class="" onclick="setTab(&#39;cfg&#39;)"><i>⚙</i>품목대장<em>MASTER</em></button><button class="" onclick="setTab(&#39;help&#39;)"><i>❓</i>사용안내<em>HELP</em></button></div>
     <div id="l2"><button class="pri" onclick="syncMes(false)"><i>🔃</i><b>새로고침</b></button><button class="" onclick="render()"><i>🔄</i><b>조회</b></button><button class="" onclick="diag()"><i>🩺</i><b>진단</b></button><button class="" onclick="window.print()"><i>🖨</i><b>인쇄</b></button><button class="" onclick="exportXls()"><i>📗</i><b>엑셀</b></button><button class="" onclick="exportCsv(&#39;sum&#39;)"><i>📄</i><b>CSV</b></button></div>
   <label style="font-size:12px">재고구분</label>
   <select id="whSel" style="font-weight:700">
@@ -790,7 +790,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="on" data-t="sum"><span class="lg">재고 현황</span><span class="sm">재고</span></div>
   <div data-t="io"><span class="lg">입출고 내역</span><span class="sm">입출고</span></div>
   <div data-t="raw"><span class="lg">원소재(코일)</span><span class="sm">원소재</span></div>
-  <div data-t="cfg"><span class="lg">품목 관리</span><span class="sm">품목</span></div>
+  <div data-t="cfg"><span class="lg">품목대장</span><span class="sm">품목</span></div>
   <div id="tMore" onclick="tglMore(event)"><span class="lg">더보기 ▾</span><span class="sm">더보기</span>
     <div class="mm" id="mMore">
       <div data-t="bin">📒 품목별 입출고 이력</div>
@@ -6231,7 +6231,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <!-- ══ 마스터 ══ -->
 <div class="page" id="p-cfg">
-  <div class="pt"><h2>품목 관리</h2><span class="sub">ITEM MASTER · 품목 기준정보 관리</span><div class="pa"><button class="btn" onclick="rCfg()">조회</button></div></div>
+  <div class="pt"><h2>품목대장</h2><span class="sub">ITEM MASTER · 품번 · 박스단위 · 안전재고 · 기초재고 관리</span><div class="pa"><button class="btn" onclick="rCfg()">조회</button></div></div>
   <div class="fbar">
     <button class="btn k" onclick="openItem(-1)">＋ 품목 등록</button>
     <button class="btn" onclick="pick(&#39;fCsv&#39;)">CSV 일괄등록</button>
@@ -6240,7 +6240,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input id="cfgQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label style="margin-left:8px">고객사</label>
     <select id="cfgCu" class="fsel" style="font-family:var(--sans);min-width:130px"><option value="">전체</option></select>
-    <span id="itStat" style="font-size:11px;color:#888;margin-left:6px;cursor:pointer" onclick="pushItems(false)" title="품목 관리 공유 상태 (클릭=지금 공유 저장)">🟢 품목 서버기준 158건</span>
+    <span id="itStat" style="font-size:11px;color:#888;margin-left:6px;cursor:pointer" onclick="pushItems(false)" title="품목대장 공유 상태 (클릭=지금 공유 저장)">🟢 품목 서버기준 158건</span>
     <label style="margin-left:8px">기초일자 일괄</label>
     <input type="date" id="cfgBd" style="width:140px" title="전 품목의 기초일자를 한 번에 변경합니다">
     <button class="btn" onclick="bulkBd()" title="기초일자 이전 전표는 계산에서 제외됩니다">적용</button>
@@ -6268,7 +6268,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="hs">
       <h3>1. 업무 순서 (월간 흐름)</h3>
       <div class="flow">
-        <div><b>①</b><span>품목 관리</span><em>품번·박스단위·안전재고 등록<br>(최초 1회, 신규품 발생 시)</em></div>
+        <div><b>①</b><span>품목대장</span><em>품번·박스단위·안전재고 등록<br>(최초 1회, 신규품 발생 시)</em></div>
         <div><b>②</b><span>MES 동기화</span><em>생산입고·출하 전표 자동 수신<br>(열려 있으면 5분마다 자동)</em></div>
         <div><b>③</b><span>입출고 내역</span><em>수동 전표 등록 / 엑셀 실적 불러오기<br>구매입고·불량폐기·조정 등</em></div>
         <div><b>④</b><span>재고 실사</span><em>실사 박스수 입력 → 차이 확인<br>→ 조정전표 발행으로 전산 = 실물</em></div>
@@ -6284,7 +6284,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <tr><td class="l"><b>📒 품목별 입출고 이력</b></td><td class="l">품번 1개의 전월이월부터 일자별 입·출고 잔량 원장(Bin Card)</td><td class="l">특정 품번 이력 추적, 감사·고객 제출</td></tr>
         <tr><td class="l"><b>↔ 입출고 내역</b></td><td class="l">모든 전표(MES 자동 + 수동) 목록. 클릭하면 수정·삭제</td><td class="l">전표 등록·정정, 엑셀 실적 일괄 입력</td></tr>
         <tr><td class="l"><b>✅ 재고 실사</b></td><td class="l">품목별 실사 박스수 입력 → 전산재고 대비 차이·정확도 계산 → 조정전표 발행</td><td class="l">월 1회 이상 실사, 현황판 사진 입력</td></tr>
-        <tr><td class="l"><b>⚙ 품목 관리</b></td><td class="l">품번·품명·박스단위·안전재고·기초재고·고객사·보관위치·별칭 관리, 백업/복원</td><td class="l">신규품 등록, 박스단위 변경, 데이터 백업</td></tr>
+        <tr><td class="l"><b>⚙ 품목대장</b></td><td class="l">품번·품명·박스단위·안전재고·기초재고·고객사·보관위치·별칭 관리, 백업/복원</td><td class="l">신규품 등록, 박스단위 변경, 데이터 백업</td></tr>
       </tbody></table>
       <div class="hint">· 공통 항목 <b>재고구분</b>(전체 / 현장재고·생산팀 / 출하대기재고·검사실)과 <b>기준월</b>은 모든 화면에 함께 적용됩니다. PC는 소메뉴 바 우측, 모바일은 ☰ 메뉴 안에 있습니다.</div>
     </div>
@@ -6304,7 +6304,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <tr><td class="l" rowspan="3"><b>실사표</b></td><td class="l">✅ 조정전표발행</td><td class="l">입력된 실사값과 전산재고의 차이를 재고조정(+/−) 전표로 발행하여 전산재고를 실물에 맞춤. +차이/−차이 전표 구분은 조회조건에서 선택</td></tr>
         <tr><td class="l">📷 사진인식</td><td class="l">현황판(화이트보드) 사진을 촬영하면 AI가 품번·재고수를 판독하여 실사표에 입력. 노란 행은 반드시 확인</td></tr>
         <tr><td class="l">🧹 실사값지우기</td><td class="l">입력한 실사값 전체 초기화 (전표에는 영향 없음)</td></tr>
-        <tr><td class="l" rowspan="5"><b>품목 관리</b></td><td class="l">➕ 품목등록</td><td class="l">신규 품번 등록. 박스단위를 먼저 입력하면 안전재고·기초재고 박스↔EA 자동 환산</td></tr>
+        <tr><td class="l" rowspan="5"><b>품목대장</b></td><td class="l">➕ 품목등록</td><td class="l">신규 품번 등록. 박스단위를 먼저 입력하면 안전재고·기초재고 박스↔EA 자동 환산</td></tr>
         <tr><td class="l">📄 CSV등록</td><td class="l">품번,품명,규격,박스단위,안전재고(EA),현재고(EA),고객사 순서의 CSV로 일괄 등록/갱신</td></tr>
         <tr><td class="l">💾 백업 / 📂 복원</td><td class="l">전체 데이터(품목+전표+설정)를 JSON 파일로 저장 / 불러오기. <b>월 1회 이상 백업 권장</b></td></tr>
         <tr><td class="l">🗑 전체삭제</td><td class="l">입출고 전표 전체 삭제 (품목은 유지). 복구 불가 — 백업 후 실행</td></tr>
@@ -6320,7 +6320,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <tr><td class="l">품번 검색</td><td class="l">검색란 클릭 시 숫자판이 팝업. 하이픈·공백 무시 검색(1856628 → 1856-628-1). "가나다" 키로 일반 자판 전환</td></tr>
         <tr><td class="l">필터(총괄표)</td><td class="l">전체 / 안전재고 미달 / 재고 0 / 당월 입출고 발생 / 장기 미불출(90일 이상 출고 없음)</td></tr>
         <tr><td class="l">실사 입력</td><td class="l">실사(박스) 칸에 박스수만 입력. EA·차이·정확도 자동 계산. 빈칸은 미실사로 처리</td></tr>
-        <tr><td class="l">품목 관리 셀 수정</td><td class="l">품명·규격·박스단위·안전재고·기초재고·고객사·보관위치는 셀에서 직접 수정, 구분은 드롭다운</td></tr>
+        <tr><td class="l">품목대장 셀 수정</td><td class="l">품명·박스단위·안전재고·기초재고·고객사·보관위치는 셀에서 직접 수정, 구분은 드롭다운</td></tr>
         <tr><td class="l">자동전표(MES/출하앱)</td><td class="l">작성자 칸에 <b>MES</b>·<b>출하앱</b> 표시. 수정해도 다음 동기화 때 원본으로 복원되므로 수량 정정은 재고조정 전표를 별도 등록</td></tr>
         <tr><td class="l">계산식</td><td class="l">현재고 = 전월이월 + 당월입고 − 당월출고 · 과부족 = 현재고 − 안전재고 · 재고일수 = 현재고 ÷ 일평균출고 · 회전율 = 당월출고 ÷ 평균재고</td></tr>
         <tr><td class="l">색상</td><td class="l"><span class="pos">녹색</span> 입고 · <span class="neg">적색</span> 출고/부족 · <span class="wn">황색</span> 기타출고/주의(재고일수 7일 미만, 장기 미불출)</td></tr>
@@ -6462,7 +6462,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         · <b>고객사 · 기종명 · 금형제번</b>은 <b>품번 마스터</b>에서 가져옵니다.
           2026년 소재입고/출하현황(SKF) 엑셀의 소재·생산일자·출하일자 시트에서 뽑은 47품번이 들어 있습니다
           (예: 1952-0056-21 → SKF씰 · JA PACK SELA(F/L) · 18DHA215A).<br>
-        · 판정 순서는 ① 출하 전표의 거래처 → ② 품번 마스터 → ③ 품목 관리의 고객 → ④ 품번 규칙 입니다.
+        · 판정 순서는 ① 출하 전표의 거래처 → ② 품번 마스터 → ③ 품목대장의 고객 → ④ 품번 규칙 입니다.
           마스터에 없는 품번은 [🏢 고객사 규칙]으로 보완하세요.<br>
         · <b>금형제번</b>(18DHA215A)이나 <b>기종명</b>(JA PACK)으로도 추적할 수 있어, 금형 문제로 클레임이 들어와도 바로 찾습니다.<br>
         · 결재란이 있는 <b>LOT 추적서</b>로 인쇄되고 엑셀로도 저장됩니다.
@@ -6482,7 +6482,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="mb">
     <div class="hint" style="margin-bottom:9px">
       · 출하의뢰서에서 거래처가 넘어오지 않아, <b>품번으로 고객사를 정합니다</b>.<br>
-      · 판정 순서: ① 출하 전표의 거래처 → ② 품목 관리의 고객 → ③ 아래 규칙<br>
+      · 판정 순서: ① 출하 전표의 거래처 → ② 품목대장의 고객 → ③ 아래 규칙<br>
       · 한 줄에 <b>품번패턴=고객사</b> 형식. <b>*</b> 는 앞자리만 맞추면 되고, <b>*</b> 한 글자는 나머지 전부를 뜻합니다.<br>
       · 위에서부터 먼저 맞는 규칙이 적용되므로 <b>*=일진</b> 같은 기본값은 맨 아래에 두세요.
     </div>
@@ -7420,7 +7420,7 @@ function applyCount(){
 function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
 
 /* ═══════ 품목대장 ═══════ */
-/* ═══════ 품목 관리 공유 동기화 (stock_item) ═══════ */
+/* ═══════ 품목대장 공유 동기화 (stock_item) ═══════ */
 const IT_TABLE='stock_item';
 const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al','setx','setp','hide'];
 const SESSION_T0=new Date().toISOString();
@@ -7620,7 +7620,7 @@ async function pushItems(silent){
       if(!r.ok)throw new Error('HTTP '+r.status);
     }
     itDirty=false;
-    if(!silent)toast('품목 관리 '+rows.length+'건 공유 저장');
+    if(!silent)toast('품목대장 '+rows.length+'건 공유 저장');
     setItStat('🟢 품목 공유');
   }catch(e){ setItStat('🔴 품목 공유 실패'); if(!silent)toast('품목 공유 실패: '+e.message); }
   itBusy=false;
@@ -7660,7 +7660,7 @@ async function pullItems(silent,strict){
     return {add,upd};
   }catch(e){
     setItStat('🔴 품목 공유 실패');
-    if(strict)throw new Error('품목 관리: '+e.message);
+    if(strict)throw new Error('품목대장: '+e.message);
     return {add:0,upd:0};
   }
 }
@@ -7794,16 +7794,15 @@ function rCfg(){
   });
   $('gt-cfg').innerHTML='품목대장 · 총 <b>'+R.length+'</b>품목'
     +(ccu?' <span style="color:#5A6875">· '+esc(ccu)+'</span>':'');
-  $('tCfg').innerHTML=`<thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>규격</th><th>단위</th>
+  $('tCfg').innerHTML=`<thead><tr><th>No</th><th>구분</th><th>품번</th><th>품명</th><th>단위</th>
     <th>박스단위</th><th>안전재고(EA)</th><th>안전(박스)</th><th>기초재고(EA)</th><th>기초일자</th>
-    <th>고객사</th><th>보관위치</th><th>현재고</th></tr></thead><tbody>`
+    <th>고객사</th><th>보관위치</th></tr></thead><tbody>`
    +R.map(({it,i})=>`<tr>
      <td class="c">${i+1}</td>
      <td class="c" style="padding:0"><select class="whs" data-i="${i}" style="min-width:62px;font-size:11px;padding:6px 2px">${WHS.map(([v,n])=>
        `<option value="${v}" ${(it.wh||'현장')===v?'selected':''}>${v==='현장'?'현장':'출하대기'}</option>`).join('')}</select></td>
      <td class="l" style="font-weight:700;cursor:pointer" onclick="openItem(${i})">${esc(it.pn)}${it.al?'<div style="font-size:9px;color:#888;font-weight:400">별칭 '+esc(it.al)+'</div>':''}</td>
      <td class="l"><input class="l" data-i="${i}" data-f="nm" value="${esc(it.nm)}"></td>
-     <td class="l"><input class="l" data-i="${i}" data-f="sp" value="${esc(it.sp)}"></td>
      <td class="c">${esc(it.un)}</td>
      <td><input type="number" data-i="${i}" data-f="bx" value="${it.bx}"></td>
      <td><input type="number" data-i="${i}" data-f="sf" value="${it.sf}"></td>
@@ -7811,10 +7810,7 @@ function rCfg(){
      <td><input type="number" data-i="${i}" data-f="bs" value="${it.bs}"></td>
      <td class="c">${it.bd}</td>
      <td class="l"><input class="l" data-i="${i}" data-f="cu" value="${esc(it.cu)}"></td>
-     <td class="l"><input class="l" data-i="${i}" data-f="lc" value="${esc(it.lc)}"></td>
-     <td style="padding:0"><input type="number" class="curIn" data-i="${i}" data-f="cur"
-        value="${calc(it).cur}" title="실사 수량을 넣으면 차이만큼 재고조정 전표가 발행됩니다"
-        style="font-weight:700;text-align:right;background:#FFFDE7"></td></tr>`).join('')+`</tbody>`;
+     <td class="l"><input class="l" data-i="${i}" data-f="lc" value="${esc(it.lc)}"></td></tr>`).join('')+`</tbody>`;
 }
 
 
@@ -8164,8 +8160,8 @@ function pinfo(pn){
 }
 
 /* ═══════ 고객사 판정 ═══════
-   출하 전표에 거래처가 비어 있고 품목 관리도 일부만 채워져 있어,
-   ① 출하 전표의 거래처 → ② 품목 관리의 고객 → ③ 품번 규칙 순으로 정한다. */
+   출하 전표에 거래처가 비어 있고 품목대장도 일부만 채워져 있어,
+   ① 출하 전표의 거래처 → ② 품목대장의 고객 → ③ 품번 규칙 순으로 정한다. */
 const CUST_RULE_DEF='IW/OW-*=SKF씰\n45631-*=부강스프링\n54610-*=세동\n*=일진';
 function custRules(){
   return String(S.custRule==null?CUST_RULE_DEF:S.custRule).split(/\n|;/)
@@ -12454,7 +12450,7 @@ window.addEventListener('resize',()=>{clearTimeout(window._rz);
   window._rz=setTimeout(()=>{ const m=isMob(); if(m!==_wasMob){_wasMob=m;} render(); },250);});
 window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
-const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목 관리','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
+const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목대장','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
 const SUB={
   sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
