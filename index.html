@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.10 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.12 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.10 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.12 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -3895,30 +3895,21 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <!-- ══ 재고 실사 ══ -->
 <div class="page" id="p-cnt">
-  <div class="pt"><h2>재고 실사</h2><span class="sub">STOCK COUNT · 실사 입력 및 차이 조정</span><div class="pa"><button class="btn" onclick="window.print()">인쇄</button></div></div>
+  <div class="pt"><h2>재고 실사</h2><span class="sub">STOCK COUNT · 재고현황 박스칸으로 맞춘 결과를 실사일자별로 기록 · 실사표 인쇄</span><div class="pa"><button class="btn" onclick="window.print()">인쇄</button></div></div>
   <div class="fbar">
     <label>실사일자</label><input type="date" id="cntD">
-    <label>+차이 구분</label>
-    <select id="cntKind" title="실사값이 전산보다 많을 때 발행할 전표 구분">
-      <option value="재고조정(+)">재고조정(+)</option>
-      <option value="생산입고">생산입고 (검사합격)</option></select>
-    <label>−차이 구분</label>
-    <select id="cntKindM" title="실사값이 전산보다 적을 때 발행할 전표 구분. 검사 후 폐기분이면 &#39;검사폐기&#39; 선택">
-      <option value="재고조정(-)">재고조정(-)</option>
-      <option value="검사폐기">검사폐기</option>
-      <option value="선별제외">선별제외</option></select>
+    <span style="display:none"><select id="cntKind"><option value="재고조정(+)">재고조정(+)</option></select><select id="cntKindM"><option value="재고조정(-)">재고조정(-)</option></select></span>
     <input id="cntQ" placeholder="품번 검색" class="kbi" style="width:130px">
     <label>고객사</label>
     <select id="cCu" class="fsel" style="font-family:var(--sans)"><option value="">전체</option></select>
     <label>필터</label>
-    <select id="cSel" class="fsel"><option value="all">전체</option><option value="todo">미입력만</option><option value="in">입력분</option><option value="diff">차이발생</option></select>
+    <select id="cSel" class="fsel"><option value="all">전체</option><option value="todo">미실사만</option><option value="in">실사분</option><option value="diff">차이발생</option></select>
     <div class="rt">
-      <button class="btn g" id="btnApplyCnt" onclick="applyCount()">✅ 재고 맞추기</button>
-      <button class="btn" onclick="zeroCount()" title="전산재고 0이고 아직 입력 안 한 품목을 실사 0으로 채웁니다">0 품목 일괄 0</button>
+      <button class="btn g" onclick="cntConfirmRest()" title="이 실사일자에 박스칸으로 맞추지 않은 품목을 '전산값 그대로 확인'으로 기록합니다">✔ 나머지 전산값 그대로 확인</button>
       <button class="btn" onclick="exportCnt()">⬇ 실사표 내려받기</button>
       <button class="btn" onclick="pick(&#39;fCnt&#39;)" style="background:#5B4B8A;color:#fff;border-color:#5B4B8A">📄 실사 CSV 불러오기</button>
       <input type="file" id="fCnt" accept=".csv,.txt" style="display:none">
-      <button class="btn" onclick="clearCount()">실사값 지우기</button></div>
+      <button class="btn" onclick="clearCount()">확인 기록 지우기</button></div>
   </div>
   <div class="sum" style="grid-template-columns:repeat(4,1fr)">
     <div><span>실사 입력</span><b id="c1">0</b><em>품목</em></div>
@@ -5420,7 +5411,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
       <td class="">-</td>
       <td>-</td>
       <td class="c" style="width:44px"></td></tr></tbody></table></div></div>
-    <div class="hint noprint">· 실사수량(박스)을 입력하면 전산재고와의 차이가 자동 계산됩니다. · [차이 조정전표 발행]을 누르면 차이분이 재고조정 입/출고로 입출고 이력에 기록되어 전산재고와 실사재고가 일치합니다.</div>
+    <div class="hint noprint">· 실사 입력은 <b>재고 현황 화면의 박스칸</b>에서 합니다 (입력 즉시 재고 반영). 이 화면은 실사일자별로 <b>어떤 품목을 얼마로 맞췄는지</b>와 정확도를 모아 보여 주는 기록입니다. · 차이가 없던 품목은 [✔ 나머지 전산값 그대로 확인]으로 실사 완료 처리하세요. · 현장 기입용 양식은 [실사표 내려받기], CSV로 적어온 값은 [실사 CSV 불러오기]로 한 번에 반영됩니다.</div>
   </div>
 </div>
 
@@ -6454,7 +6445,6 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
         <tr><td class="l">📥 엑셀실적</td><td class="l">생산·출고 실적 엑셀(.xlsx/.xlsm/CSV) 또는 복사 붙여넣기 → 컬럼 자동 매핑 → 미리보기 → 전표 일괄 생성 (중복 자동 제외)</td></tr>
         <tr><td class="l">📄 CSV</td><td class="l">입출고대장 CSV 저장</td></tr>
         <tr><td class="l" rowspan="3"><b>실사표</b></td><td class="l">✅ 조정전표발행</td><td class="l">입력된 실사값과 전산재고의 차이를 재고조정(+/−) 전표로 발행하여 전산재고를 실물에 맞춤. +차이/−차이 전표 구분은 조회조건에서 선택</td></tr>
-        <tr><td class="l">📷 사진인식</td><td class="l">현황판(화이트보드) 사진을 촬영하면 AI가 품번·재고수를 판독하여 실사표에 입력. 노란 행은 반드시 확인</td></tr>
         <tr><td class="l">🧹 실사값지우기</td><td class="l">입력한 실사값 전체 초기화 (전표에는 영향 없음)</td></tr>
         <tr><td class="l" rowspan="5"><b>품목대장</b></td><td class="l">➕ 품목등록</td><td class="l">신규 품번 등록. 박스단위를 먼저 입력하면 안전재고·기초재고 박스↔EA 자동 환산</td></tr>
         <tr><td class="l">📄 CSV등록</td><td class="l">품번,품명,규격,박스단위,안전재고(EA),현재고(EA),고객사 순서의 CSV로 일괄 등록/갱신</td></tr>
@@ -6932,19 +6922,6 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   </div>
 </div></div>
 
-<div class="mask" id="mOcr"><div class="modal" style="max-width:820px">
-  <h3>현황판 사진으로 재고 입력<span onclick="closeAll()">✕</span></h3>
-  <div class="mb">
-    <button class="btn k" style="width:100%;padding:12px" onclick="pick(&#39;fOcr&#39;)">📷 현황판 사진 촬영 / 선택</button>
-    <input type="file" id="fOcr" accept="image/*" capture="environment" style="display:none">
-    <div id="ocrMsg" style="margin:9px 0"></div>
-    <div class="scroll" id="ocrPrev" style="max-height:340px;overflow-y:auto"></div>
-    <button class="btn g" id="ocrApply" style="width:100%;padding:12px;margin-top:10px;display:none" onclick="applyOcr()">체크한 행을 실사표에 입력</button>
-    <div class="hint">· 손글씨 판독은 오차가 있을 수 있습니다. <b>노란 배경 행은 판독이 불확실</b>하니 반드시 확인하고 수정하세요.<br>
-    · 실사표에 값만 채워지며, 재고는 <b>[차이 조정전표 발행]</b>을 눌러야 반영됩니다.<br>
-    · 현황판 전체가 기울어지지 않게, 글씨가 선명하게 나오도록 촬영하세요. 열이 많으면 나눠서 여러 장 촬영하면 정확도가 올라갑니다.</div>
-  </div>
-</div></div>
 
 <div class="bst"><span>사용자: <b id="bsUser">-</b></span><span>재고구분: <b id="bsWh">전체</b></span><span>기준월: <b id="bsYm">2026-09</b></span><span class="right" id="bsSt">MES 16:15 동기화됨 · 서버전표 5549건</span></div>
 <button class="fab" onclick="openIO()" title="입출고 등록">＋</button>
@@ -7486,18 +7463,22 @@ function rCnt(){
   const cu=($('cCu')&&$('cCu').value)||'';
   const q=$('cntQ').value.trim().toLowerCase();
   let n=0,nd=0,sd=0,tc=0;
+  const D=($('cntD')&&$('cntD').value)||today();
+  const OK=(S.cntOk&&S.cntOk[D])||{};
   const rows=S.items.filter(inWh).map(it=>{
     const v=calc(it);
-    const real=it.cnt==null?null:it.cnt*it.bx;
-    const df=real===null?null:real-v.cur;
-    if(real!==null){n++;tc+=v.cur;if(df)nd++;sd+=Math.abs(df);}
-    return {it,v,real,df};
+    const fx=fixOfDay(it.pn,D);
+    let real=null, base=v.cur, df=null, how='';
+    if(fx){ real=fx.ft; base=fx.fc; df=fx.ft-fx.fc; how='박스칸 · '+(fx.by||''); }
+    else if(OK[it.pn]){ real=v.cur; base=v.cur; df=0; how='전산값 확인'; }
+    if(real!==null){n++;tc+=base;if(df)nd++;sd+=Math.abs(df);}
+    return {it,v,real,df,base,how};
   });
   if(cu){                                  /* 고객사를 고르면 그 범위로만 집계 */
     n=0;nd=0;sd=0;tc=0;
-    rows.forEach(({it,v,real,df})=>{
+    rows.forEach(({it,v,real,df,base})=>{
       const c=(it.cu||'').trim()||'(미지정)'; if(c!==cu)return;
-      if(real!==null){n++;tc+=v.cur;if(df)nd++;sd+=Math.abs(df);}
+      if(real!==null){n++;tc+=base;if(df)nd++;sd+=Math.abs(df);}
     });
   }
   anim('c1',n);anim('c2',nd);anim('c3',sd);
@@ -7526,26 +7507,35 @@ function rCnt(){
     return;
   }
   if($('tCnt').tagName!=='TABLE'){$('tCnt').outerHTML='<table class="t" id="tCnt"></table>';}
-  $('gt-cnt').innerHTML='재고 실사 · 총 <b>'+R.length+'</b>품목 · 실사입력 <b>'+n+'</b>'+(nd?' · <b style="color:#C94A3F">차이 '+nd+'품목 — 아직 재고에 반영 안 됨 → [재고 맞추기]</b>':'');
-  const ab=$('btnApplyCnt'); if(ab)ab.textContent='✅ 재고 맞추기'+(nd?' ('+nd+'품목 차이)':'');
-  document.querySelectorAll('#l2 button').forEach(b=>{ if((b.getAttribute('onclick')||'').indexOf('applyCount')===0){ const bb=b.querySelector('b'); if(bb)bb.textContent='재고 맞추기'+(nd?' ('+nd+')':''); } });
+  $('gt-cnt').innerHTML='재고 실사 <b>'+D+'</b> · 총 <b>'+R.length+'</b>품목 · 실사 <b>'+n+'</b>'+(nd?' · 차이 <b style="color:#C94A3F">'+nd+'</b>품목 (재고에 이미 반영됨)':'')
+    +' <span style="color:#7d8b99">· 실사 입력은 재고 현황 박스칸에서</span>';
   $('tCnt').innerHTML=`<thead><tr><th>No</th><th>품번</th><th>품명</th><th>보관위치</th><th>박스단위</th>
-    <th>전산재고(EA)</th><th>전산(박스)</th><th>실사(박스)</th><th>실사(EA)</th><th>차이(EA)</th><th>정확도</th><th>확인</th></tr></thead><tbody>`
-   +R.map(({it,v,real,df},i)=>{
-     const idx=S.items.indexOf(it);
+    <th>실사 전 전산(EA)</th><th>전산(박스)</th><th>실사(박스)</th><th>실사(EA)</th><th>차이(EA)</th><th>정확도</th><th>확인</th></tr></thead><tbody>`
+   +R.map(({it,v,real,df,base,how},i)=>{
+     const b=+it.bx||0;
      return `<tr>
-      <td class="c">${i+1}</td><td class="l" style="font-weight:700">${esc(it.pn)}</td>
+      <td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" title="재고 현황에서 이 품목 박스칸 열기" onclick="goFix('${esc(it.pn)}')">${esc(it.pn)}</td>
       <td class="l" style="font-family:var(--sans)">${esc(it.nm)}</td>
       <td class="c" style="font-family:var(--sans)">${esc(it.lc)}</td>
-      <td>${nf(it.bx)}</td><td>${nf(v.cur)}</td><td>${v.box}</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="${idx}"
-        value="${it.cnt==null?'':it.cnt}" placeholder="－"></td>
+      <td>${nf(it.bx)}</td><td>${nf(base)}</td><td>${b?Math.floor(base/b):nf(base)}</td>
+      <td style="background:${real===null?'#FFFDE7':'#EAF6EE'};font-weight:700">${real===null?'<span style="color:#9A6400">미실사</span>':(b?Math.floor(real/b):nf(real))}</td>
       <td>${real===null?'-':nf(real)}</td>
       <td class="${df?'neg':''}">${df===null?'-':(df>0?'+':'')+nf(df)}</td>
-      <td>${df===null||v.cur<=0?'-':(100-Math.abs(df)/v.cur*100).toFixed(1)+'%'}</td>
-      <td class="c" style="width:44px"></td></tr>`;
+      <td>${df===null||base<=0?'-':(100-Math.abs(df)/base*100).toFixed(1)+'%'}</td>
+      <td class="c" style="font-family:var(--sans);font-size:10px;color:${df?'#C94A3F':'#0B6B3A'}">${esc(how)}</td></tr>`;
    }).join('')+`</tbody>`;
 }
+/* 실사 탭은 기록 전용(v12.11) — 입력·조정은 재고 현황 박스칸(fixStock) 한 경로로 통일 */
+function cntConfirmRest(){
+  const D=($('cntD')&&$('cntD').value)||today();
+  if(!S.cntOk||typeof S.cntOk!=='object')S.cntOk={};
+  const OK=S.cntOk[D]||(S.cntOk[D]={});
+  const T=S.items.filter(it=>inWh(it)&&!fixOfDay(it.pn,D)&&!OK[it.pn]);
+  if(!T.length){toast('확인할 품목이 없습니다');return;}
+  if(!confirm(D+' 실사: 박스칸으로 맞추지 않은 '+T.length+'품목을 "전산값 그대로 확인(차이 0)"으로 기록합니다.\n\n실물이 다른 품목이 있으면 취소하고 재고 현황 박스칸에서 먼저 맞추세요.'))return;
+  T.forEach(it=>OK[it.pn]=1); save(); rCnt(); toast(T.length+'품목 확인 기록');
+}
+function goFix(pn){ setTab('sum'); $('fq').value=pn; rSum(); setTimeout(()=>{ const i=$('tSum').querySelector('input.sumBx[data-pn="'+pn.replace(/"/g,'\\"')+'"]'); if(i){ i.scrollIntoView({block:'center'}); i.focus(); } },150); }
 function applyCount(){
   const d=$('cntD').value||today();
   const t=S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0);
@@ -7571,15 +7561,8 @@ function applyCount(){
   S.items.forEach(it=>it.cnt=null);
   save();render();toast(t.length+'건 조정전표가 발행되었습니다');
 }
-function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
-/* 전산재고 0 + 미입력 품목 → 실사 0 (빈칸=미실사 혼동 제거) */
-function zeroCount(){
-  const T=S.items.filter(it=>inWh(it)&&it.cnt==null&&Math.round(calc(it).cur||0)===0);
-  if(!T.length){toast('대상 품목이 없습니다 (전산 0 · 미입력)');return;}
-  T.forEach(it=>it.cnt=0); save(); rCnt(); toast(T.length+'품목을 실사 0으로 채웠습니다');
-}
-/* 실사 미반영 품목 수 */
-function cntPending(){ return S.items.filter(it=>it.cnt!=null&&(it.cnt*it.bx-calc(it).cur)!==0).length; }
+function clearCount(){ const D=($('cntD')&&$('cntD').value)||today(); if(S.cntOk)delete S.cntOk[D]; S.items.forEach(it=>it.cnt=null);save();rCnt();toast(D+' 확인 기록을 지웠습니다 (박스칸 조정 전표는 유지)'); }
+function cntPending(){ return 0; }
 
 /* ═══════ 품목대장 ═══════ */
 /* ═══════ 품목대장 공유 동기화 (stock_item) ═══════ */
@@ -12696,12 +12679,11 @@ if(SYNC_MIN>0) setInterval(()=>syncMes(true),SYNC_MIN*60*1000);
 
 
 /* ═══════ 현황판 사진 인식 (Claude Vision) ═══════ */
-let OCRrows=[];
 /* 실사값 CSV 불러오기 — 형식: 품번,실사박스  (헤더 있어도 됨) */
 $('fCnt').onchange=async e=>{
   const f=e.target.files[0]; if(!f)return; e.target.value='';
   const txt=(await readText(f)).replace(/^\uFEFF/,'');
-  let ok=0,unk=[];
+  let ok=0,unk=[],rowsToFix=[];
   txt.split(/\r?\n/).forEach(l=>{
     if(!l.trim())return;
     const p=l.split(',').map(s=>s.trim().replace(/^"|"$/g,''));
@@ -12710,99 +12692,18 @@ $('fCnt').onchange=async e=>{
     if(isExcl(pn))return;
     const it=S.items.find(x=>x.pn===pn);
     if(!it){unk.push(p[0]);return;}
-    const v=p[1];
-    it.cnt=(v===''||v==null)?null:Math.max(0,parseInt(String(v).replace(/[^0-9-]/g,''))||0);
-    ok++;
+    const v=p[1]; if(v===''||v==null)return;
+    const bxn=Math.max(0,parseInt(String(v).replace(/[^0-9-]/g,''))||0);
+    rowsToFix.push({it,ea:it.bx?bxn*it.bx:bxn}); ok++;
   });
-  save(); rCnt();
-  toast('실사값 '+ok+'건 입력'+(unk.length?' · 미등록 '+unk.length+'건':'')
-    +' — 확인 후 [조정전표발행]');
+  if(rowsToFix.length&&!confirm('CSV '+rowsToFix.length+'품목의 실사값을 재고에 바로 반영합니다 (차이 없는 품목은 확인 기록만).\n진행할까요?'))return;
+  const D=($('cntD')&&$('cntD').value)||today(); if(!S.cntOk)S.cntOk={}; const OK=S.cntOk[D]||(S.cntOk[D]={});
+  let ch=0; for(const {it,ea} of rowsToFix){ if(Math.round(calc(it).cur)===Math.round(ea)){OK[it.pn]=1;} else { await fixStock(it,ea,true); ch++; } }
+  save(); render(); rFixBar(); try{ await pushManual(); }catch(e){}
+  toast('실사 '+ok+'건 반영 · 조정 '+ch+'건'+(unk.length?' · 미등록 '+unk.length+'건':''));
   if(unk.length)alert('품목대장에 없어 건너뛴 품번 '+unk.length+'건:\n'+unk.slice(0,20).join(', ')
     +(unk.length>20?' 외 '+(unk.length-20)+'건':''));
 };
-function openOcr(){
-  OCRrows=[]; $('ocrPrev').innerHTML=''; $('ocrMsg').textContent='';
-  $('ocrApply').style.display='none';
-  $('mOcr').classList.add('on');
-}
-$('fOcr').onchange=async e=>{
-  const f=e.target.files[0]; if(!f) return; e.target.value='';
-  const msg=$('ocrMsg');
-  msg.innerHTML='<span class="ipill w">사진 분석 중… 20초 정도 걸립니다</span>';
-  $('ocrPrev').innerHTML=''; $('ocrApply').style.display='none';
-  try{
-    const b64=await new Promise((res,rej)=>{const r=new FileReader();
-      r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
-    const known=S.items.filter(inWh).map(i=>i.pn);
-    const sys='당신은 제조현장 재고 화이트보드를 판독하는 도구입니다. JSON 배열만 출력하고 다른 말은 하지 마세요.';
-    const prompt=
-      '이 사진은 공장의 출하대기재고 현황판입니다. 표에서 각 행의 [품번, 박스단위, 재고수량, 적정재고]를 읽으세요.\n'
-      +'- 재고수량과 적정재고는 손글씨일 수 있습니다. 숫자만 추출하세요.\n'
-      +'- 칸이 비어 있으면 null 로 두세요.\n'
-      +'- 여러 열(블록)로 나뉘어 있으면 모두 읽으세요.\n'
-      +'- 판독이 불확실한 값은 conf 를 "low" 로 표시하세요.\n'
-      +'참고: 등록된 품번 목록 = '+JSON.stringify(known.slice(0,200))+'\n'
-      +'품번이 목록과 비슷하면 목록의 표기로 맞추세요.\n'
-      +'출력 형식(JSON 배열만): [{"pn":"1853-515-2","box":1000,"qty":4,"std":7,"conf":"high"}]';
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,system:sys,
-        messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:b64}},
-          {type:'text',text:prompt}]}]})});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data=await r.json();
-    const txt=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const m=txt.match(/\[[\s\S]*\]/);
-    if(!m) throw new Error('판독 결과를 해석하지 못했습니다');
-    OCRrows=JSON.parse(m[0]).map(x=>({
-      pn:canonPn(x.pn), box:+x.box||0, qty:(x.qty==null?null:+x.qty),
-      std:(x.std==null?null:+x.std), conf:x.conf||'high'}))
-      .filter(x=>x.pn&&!isExcl(x.pn));
-    drawOcr();
-  }catch(err){ msg.innerHTML='<span class="ipill r">인식 실패: '+esc(err.message)+'</span>'; }
-};
-function drawOcr(){
-  const n=OCRrows.length, low=OCRrows.filter(x=>x.conf==='low').length;
-  const unk=OCRrows.filter(x=>!S.items.some(i=>i.pn===x.pn)).length;
-  $('ocrMsg').innerHTML='<span class="ipill g">'+n+'행 인식</span>'
-    +(low?'<span class="ipill w">불확실 '+low+'행 — 반드시 확인</span>':'')
-    +(unk?'<span class="ipill r">미등록 품번 '+unk+'행</span>':'');
-  $('ocrPrev').innerHTML='<table class="t"><thead><tr><th>품번</th><th>박스단위</th>'
-    +'<th>현재고(박스)</th><th>사진 판독</th><th>적용</th></tr></thead><tbody>'
-    +OCRrows.map((x,i)=>{
-      const it=S.items.find(y=>y.pn===x.pn);
-      const cur=it?boxOf(it,calc(it).cur):'-';
-      return '<tr'+(x.conf==='low'?' style="background:#FFF8E1"':'')+'>'
-        +'<td class="l" style="font-weight:700">'+esc(x.pn)+(it?'':' <span class="ipill r">미등록</span>')+'</td>'
-        +'<td>'+(it?nf(it.bx):(x.box?nf(x.box):'-'))+'</td>'
-        +'<td>'+cur+'</td>'
-        +'<td style="background:#FFFDE7;width:80px"><input type="number" data-i="'+i+'" data-f="qty" value="'+(x.qty==null?'':x.qty)+'"></td>'
-        +'<td class="c" style="width:44px"><input type="checkbox" data-i="'+i+'" data-f="use"'
-          +(x.qty==null||!it?'':' checked')+(it?'':' disabled')+'></td></tr>';
-    }).join('')+'</tbody></table>';
-  $('ocrApply').style.display='block';
-}
-$('ocrPrev').addEventListener('change',e=>{
-  const i=+e.target.dataset.i, f=e.target.dataset.f;
-  if(f==='qty') OCRrows[i].qty=e.target.value===''?null:+e.target.value;
-  if(f==='use') OCRrows[i].use=e.target.checked;
-});
-function applyOcr(){
-  let n=0;
-  $('ocrPrev').querySelectorAll('input[data-f="use"]').forEach(c=>{
-    if(!c.checked)return;
-    const x=OCRrows[+c.dataset.i];
-    const it=S.items.find(y=>y.pn===x.pn);
-    if(!it||x.qty==null)return;
-    it.cnt=x.qty; n++;
-  });
-  if(!n){toast('적용할 행이 없습니다');return;}
-  save(); closeAll(); setTab('cnt'); rCnt();
-  toast(n+'건이 실사표에 입력되었습니다 — 확인 후 [차이 조정전표 발행]');
-}
-
-
 /* ═══════ 모바일 카드 렌더 ═══════ */
 const isMob=()=>window.innerWidth<=760;
 const CARD=true;   /* 휴대폰에서는 카드형으로 (총괄표·실사·입출고) */
@@ -12874,7 +12775,7 @@ const SUB={
   sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
-  cnt:[['✅','재고 맞추기','applyCount()','pri'],['🖨','실사표 인쇄','exportCnt()'],['0️⃣','0 품목 일괄 0','zeroCount()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
+  cnt:[['🖨','실사표 인쇄','exportCnt()','pri'],['✔','나머지 확인','cntConfirmRest()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','확인기록 지우기','clearCount()'],['🖨','인쇄','window.print()']],
   trc:[['🔍','추적','rTrc()','pri'],['🏢','고객사','openCust()'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
   raw:[['🔄','새로고침','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
@@ -13031,8 +12932,6 @@ const MORE_TABS=['bin','cnt','trc','help'];
 function tglMore(e){ if(e&&e.target.closest('.mm'))return; $('mMore').classList.toggle('show'); }
 document.addEventListener('click',e=>{ if(!e.target.closest('#tMore')){const m=$('mMore'); if(m)m.classList.remove('show');} });
 function setTab(t){
-  if(tab==='cnt'&&t!=='cnt'){ const pd=cntPending();
-    if(pd&&!confirm('실사 차이 '+pd+'품목이 아직 재고에 반영되지 않았습니다.\n[재고 맞추기]를 누르지 않으면 전산재고는 그대로입니다.\n\n그래도 나갈까요? (실사값은 남아 있습니다)'))return; }
   tab=t;document.querySelectorAll('.tabs div').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
   $('tMore').classList.toggle('on',MORE_TABS.includes(t)); $('mMore').classList.remove('show');
   window.scrollTo({top:0});
@@ -13076,7 +12975,7 @@ document.addEventListener('change',e=>{
   S.msf[e.target.dataset.sf]=+e.target.value||0; save(); rRaw();
 });
 ['ioF','ioT','ioQ','ioK'].forEach(i=>{$(i).oninput=rIo;$(i).onchange=rIo;});
-$('cntD').onchange=()=>$('i4').textContent=$('cntD').value;
+$('cntD').onchange=()=>{$('i4').textContent=$('cntD').value; rCnt();};
 $('xPn').oninput=xInfo;
 $('xB').oninput=()=>{const it=S.items.find(x=>x.pn===$('xPn').value.trim());
   if(it&&it.bx&&$('xB').value!=='')$('xQ').value=Math.round((+$('xB').value||0)*it.bx);};
@@ -13264,7 +13163,7 @@ $('tCfg').addEventListener('change',e=>{
 /* ═══════ 현재고 직접 수정 ═══════
    실사로 확인한 수량을 넣으면 차이만큼 재고조정 전표를 만든다.
    (전표를 남기지 않고 숫자만 바꾸면 수불이 맞지 않으므로 반드시 전표로 처리한다) */
-async function fixStock(it, val){
+async function fixStock(it, val, quiet){
   const v=String(val==null?'':val).trim();
   if(v===''){ rCfg(); return; }
   const want=Math.round(+v||0);
@@ -13278,14 +13177,25 @@ async function fixStock(it, val){
   const bxs=(n)=>{ const b=+it.bx||0; if(!b) return nf(n)+' EA';
     const q=Math.floor(n/b), r=((n%b)+b)%b; return q+'박스'+(r?'+'+nf(r):'')+' ('+nf(n)+' EA)'; };
   const rec={ id:S.seq++, d:d, pn:it.pn, k:(df>0?'재고조정(+)':'재고조정(-)'),
-    q:Math.abs(df), p:'', lot:'',
+    q:Math.abs(df), p:'', lot:'', fc:cur, ft:want,
     n:'재고 직접수정 · 전산 '+bxs(cur)+' → 실사 '+bxs(want),
     by:S.user||'' };
   S.led.push(rec);
   FIXLOG.push({id:rec.id,pn:it.pn,cur,want,df,t:Date.now()});
-  save(); render(); rFixBar();
-  toast(it.pn+' 재고를 '+nf(want)+' EA 로 맞췄습니다 ('+(df>0?'+':'')+nf(df)+') · 잘못 눌렀으면 [되돌리기]');
-  try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
+  if(!quiet){ save(); render(); rFixBar();
+    toast(it.pn+' 재고를 '+nf(want)+' EA 로 맞췄습니다 ('+(df>0?'+':'')+nf(df)+') · 잘못 눌렀으면 [되돌리기]');
+    try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); } }
+}
+/* 실사 기록: 해당 일자의 '재고 직접수정' 전표에서 전산→실사 수량을 읽는다 (구 전표는 비고에서 파싱) */
+function fixOfDay(pn,d){
+  const rs=S.led.filter(r=>r.pn===pn&&r.d===d&&/재고조정/.test(r.k)&&(r.fc!=null||/재고 직접수정/.test(r.n||'')));
+  if(!rs.length)return null;
+  const r=rs[rs.length-1];
+  let fc=r.fc, ft=r.ft;
+  if(fc==null){ const m=String(r.n||'').match(/\(([\d,]+) EA\)[^()]*\(([\d,]+) EA\)/)||String(r.n||'').match(/전산 ([\d,]+) EA → 실사 ([\d,]+) EA/);
+    if(m){ fc=+m[1].replace(/,/g,''); ft=+m[2].replace(/,/g,''); } else return null; }
+  if(rs.length>1){ const f0=rs[0]; if(f0.fc!=null)fc=f0.fc; }   /* 같은 날 여러 번 → 처음 전산값, 마지막 실사값 */
+  return {fc,ft,by:r.by||'',id:r.id};
 }
 /* ── 박스칸 직접수정 되돌리기 바 ── */
 let FIXLOG=[];
