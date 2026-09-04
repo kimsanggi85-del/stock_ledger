@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.15 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.16 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.15 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.16 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13096,20 +13096,24 @@ function openFix(pn){
   const cb=bx?Math.floor(cur/bx):0, cl=bx?((cur%bx)+bx)%bx:cur;
   box.innerHTML=
     '<div class="fx-in">'
-    +(bx?'<label><em>박스</em><input type="number" inputmode="numeric" data-k="b" value="'+cb+'"></label>'
-        +'<label><em>낱개</em><input type="number" inputmode="numeric" data-k="e" value="'+cl+'"></label>'
-      :'<label><em>수량(EA)</em><input type="number" inputmode="numeric" data-k="e" value="'+cur+'"></label>')
+    /* 기존값을 칸에 넣지 않는다 — 0 뒤에 숫자가 붙어 오기(05)가 나던 버그. 현재값은 흐린 안내(placeholder)로만 (v12.16) */
+    +(bx?'<label><em>박스</em><input type="number" inputmode="numeric" data-k="b" value="" placeholder="'+cb+'"></label>'
+        +'<label><em>낱개</em><input type="number" inputmode="numeric" data-k="e" value="" placeholder="'+cl+'"></label>'
+      :'<label><em>수량(EA)</em><input type="number" inputmode="numeric" data-k="e" value="" placeholder="'+cur+'"></label>')
     +'</div>'
     +'<div class="fx-r" data-r>실사 <b>'+nf(cur)+'</b> EA · 차이 <b class="z">0</b></div>'
     +'<div class="fx-b"><button class="ok" data-go>이 재고로 맞춤</button>'
     +'<button class="cx" data-cx>취소</button></div>';
   const ins=box.querySelectorAll('input');
   const calcNow=()=>{
-    let v=0;
-    ins.forEach(i=>{ v += (i.dataset.k==='b') ? (+i.value||0)*bx : (+i.value||0); });
+    let v=0, typed=false;
+    ins.forEach(i=>{ if(String(i.value).trim()!=='')typed=true; v += (i.dataset.k==='b') ? (+i.value||0)*bx : (+i.value||0); });
+    if(!typed)v=cur;                                   /* 아무것도 안 쳤으면 변경 없음 */
     const df=Math.round(v)-cur;
-    box.querySelector('[data-r]').innerHTML='실사 <b>'+nf(Math.round(v))+'</b> EA · 차이 '
-      +'<b class="'+(df?(df>0?'p':'n'):'z')+'">'+(df>0?'+':'')+nf(df)+'</b>';
+    box.querySelector('[data-r]').innerHTML=(typed?'실사 <b>'+nf(Math.round(v))+'</b> EA · 차이 '
+      +'<b class="'+(df?(df>0?'p':'n'):'z')+'">'+(df>0?'+':'')+nf(df)+'</b>'
+      :'<span style="color:#9A6400">실물 박스수를 입력하세요 (현재 전산 '+nf(cur)+' EA)</span>');
+    const go=box.querySelector('[data-go]'); if(go){ go.disabled=!typed||!df; go.style.opacity=(!typed||!df)?'.45':'1'; go.textContent=!typed?'입력 대기':(!df?'차이 없음':'이 재고로 맞춤'); }
     return Math.round(v);
   };
   ins.forEach(i=>{ i.addEventListener('input',calcNow); });
