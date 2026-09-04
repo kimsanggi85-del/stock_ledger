@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.6 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.7 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.7 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9571,7 +9571,9 @@ function rRaw(){
       +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
       +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>'
       +((()=>{const off=S.coils.filter(isOff).length;
-        return off?' <span style="color:#5B4B8A">· 사급·관리제외 '+off+'본 숨김</span>':'';})());
+        return off?' <span style="color:#5B4B8A">· 사급·관리제외 '+off+'본 숨김</span>':'';})())
+      +((()=>{const pd=S.coils.filter(c=>c.pend).length;
+        return pd?' <span style="color:#9A6400;font-weight:700">· MES 미수신(수입검사 선등록) '+pd+'본</span>':'';})());
     $('rawHint').innerHTML='· <b>노란 칸은 표에서 바로 고칠 수 있습니다</b>. 칸을 클릭해 값을 바꾸고 다른 곳을 누르면 저장됩니다.<br>'
       +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
       +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
@@ -9621,7 +9623,7 @@ function rRaw(){
          <td class="${isDeadCoil(c)?'wn':''}">${coilAge(c)}</td>
          <td class="c ${dueCls(dueLeft(c))}" style="font-size:10.5px">${(v=>{const d2=dueOf(c);
             return d2?esc(d2)+(v==null?'':'<div style="font-size:9px">'+(v<0?'초과 '+(-v)+'일':'D-'+v)+'</div>'):'-';})(dueLeft(c))}</td>
-         <td class="l" style="padding:0">${isFree(c)?'<span style="background:#EDE7F6;color:#5B4B8A;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700">사급</span>':''}${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span>':''}
+         <td class="l" style="padding:0">${isFree(c)?'<span style="background:#EDE7F6;color:#5B4B8A;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700">사급</span>':''}${c.pend?'<span style="background:#FFF3D6;color:#9A6400;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700" title="수입검사 완료로 선등록됨. MES 소재입고 수신 시 자동 승격">MES 미수신</span>':(c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span>':'')}
            ${E('n',c.n,'class="ce l" style="font-family:var(--sans);font-size:10.5px"')}</td></tr>`;
        }).join(''):`<tr><td colspan="20" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
@@ -10194,7 +10196,7 @@ async function syncIqc(silent){
       }else DG.dup++;
     });
     S.iqcDiag=DG;
-    let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0,estD=0,ownDup=0,preBase=0;
+    let add=0,upd=0,hold=0,insHit=0,noIns=0,takeover=0,jgFix=0,estD=0,ownDup=0,preBase=0,pendAdd=0;
     const seen=new Set();
     picks.forEach(({r,lots,rd,group,full})=>{
       const mt=String(r.material_type||r.spec||'').trim().toUpperCase();
@@ -10233,19 +10235,22 @@ async function syncIqc(silent){
           ||String(c.ms||'').toUpperCase()===String(r.heat_no||'').toUpperCase()));
         if(ownHit){ ownDup++; return; }
         let ex=S.coils.find(c=>c.src===src);
+        let pendNew=false;
         if(!ex&&S.mesMode){                       /* MES 코일 중 같은 LOT 이면 판정·성적서만 갱신 */
-          S.coils.filter(c=>c.src&&c.src.indexOf('MESRCV|')===0&&String(c.cno).split('#')[0]===cno).forEach(c=>{
+          const mesHit=S.coils.filter(c=>c.src&&c.src.indexOf('MESRCV|')===0&&String(c.cno).split('#')[0]===cno);
+          mesHit.forEach(c=>{
             const put={iq:jg,cert:jv?jv.cert:'',ins:jv?jv.ins:''};
             LOCKABLE.forEach(f=>{ if(isLocked(c,f))delete put[f]; });
             if(Object.keys(put).some(k=>c[k]!==put[k])){Object.assign(c,put);upd++;}
           });
-          preBase++; return;
+          if(mesHit.length){ preBase++; return; }
+          /* MES 입고가 아직 안 올라온 LOT → 수입검사 완료 즉시 코일 등록(대기). MES 입고 수신 시 syncRawMes 가 승격 */
+          pendNew=true;
         }
         if(!ex){
           /* 같은 LOT 으로 보완 등록해 둔 코일이 있으면 새로 만들지 않고 그 코일을 정식분으로 승격.
              투입 이력이 그대로 유지되고 중복 코일이 생기지 않는다. */
           /* MES 입고(MESRCV) 또는 MES 재고 기준(MESSTK) 코일이 정본 — 수입검사는 새 코일을 만들지 않는다 */
-          if(S.mesMode){ preBase++; return; }
           if(S.coils.some(c=>c.src&&c.src.indexOf('MESSTK|')===0&&String(c.cno).split('#')[0]===cno)){ preBase++; return; }
           const t0=S.coils.find(c=>c.cno===cno&&c.src&&c.src.indexOf('MESLOT|')===0);
           if(t0){ ex=t0; ex.src=src; takeover++; }
@@ -10256,9 +10261,11 @@ async function syncIqc(silent){
                  cert:jv?jv.cert:'', ins:jv?jv.ins:'',
                  n:['LOT '+(isNo?'-':lot),r.heat_no?'HEAT '+r.heat_no:'',n>1?n+'코일 분할':'',
                     jv?('검사 '+(jv.ins||'-')+' '+(jv.cert||'')+(jv.by?' / '+jv.by:'')):'검사 미발행',
-                    dEst?'입고일 추정':'', group?'묶음성적서 균등배분('+n+'코일)':'']
+                    dEst?'입고일 추정':'', group?'묶음성적서 균등배분('+n+'코일)':'',
+                    pendNew?'수입검사 등록 · MES 입고 대기':'']
                     .filter(Boolean).join(' · '),
                  src};
+        if(pendNew){ o.pend=1; pendAdd++; }
         if(ex){
           const put={d:o.d,mt:o.mt,t:o.t,w:o.w,wt:o.wt,iq:o.iq,sup:o.sup,ms:o.ms,
                      cert:o.cert,ins:o.ins,n:o.n};
@@ -10313,6 +10320,7 @@ async function syncIqc(silent){
       L.push('  · 수요자 검사 발행분(iqc_inspections) '+insN+'건 조회');
       L.push('  · 판정 근거: 검사발행 '+insHit+'본 / 성적서판정만 '+noIns+'본');
       if(takeover)L.push('  · 보완 코일 '+takeover+'본을 정식 입고분으로 승격(중복 생성 없음)');
+      if(pendAdd)L.push('  · MES 입고 미수신 LOT '+pendAdd+'본을 수입검사 기준으로 선등록 (MES 입고 수신 시 자동 승격)');
       if(ownDup)L.push('  · 엑셀 대장에 이미 있어 건너뛴 코일 '+ownDup+'본 (중복 방지)');
       if(jgFix)L.push('  · 미등록 코일 '+jgFix+'본에 검사 판정 반영');
       if(wFill)L.push('  · 폭을 몰랐던 코일 '+wFill+'본에 검사 발행분의 폭 반영');
@@ -10433,7 +10441,7 @@ async function refreshAll(){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
-        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·미존재 코일 '+rm.cleared+'본 정리':'')
+        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.prom?' · 수입검사 대기 코일 '+rm.prom+'본 MES 입고로 승격':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·미존재 코일 '+rm.cleared+'본 정리':'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -10930,6 +10938,18 @@ async function syncRawMes(silent){
           if(c){ c.src=src; out.upd++; }
         }
         if(!c){
+          /* 수입검사 완료로 먼저 등록된 대기 코일(IQC2)이 있으면 승격 — 같은 LOT, 없으면 같은 HEAT+중량(±5%) */
+          const isPend=x=>x.pend&&x.src&&x.src.indexOf('IQC2|')===0;
+          c=S.coils.find(x=>isPend(x)&&String(x.cno).split('#')[0]===lot);
+          if(!c){
+            const hb=lotBase(lot).toUpperCase(), wt0=+r.weight||0;
+            const cand=S.coils.filter(x=>isPend(x)&&hb&&String(x.ms||lotBase(x.cno)).toUpperCase()===hb&&wt0>0&&Math.abs((+x.wt||0)-wt0)<=wt0*0.05);
+            if(cand.length===1)c=cand[0];
+          }
+          if(c){ c.src=src; delete c.pend; c.n=String(c.n||'').replace(' · 수입검사 등록 · MES 입고 대기','').replace('수입검사 등록 · MES 입고 대기','');
+                 out.prom=(out.prom||0)+1; }
+        }
+        if(!c){
           let cno=lot;
           if(S.coils.some(x=>x.cno===cno))cno=lot+'#'+rno.slice(2,6)+'-'+rno.slice(-3);   /* 같은 LOT 이름 재사용 → 입고번호로 구분 */
           c={id:S.cseq++,cno,src,lc:'',iq:'합격',st:'대기',ua:nowIso()};
@@ -10967,7 +10987,7 @@ async function syncRawMes(silent){
       });
       /* MES 에 없는 자동연동 코일(시트·수입검사·설비 보완)은 정리 — 직접 등록·전표 달린 것은 유지 */
       /* MESRCV 도 포함 — MES 에서 입고취소·반출(IO_FLAG=2)된 건은 코일도 없어져야 한다 */
-      const rm=S.coils.filter(c=>c.src&&/^(MESRCV|MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)&&!S.mled.some(m=>m.cid===c.id&&!m.auto));
+      const rm=S.coils.filter(c=>c.src&&/^(MESRCV|MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)&&!c.pend&&!S.mled.some(m=>m.cid===c.id&&!m.auto));   /* 수입검사 대기 코일은 MES 수신 전까지 유지 */
       if(rm.length){ const ids=new Set(rm.map(c=>c.id)); markDel(rm.map(c=>c.cno)); S.mled=S.mled.filter(m=>!ids.has(m.cid)); S.coils=S.coils.filter(c=>!ids.has(c.id)); out.cleared=rm.length; }
       S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
       rawDirty=true;
