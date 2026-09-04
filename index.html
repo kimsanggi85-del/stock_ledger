@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.8 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.9 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.8 · 원소재 v11.21</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.9 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9333,7 +9333,55 @@ function setRV(v){RV=v;
   const cb=$('cntBar'); if(cb)cb.style.display=(v==='cnt')?'flex':'none';
   if(v==='cnt'&&$('cntD2')&&!$('cntD2').value)$('cntD2').value=today();
   rRaw();}
-function rRaw(){
+/* ═══ 원소재 표 공통 정렬 — 모든 보기(업체별·설비·코일·규격·실사·입출고·소요량) 헤더 클릭: ▲ 오름 → ▼ 내림 → 해제 ═══ */
+let RSORT={};
+function rRaw(){ rRaw0(); applyRawSort(); }
+function applyRawSort(){
+  const t=$('tRaw'); if(!t||(typeof MC!=='undefined'&&MC))return;
+  const thead=t.querySelector('thead'); if(!thead)return;
+  const hr=thead.querySelector('tr:last-child'); if(!hr)return;
+  const ths=[...hr.children];
+  const st=RSORT[RV]||null;
+  ths.forEach((th,i)=>{
+    th.style.cursor='pointer'; th.style.userSelect='none'; th.style.whiteSpace='nowrap';
+    if(!th.title)th.title='클릭 시 정렬 (▲ 오름 → ▼ 내림 → 해제)';
+    th.querySelectorAll('.srt').forEach(x=>x.remove());
+    if(st&&st.i===i)th.insertAdjacentHTML('beforeend','<span class="srt" style="color:#C2620C"> '+(st.dir>0?'▲':'▼')+'</span>');
+    th.onclick=e=>{ if(e.target.closest('input,select,button'))return;
+      const cur=RSORT[RV]; let dir=1;
+      if(cur&&cur.i===i)dir=cur.dir>0?-1:0;
+      RSORT[RV]=dir?{i,dir}:null; rRaw(); };
+  });
+  if(!st)return;
+  const tb=t.querySelector('tbody'); if(!tb)return;
+  const rows=[...tb.children].filter(r=>r.tagName==='TR');
+  if(rows.length<2)return;
+  const pinned=r=>!!r.querySelector('td[colspan]');        /* 빈 안내·합계 행은 고정 */
+  const val=r=>{ const td=r.children[st.i]; if(!td)return ''; const inp=td.querySelector('input,select');
+    let v=inp?(inp.tagName==='SELECT'?(inp.options[inp.selectedIndex]||{}).text:inp.value):td.textContent; return String(v||'').replace(/^└\s*/,'').trim(); };
+  const num=v=>{ const m=String(v).replace(/,/g,'').match(/^[+\-]?\d+(?:\.\d+)?/); if(!m)return null; if(/^\d{4}-\d{2}-\d{2}/.test(v))return null; return parseFloat(m[0]); };
+  const cmp=(a,b)=>{ const x=val(a),y=val(b);
+    if(!x&&y)return 1; if(x&&!y)return -1; if(!x&&!y)return 0;
+    const nx=num(x),ny=num(y); let c=(nx!=null&&ny!=null)?nx-ny:x.localeCompare(y,'ko',{numeric:true});
+    return c*st.dir; };
+  /* 그룹 표(업체별): grp 행 + 딸린 행을 한 덩어리로, 덩어리끼리·덩어리 안에서 각각 정렬 */
+  const blocks=[]; let cur=null;
+  rows.forEach(r=>{ if(pinned(r)){blocks.push({h:r,kids:[],pin:1});cur=null;return;}
+    if(r.classList.contains('grp')){cur={h:r,kids:[]};blocks.push(cur);return;}
+    if(cur)cur.kids.push(r); else blocks.push({h:r,kids:[]}); });
+  const live=blocks.filter(b=>!b.pin), pins=blocks.filter(b=>b.pin);
+  const stable=(arr,f)=>arr.map((x,k)=>({x,k})).sort((a,b)=>f(a.x,b.x)||a.k-b.k).map(o=>o.x);
+  const sorted=stable(live,(a,b)=>cmp(a.h,b.h));
+  const frag=document.createDocumentFragment();
+  sorted.forEach(b=>{ frag.appendChild(b.h); stable(b.kids,cmp).forEach(k=>frag.appendChild(k)); });
+  pins.forEach(b=>frag.appendChild(b.h));
+  tb.appendChild(frag);
+  /* No 열 다시 매기기 */
+  if(String(ths[0].textContent||'').trim().replace(/[▲▼]/g,'').trim()==='No'){
+    let n=0; [...tb.children].forEach(r=>{ if(r.tagName!=='TR'||pinned(r)||r.classList.contains('grp'))return; const td=r.children[0]; if(td&&/^\d+$/.test(td.textContent.trim()))td.textContent=++n; });
+  }
+}
+function rRaw0(){
   const q=nz($('rawQ').value.trim()), fst=$('rawSt').value;
   const a=mStart(),b=mEnd();
   /* 요약 */
@@ -9590,7 +9638,7 @@ function rRaw(){
     $('tRaw').innerHTML=`<colgroup>
       <col style="width:34px"><col style="width:112px"><col style="width:158px"><col style="width:82px">
       <col style="width:58px"><col style="width:60px"><col style="width:80px"><col style="width:70px">
-      <col style="width:78px"><col style="width:50px"><col style="width:56px"><col style="width:72px">
+      <col style="width:78px"><col style="width:50px"><col style="width:72px"><col style="width:72px">
       <col style="width:104px"><col style="width:100px"><col style="width:124px"><col style="width:124px">
       <col style="width:96px"><col style="width:48px"><col style="width:86px"><col style="width:170px"></colgroup>
       <thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
@@ -9815,9 +9863,7 @@ function rRaw(){
   else if(RV==='eq'){
     const C=eqCompare().filter(x=>!q||nz((x.e.lot||'')+' '+(x.e.pn||'')+' '+(x.e.nm||'')).includes(q));
     const all=(S.eq||[]).filter(e=>!q||nz((e.lot||'')+' '+(e.pn||'')+' '+(e.nm||'')).includes(q));
-    if(EQS.k){ const k=EQS.k, g=e=>String(k==='mc'?(e.nm||e.mc):(e[k]||'')).trim();
-      all.sort((a,b)=>{ const x=g(a),y=g(b); if(!x&&y)return 1; if(x&&!y)return -1; return EQS.dir*x.localeCompare(y,'ko',{numeric:true}); }); }
-    const EH=(k,t)=>`<th style="cursor:pointer;user-select:none;white-space:nowrap" title="클릭 시 정렬" onclick="setEqSort('${k}')">${t}${EQS.k===k?(EQS.dir>0?' ▲':' ▼'):''}</th>`;
+
     $('gt-raw').innerHTML='설비별 소재 사용현황 · 총 <b>'+all.length+'</b>대'
       +(S.eqLast?' · 최종 연동 '+String(S.eqLast).slice(0,16).replace('T',' '):'');
     $('rawHint').innerHTML='· <b>MES 예상잔량</b> = 코일중량 − (실적 × 소요g ÷ 1000). 설비에서 계산한 현장 값입니다.<br>'
@@ -9829,8 +9875,8 @@ function rRaw(){
         :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">[MES 설비 연동]을 눌러 현황을 가져오세요.</td></tr>')+'</tbody>';
       fillRawLists(); return;
     }
-    $('tRaw').innerHTML=`<thead><tr><th>No</th>${EH('mc','설비')}<th>상태</th>${EH('mold','금형')}${EH('pn','품번')}${EH('nm','품명')}
-      <th>소재 규격</th>${EH('lot','장착 LOT')}<th>코일kg(MES)</th><th>소요 g/EA</th><th>실적(EA)</th><th>사용(kg)</th>
+    $('tRaw').innerHTML=`<thead><tr><th>No</th><th>설비</th><th>상태</th><th>금형</th><th>품번</th><th>품명</th>
+      <th>소재 규격</th><th>장착 LOT</th><th>코일kg(MES)</th><th>소요 g/EA</th><th>실적(EA)</th><th>사용(kg)</th>
       <th>MES 예상잔량</th><th>원장 잔량</th><th>차이</th><th>원장</th></tr></thead><tbody>`
      +(all.length?all.map((e,i)=>{
         const x=C.find(y=>y.e===e)||{c:S.coils.find(c=>c.cno===e.lot)||null,mesRem:null,ledRem:null,gap:null};
@@ -10395,8 +10441,6 @@ async function syncIqc(silent){
 
 
 /* ═══════ 한 번에 최신화 ═══════ */
-let EQS={k:'',dir:1};
-function setEqSort(k){ if(EQS.k===k){ if(EQS.dir>0)EQS.dir=-1; else EQS={k:'',dir:1}; } else EQS={k,dir:1}; rRaw(); }
 function tglTools(e){
   if(e&&e.stopPropagation)e.stopPropagation();
   const p2=$('toolsPop'); if(!p2)return;
