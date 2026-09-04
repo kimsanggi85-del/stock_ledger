@@ -761,7 +761,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -805,7 +805,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 <!-- ══ 총괄표 ══ -->
 <div class="page on" id="p-sum">
   <button class="m-only" onclick="syncMes(false)" style="width:100%;padding:13px;margin:0 0 10px;border:0;border-radius:10px;background:#1F3A5F;color:#fff;font-size:15px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.15)">🔃 새로고침</button>
-  <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="printCountSheet()" style="background:#1E2A36;color:#fff;border-color:#1E2A36">📋 재고조사표</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
+  <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
   <div class="sum" style="grid-template-columns:repeat(7,1fr)">
     <div><span>관리품목</span><b id="q1">158</b><em>품목</em></div>
     <div class="g"><span>당월 입고</span><b id="q2">120,487</b><em>EA</em></div>
@@ -820,6 +820,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <input id="fq" placeholder="품번 / 품명 검색" class="kbi" style="width:150px">
     <label>고객사</label>
     <select id="sCu" class="fsel" style="font-family:var(--sans);min-width:130px"><option value="">전체</option></select>
+    <button class="btn" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다"
+      style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
     <select id="fSort" title="정렬" onchange="(function(v){const[k,d]=v.split(&#39;|&#39;);SORT={k,d:+d};rSum();})(this.value)">
       <option value="pn|1">품번순</option><option value="nm|1">품명순</option><option value="wh|1">구분순</option>
       <option value="cur|-1">현재고 많은순</option><option value="cur|1">현재고 적은순</option>
@@ -8640,6 +8642,9 @@ async function loadShipHist(force){
       /* 품목대장(별칭 포함)에 없는 기종은 전표를 만들지 않는다 */
       if(!pn || !(S.items||[]).some(it=>it.pn===pn
           || String(it.al||'').split(',').some(a=>a.trim()===pn))) return null;
+      /* SKF씰 품목의 출하는 출하의뢰서(SHIP|)가 정본이다.
+         출하일반 앱에 잘못 등록된 건까지 빼면 재고가 두 번 줄어든다. */
+      if(/^SKF\s*씰$/.test(cuOf(pn))) return null;
       const cuNote=(String(x.note||'').match(/\[고객사:([^\]]+)\]/)||[])[1];
       return {id:'GN'+x.id,d:String(x.move_date||'').slice(0,10),
         pn:pn, k:'출하', q:+x.qty||0,
