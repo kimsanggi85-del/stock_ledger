@@ -761,7 +761,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8565,12 +8565,19 @@ async function loadShipHist(force){
     const B=rows.b.map(x=>{
       const raw=String(x.general_model||x.base_part||'').trim();
       const rw=String(x.format||'')==='레이스웨이출하';
+      const dep=String(x.departure||'').trim(), dst=String(x.destination||'').trim();
+      /* 레이스웨이는 공정 간 이동도 같은 테이블에 쌓인다.
+         고객에게 실제로 나간 것은 [출하대기장 → SBC] 뿐이므로 그것만 재고에서 뺀다. */
+      if(rw && !(/출하대기/.test(dep) && /SBC/i.test(dst))) return null;
+      /* 품번 변환: SBC 기종은 품목대장 별칭으로만 찾는다.
+         (불량관리 자동학습 매핑에 잘못된 짝이 섞여 일진 품번으로 붙은 사고가 있었다) */
+      const pn = rw ? sbcPn(raw) : (modelToPn(raw)||canonPn(raw));
+      if(!pn) return null;
       return {id:'GN'+x.id,d:String(x.move_date||'').slice(0,10),
-        pn:modelToPn(raw)||canonPn(raw),          /* 기종명이면 매핑표로 품번 변환 */
-        k:'출하', q:+x.qty||0, p:x.destination||'', lot:String(x.lot||''),
+        pn:pn, k:'출하', q:+x.qty||0, p:dst||x.destination||'', lot:String(x.lot||''),
         n:(rw?'출하(레이스웨이)':'출하(일반)')+(x.lot?'':' · LOT 미기록'),
         by:rw?'레이스웨이':'출하일반', src:'GN|'+x.id};
-    });
+    }).filter(Boolean);
     SHIP_H=A.concat(B).filter(r=>r.pn&&r.d&&r.q>0).sort((x,y)=>x.d.localeCompare(y.d));
     SHIP_AT=Date.now();
     SHIP_ERR='';
@@ -11746,6 +11753,30 @@ async function loadModelMap(){
   const n=Object.keys(m).length;
   if(n) console.log('기종↔품번 매핑 '+n+'건 로드');
   return m;
+}
+/* SBC 레이스웨이 기종명 → 품목대장 품번 (별칭만 사용, 외부 매핑표를 믿지 않는다)
+   '1179T Outer' → OW-BDA-1179 / '1113AA Inner' → IW-BDA-1113 */
+function sbcPn(m){
+  const raw=String(m||'').trim(); if(!raw) return '';
+  const hit=(S.items||[]).find(it=>{
+    if(String(it.pn).toUpperCase()===raw.toUpperCase()) return true;
+    return String(it.al||'').split(',').some(a=>a.trim()&&a.trim().toUpperCase()===raw.toUpperCase());
+  });
+  if(hit) return hit.pn;
+  /* 별칭에 없으면 Inner/Outer 를 떼고 세트 부모를 찾아 해당 구성품으로 */
+  const side=/inner/i.test(raw)?'IW':(/outer/i.test(raw)?'OW':'');
+  const base=raw.replace(/\s*(Inner|Outer)\s*$/i,'').trim();
+  const par=(S.items||[]).find(it=>{
+    if(String(it.pn).toUpperCase().endsWith('-'+base.toUpperCase())) return true;
+    return String(it.al||'').split(',').some(a=>a.trim()&&a.trim().toUpperCase()===base.toUpperCase());
+  });
+  if(par&&side){
+    const kid=(S.items||[]).find(i=>i.setp===(par.setp||par.pn)&&String(i.pn).toUpperCase().startsWith(side+'-'));
+    if(kid) return kid.pn;
+  }
+  if(par) return par.setp||par.pn;
+  console.warn('레이스웨이 기종 미등록 — 전표를 만들지 않음:', raw);
+  return '';
 }
 function modelToPn(m){
   let s=String(m||'').trim();
