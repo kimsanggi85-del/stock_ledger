@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.13 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.14 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.13 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.14 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6924,7 +6924,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 
 <div class="bst"><span>사용자: <b id="bsUser">-</b></span><span>재고구분: <b id="bsWh">전체</b></span><span>기준월: <b id="bsYm">2026-09</b></span><span class="right" id="bsSt">MES 16:15 동기화됨 · 서버전표 5549건</span></div>
-<button class="fab" onclick="openIO()" title="입출고 등록">＋</button>
+<!-- 모바일 ＋(입출고등록) 떠있는 버튼 제거 — 재고 카드의 [재고수정] 버튼을 가려 실사에 방해 (v12.14). 입출고 등록은 ☰ 메뉴 → 입출고 내역 → ➕ 입출고등록 -->
 <div class="toast" id="toast">자동전표 1건 반영</div>
 
 <script>
