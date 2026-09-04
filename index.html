@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v12.12 | 태진다이텍</title>
+<title>재고 입출고 현황 v12.13 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -902,7 +902,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.12 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.13 · 원소재 v11.22</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7208,24 +7208,28 @@ const dlt=(r,it)=>kindIO(r.k)==='I'?effQ(r,it):-effQ(r,it);
 
 function calc(it){
   const a=mStart(), b=mEnd();
-  let open=it.bs, iq=0, oq=0, sq=0, last='';
+  let open=it.bs, iq=0, oq=0, sq=0, last='', adj=0;
   const setp=it.setp?String(it.setp):'';
   S.led.forEach(r=>{
     if(!(r.pn===it.pn||(setp&&r.pn===setp))||r.d<=it.bd) return;
     if(r.d<a){ open+=dlt(r,it); return; }
     if(r.d>b) return;
     const q=effQ(r,it);
-    if(kindIO(r.k)==='I') iq+=q; else oq+=q;
+    /* 재고조정(+)/(−)은 같은 달 안에서 상계해 순액만 표시 — 짝으로 생긴 큰 숫자가 입고·기타출고 양쪽에 보이지 않게 (v12.13) */
+    if(r.k==='재고조정(+)'){ adj+=q; }
+    else if(r.k==='재고조정(-)'){ adj-=q; }
+    else if(kindIO(r.k)==='I') iq+=q; else oq+=q;
     if(r.k==='출하') sq+=q;
     if(r.d>last) last=r.d;
   });
+  if(adj>0)iq+=adj; else if(adj<0)oq+=-adj;
   const cur=open+iq-oq;
   const days=new Date(ym.split('-')[0],+ym.split('-')[1],0).getDate();
   const dayOut=oq/days;
   const doi=dayOut>0?cur/dayOut:null;
   const avg=(open+cur)/2;
   const trn=avg>0?oq/avg:0;
-  return {open,iq,oq,sq,cur,gap:cur-it.sf,doi,trn,last,box:it.bx?Math.floor(cur/it.bx):0};
+  return {open,iq,oq,sq,cur,gap:cur-it.sf,doi,trn,last,adj,box:it.bx?Math.floor(cur/it.bx):0};
 }
 /* 전체 기간 기준 최종 출고일 (장기 미불출 판정) */
 function lastOut(it){
