@@ -761,7 +761,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v11.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6234,6 +6234,8 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   <div class="pt"><h2>품목대장</h2><span class="sub">ITEM MASTER · 품번 · 박스단위 · 안전재고 · 기초재고 관리</span><div class="pa"><button class="btn" onclick="rCfg()">조회</button></div></div>
   <div class="fbar">
     <button class="btn k" onclick="openItem(-1)">＋ 품목 등록</button>
+    <button class="btn" id="cfgSaveBtn" onclick="saveCfg()"
+      style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">💾 저장</button>
     <button class="btn" onclick="pick(&#39;fCsv&#39;)">CSV 일괄등록</button>
     <button class="btn" onclick="fixNm()" title="품명 칸에 숫자만 들어간 항목을 비웁니다">🧹 품명 숫자 정리</button>
     <input type="file" id="fCsv" accept=".csv,.txt,.tsv" style="display:none">
@@ -6805,7 +6807,7 @@ const KEY='tjd_ledger_v1';
 const SB_URL='https://ebthltdmxpzlkfwvdloz.supabase.co';
 const SB_KEY='sb_publishable_ZSgcZapb7cTgFezGmOV_ow_9MT15SnS';
 const SB_TABLE='stock_ledger';
-const SYNC_MIN=5;   /* 열려있는 동안 5분마다 자동 동기화 */
+const SYNC_MIN=0;   /* 0 = 주기 자동 동기화 끔 (기동 시 1회만) — 화면이 계속 다시 그려지는 것을 막는다 */
 const SEED=`1515-196,2000,5,24,2026-05-13
 1520-172,2500,0,5,2021-10-22
 1547-102-1,1400,7,12,2023-10-03
@@ -7761,14 +7763,40 @@ function rInsp(){
   $('inspBox').querySelectorAll('.ic').forEach(c=>c.onchange=()=>{
     S.inspCust=[...$('inspBox').querySelectorAll('.ic')].filter(x=>x.checked).map(x=>x.value).join(',');
     save();rInsp();syncMes(false);});
-  $('inspBox').querySelectorAll('.ia').forEach(s=>s.onchange=()=>{
+  $('inspBox').querySelectorAll('.ia').forEach(s=>s.onchange=async()=>{
     if(!s.value)return;
-    const it=S.items.find(x=>x.pn===s.value);
+    const model=s.dataset.k, pn=s.value;
+    const it=S.items.find(x=>x.pn===pn);
+    if(!it){ toast('품번을 찾지 못했습니다'); return; }
     const cur=(it.al||'').split(',').map(v=>v.trim()).filter(Boolean);
-    if(!cur.includes(s.dataset.k))cur.push(s.dataset.k);
+    if(!cur.includes(model))cur.push(model);
     it.al=cur.join(',');
-    if(S.inspSkip)delete S.inspSkip[s.dataset.k];
-    save();toast(s.dataset.k+' → '+s.value+' 연결됨');rInsp();syncMes(true);});
+    if(typeof touchItem==='function') touchItem(it);
+    if(S.inspSkip)delete S.inspSkip[model];
+    save();
+    /* 고른 줄만 지우고 화면은 그대로 둔다 — 여러 건을 이어서 연결할 수 있다 */
+    const tr=s.closest('tr'); if(tr) tr.remove();
+    const box=$('inspBox');
+    const left=box?box.querySelectorAll('.ia').length:0;
+    const hd=box?box.querySelector('b[style*="var(--wn)"]'):null;
+    if(hd) hd.textContent='품목대장에 없는 기종 '+left+'종 — 아직 반영되지 않았습니다';
+    toast(model+' → '+pn+' 연결됨'+(left?' · 남은 '+left+'종':' · 모두 연결'));
+    /* 별칭을 서버에 올려야 다음 동기화에서 되돌아오지 않는다 */
+    try{ await pushItems(true); }catch(e){ console.warn('별칭 공유:',e.message); }
+  });
+}
+/* 품목대장 수정 내용을 서버에 저장한다 (셀 수정은 자동 저장되지만, 눌러서 확실히 올린다) */
+async function saveCfg(){
+  const b=$('cfgSaveBtn'); if(b){ b.disabled=true; b.textContent='저장 중…'; }
+  try{
+    save();
+    const r=await pushItems(false);
+    toast('품목대장을 저장했습니다'+(r&&r.add!=null?' · 신규 '+r.add+' / 갱신 '+r.upd:''));
+  }catch(e){
+    toast('저장 실패: '+e.message);
+  }finally{
+    if(b){ b.disabled=false; b.textContent='💾 저장'; }
+  }
 }
 function fillCfgCu(){
   const sel=$('cfgCu'); if(!sel)return;
@@ -12304,7 +12332,7 @@ function syncBanner(msg){
     +'<button onclick="syncBanner();syncMes(false)" style="margin-left:auto;padding:6px 14px;border:0;border-radius:6px;'
     +'background:#fff;color:#C0392B;font-weight:800;cursor:pointer">다시 시도</button>';
 }
-setInterval(()=>syncMes(true),SYNC_MIN*60*1000);
+if(SYNC_MIN>0) setInterval(()=>syncMes(true),SYNC_MIN*60*1000);
 
 
 /* ═══════ 현황판 사진 인식 (Claude Vision) ═══════ */
@@ -12866,28 +12894,23 @@ syncDot('busy','최신 자료를 가져오는 중…');   /* 열자마자 자동
    지금까지는 열 때마다 [새로고침]을 눌러야 최신이 보였다.
    ① 열면 바로 받아오고 실패해도 몇 번 더 시도한다
    ② 다른 창을 보다 돌아오거나, 인터넷이 끊겼다 붙으면 다시 받아온다 */
-let autoTry=0;
+let autoTry=0, autoDone=false;
 async function autoSync(reason){
-  if(document.hidden) return;
-  if(mesBusy) return;
+  if(document.hidden||mesBusy) return;
+  if(autoDone) return;                    /* 접속 후 한 번만 — 화면이 계속 새로 그려지지 않게 */
   try{
     const r=await syncMes(true);
-    if(r&&r.ok){ autoTry=0; render(); return; }
+    if(r&&r.ok){ autoDone=true; autoTry=0; render(); return; }
   }catch(e){}
-  if(++autoTry<=3){                       /* 5초 → 15초 → 45초 */
+  if(++autoTry<=3){                       /* 실패했을 때만 5초 → 15초 → 45초 재시도 */
     setTimeout(()=>autoSync('재시도'), 5000*Math.pow(3,autoTry-1));
   }
 }
 autoSync('기동');
 
-let lastAuto=Date.now();
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden) return;
-  if(Date.now()-lastAuto < 60000) return;   /* 1분 안에 이미 받았으면 건너뜀 */
-  lastAuto=Date.now(); autoTry=0; autoSync('화면 복귀');
-});
-window.addEventListener('online',()=>{ autoTry=0; autoSync('통신 복구'); });
-window.addEventListener('pageshow',e=>{ if(e.persisted){ autoTry=0; autoSync('뒤로가기 복귀'); } });
+/* 통신이 끊겼다 붙었는데 아직 한 번도 못 받았으면 그때만 다시 시도 */
+window.addEventListener('online',()=>{ if(!autoDone){ autoTry=0; autoSync('통신 복구'); } });
+window.addEventListener('pageshow',e=>{ if(e.persisted&&!autoDone){ autoTry=0; autoSync('뒤로가기 복귀'); } });
 
 syncInfo();
 window.addEventListener('beforeunload',()=>{save();if(itDirty)pushItems(true);if(rawDirty)pushRaw(true);});
