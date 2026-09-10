@@ -873,7 +873,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v13.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v13.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7284,7 +7284,7 @@ function rSum(){
     if(v.gap<0)nShort++; if(isDead(it))nDead++;});
   const R=sortRows(rows.filter(({it,v})=>{
     if(scu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==scu) return false; }
-    if(q&&!nz(it.pn+' '+it.nm).includes(nz(q)))return false;
+    if(nz(q)&&!nz(String(it.pn||'')+' '+String(it.nm||'')).includes(nz(q)))return false;
     if(F==='short')return v.gap<0;
     if(F==='zero')return v.cur<=0;
     if(F==='move')return v.iq||v.oq;
@@ -7497,7 +7497,7 @@ function rCnt(){
   $('c4').textContent=tc>0?(100-sd/tc*100).toFixed(1):'—';
   const R=rows.filter(({it,real,df})=>{
     if(cu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==cu) return false; }
-    if(q&&!nz(it.pn+' '+it.nm).includes(nz(q)))return false;
+    if(nz(q)&&!nz(String(it.pn||'')+' '+String(it.nm||'')).includes(nz(q)))return false;
     if(C==='in')return real!==null;
     if(C==='diff')return df!==null&&df!==0;
     return true;});
@@ -12782,7 +12782,8 @@ function tglDrawer(f){
   if(on)rDTabs();
 }
 /* 검색: 하이픈·공백 무시 + 숫자/문자 키패드 전환 */
-const nz=s=>String(s||'').toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
+const nz=s=>{ s=String(s||''); try{ s=s.normalize('NFKC'); }catch(_){}
+  return s.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[^a-z0-9가-힣]/g,''); };
 /* ═══════ 숫자 키패드 팝업 ═══════ */
 let KBT=null;
 const KBKEYS=[['1','2','3','⌫'],['4','5','6','-'],['7','8','9','C'],['가나다','0','.','닫기']];
@@ -12860,6 +12861,9 @@ $('whSel').onchange=e=>{WH=e.target.value;render();};
 $('ym').onchange=()=>{ym=$('ym').value;$('i1').textContent=ym;
   $('ioF').value=mStart();$('ioT').value=mEnd();render();};
 $('fq').oninput=rSum;
+$('fq').addEventListener('compositionend',rSum);
+$('fq').addEventListener('keyup',e=>{ if(e.key==='Enter'){ e.target.blur(); } rSum(); });
+$('fq').addEventListener('change',rSum);
 /* 휴대폰 숫자 검색판 — 누르는 숫자를 품번 검색창에 이어 붙인다 (8 → 8, 8 → 88) */
 (function(){
   const pad=$('qsPad'); if(!pad)return;
