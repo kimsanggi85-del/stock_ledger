@@ -772,13 +772,27 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   font-size:10.5px;font-weight:800;white-space:nowrap}
 .czq{font-size:9.5px;color:#8A5A00;font-weight:600;white-space:nowrap}
 .czq b{font-size:10.5px;color:#6B4400}
+
+/* 품목 등록/수정 모달 — 넓게, 짧게 */
+@media (min-width:900px){
+  .itModal .mb .g2{grid-template-columns:1fr 1fr 1fr}   /* 세 칸씩 배치해 세로 길이를 줄인다 */
+  .itModal .mb{padding:14px 16px 96px}
+}
+.itAdv{margin:2px 0 10px;border:1px solid var(--line2);border-radius:7px;background:#FAFBFC}
+.itAdv>summary{cursor:pointer;padding:8px 11px;font-size:12px;font-weight:700;color:#5A6875;list-style:none}
+.itAdv>summary::-webkit-details-marker{display:none}
+.itAdv>summary::before{content:"▸ ";color:#93A0AB}
+.itAdv[open]>summary::before{content:"▾ "}
+.itAdv[open]{background:#fff;padding:0 10px 4px}
+.itAdv .fld:last-child{margin-bottom:6px}
+#yCurBox{margin-top:4px}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6701,7 +6715,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 </div></div>
 
 <!-- 품목 등록 -->
-<div class="mask" id="mIt"><div class="modal">
+<div class="mask" id="mIt"><div class="modal itModal" style="max-width:760px">
   <h3 id="itT">품목 등록<span onclick="closeAll()">✕</span></h3>
   <div class="mb">
     <input type="hidden" id="yIdx">
@@ -6724,14 +6738,17 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <div class="g2">
       <div class="fld"><label>고객사</label><input id="yCu" style="font-family:var(--sans)"></div>
       <div class="fld"><label>보관위치</label><input id="yLc" style="font-family:var(--sans)"></div></div>
-    <div class="g2">
-      <div class="fld"><label>세트 부모 품번 (이 품번의 전표를 그대로 물려받음)</label>
-        <input id="ySetp" placeholder="예) IW/OW-BDA-1106" style="font-family:var(--sans)"></div>
-      <div class="fld"><label>재고 화면 숨김 (세트 부모처럼 집계 전용)</label>
-        <select id="yHide"><option value="">표시</option><option value="1">숨김</option></select></div></div>
     <input type="hidden" id="ySetx">
-    <div class="fld"><label>품번 별칭 (출하앱·MES 표기가 다를 때, 쉼표 구분)</label>
-      <input id="yAl" placeholder="예) 1856-627(628)-1"></div>
+    <details class="itAdv"><summary>고급 설정 (별칭 · 세트 · 숨김)</summary>
+      <div class="fld"><label>품번 별칭 (출하앱·MES 표기가 다를 때, 쉼표 구분)</label>
+        <input id="yAl" placeholder="예) 1856-627(628)-1"></div>
+      <div class="g2">
+        <div class="fld"><label>세트 부모 품번 (이 품번의 전표를 그대로 물려받음)</label>
+          <input id="ySetp" placeholder="예) IW/OW-BDA-1106" style="font-family:var(--sans)"></div>
+        <div class="fld"><label>재고 화면 숨김 (세트 부모처럼 집계 전용)</label>
+          <select id="yHide"><option value="">표시</option><option value="1">숨김</option></select></div>
+      </div>
+    </details>
     <div class="fld" id="yCurBox" style="background:#FFFDE7;border:1px solid #E0D9A8;border-radius:7px;padding:9px 11px">
       <label style="color:#946200">현재고 수정 (실사 수량 입력 → 차이만큼 조정전표 발행)</label>
       <div style="display:flex;gap:8px;align-items:center">
