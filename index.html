@@ -3,7 +3,7 @@
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>재고 입출고 현황 v9.1 | 태진다이텍</title>
+<title>재고 입출고 현황 v9.0 | 태진다이텍</title>
 <style>
 :root{
   --ink:#1A1A1A; --sub:#666; --line:#B8BFC6; --line2:#E3E7EB; --bg:#E9ECEF; --paper:#fff;
@@ -768,7 +768,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.5 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v12.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6255,6 +6255,13 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
     <label style="margin-left:8px">기초일자 일괄</label>
     <input type="date" id="cfgBd" style="width:140px" title="전 품목의 기초일자를 한 번에 변경합니다">
     <button class="btn" onclick="bulkBd()" title="기초일자 이전 전표는 계산에서 제외됩니다">적용</button>
+    <label style="margin-left:8px">보관위치 일괄</label>
+    <input id="cfgLc" list="dlLc" placeholder="예) A동 1층" style="width:140px"
+      title="지금 목록에 보이는 품목의 보관위치를 한 번에 넣습니다">
+    <datalist id="dlLc"></datalist>
+    <button class="btn" onclick="bulkLc()"
+      style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800"
+      title="검색·고객사로 걸러낸 품목에만 적용됩니다">📍 위치 지정</button>
     <input type="hidden" id="cfgEx">
     <div class="rt">
       <button class="btn" onclick="backup()">백업</button>
@@ -7610,9 +7617,6 @@ function itRow(it){
     let v=it[c];
     if(c==='bd') v=(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:null;
     else if(['bx','sf','bs'].includes(c)) v=Math.round(+v||0);   /* 정수 칸 — 소수 입력 시 저장 실패 방지 */
-    /* setx 는 정수이면서 빈 값 허용(null) — 문자열 '' 로 보내면 Postgres 22P02 로 저장 자체가 실패한다 */
-    else if(c==='setx'){ const n=Math.round(+v); v=(v==null||v===''||!isFinite(n)||n<=0)?null:n; }
-    else if(c==='hide') v=!!v;                                   /* 불리언 칸 — '' 로 보내면 저장 실패 */
     else if(c==='pn') v=String(v||'').trim();
     else v=v==null?'':String(v);
     o[c]=v;
@@ -7728,6 +7732,43 @@ function fixNm(){
   t.forEach(i=>{i.nm='';touchItem(i);});
   save();render();pushItems(true);toast(t.length+'건 품명 정리 완료');
 }
+/* ═══════ 보관위치 일괄 지정 ═══════
+   지금 화면에 보이는 품목(고객사·품번 검색으로 걸러낸 것)에만 넣는다.
+   창고를 도는 순서대로 위치를 채워 두면 재고조사표가 그 동선으로 정렬된다. */
+function cfgRows(){
+  const ccu=($('cfgCu')&&$('cfgCu').value)||'';
+  const q=nz(($('cfgQ').value||'').trim());
+  return S.items.filter(it=>{
+    if(!inWh(it)) return false;
+    if(ccu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==ccu) return false; }
+    if(q&&!nz(it.pn+' '+(it.nm||'')+' '+(it.cu||'')).includes(q)) return false;
+    return true;
+  });
+}
+function fillLcList(){
+  const dl=$('dlLc'); if(!dl) return;
+  const used=[...new Set(S.items.map(i=>String(i.lc||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  dl.innerHTML=used.map(v=>`<option value="${esc(v)}">`).join('');
+}
+function bulkLc(){
+  const el=$('cfgLc'); const v=String(el&&el.value||'').trim();
+  const t=cfgRows();
+  if(!t.length){ toast('대상 품목이 없습니다'); return; }
+  const empty=t.filter(i=>!String(i.lc||'').trim()).length;
+  const ccu=($('cfgCu')&&$('cfgCu').value)||'';
+  if(v===''){
+    if(!confirm('보관위치를 비웁니다 ('+t.length+'품목'+(ccu?' · '+ccu:'')+')\n\n계속하시겠습니까?')) return;
+  }else{
+    if(!confirm('보관위치를 "'+v+'" 로 지정합니다.\n\n'
+      +'· 대상 '+t.length+'품목'+(ccu?' (고객사 '+ccu+')':'')+'\n'
+      +'· 그중 비어 있던 품목 '+empty+'개\n'
+      +'· 이미 다른 위치가 있는 품목도 덮어씁니다\n\n'
+      +'재고조사표가 이 위치 순서로 정렬됩니다. 계속하시겠습니까?')) return;
+  }
+  t.forEach(i=>{ i.lc=v; touchItem(i); });
+  save(); fillLcList(); rCfg(); pushItems(true);
+  toast(t.length+'품목 보관위치 '+(v?'→ '+v:'비움'));
+}
 function bulkBd(){
   const d=$('cfgBd').value;
   if(!d){toast('날짜를 선택하세요');return;}
@@ -7829,6 +7870,7 @@ function fillCfgCu(){
 function rCfg(){
   rInsp();
   fillCfgCu();
+  fillLcList();
   const ccu=($('cfgCu')&&$('cfgCu').value)||'';
   const q=$('cfgQ').value.trim().toLowerCase();
   const R=S.items.map((it,i)=>({it,i})).filter(({it})=>{
@@ -12763,34 +12805,42 @@ function printCountSheet(){
   });
   if(!all.length){ toast('출력할 품목이 없습니다'); return; }
   const showCur=confirm('전산 재고를 함께 인쇄할까요?\n\n[확인] 전산재고 표시 — 대조하며 빠르게 확인\n[취소] 빈 양식 — 선입견 없이 실제 수량만 기록');
+  const zeroN=all.filter(it=>Math.round(calc(it).cur||0)===0).length;
+  let skipZero=false;
+  if(zeroN) skipZero=confirm('재고가 0 인 '+zeroN+'품목을 뺄까요?\n\n[확인] 빼고 인쇄 — 셀 물건이 있는 품목만 ('+(all.length-zeroN)+'품목)\n[취소] 전부 인쇄 ('+all.length+'품목)');
 
   /* 고객사를 고르지 않았으면 고객사마다 한 장씩 (페이지 나눔) */
+  const tgt=skipZero?all.filter(it=>Math.round(calc(it).cur||0)!==0):all;
+  if(!tgt.length){ toast('출력할 품목이 없습니다'); return; }
   const byCu={};
-  all.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
+  tgt.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
   const cus=Object.keys(byCu).sort((a,b)=>byCu[b].length-byCu[a].length||a.localeCompare(b,'ko'));
   const sortRows=(rows)=>rows.sort((a,b)=>String(a.wh||'').localeCompare(String(b.wh||''),'ko')
       || String(a.lc||'').localeCompare(String(b.lc||''),'ko')
       || a.pn.localeCompare(b.pn,'en',{numeric:true}));
   const td=today();
-  const pages=cus.map((cu,pi)=>countSheetPage(cu,sortRows(byCu[cu]),showCur,td,pi+1,cus.length)).join('');
+  const pages=cus.map((cu,pi)=>countSheetPage(cu,sortRows(byCu[cu]),showCur,td,pi+1,cus.length,skipZero)).join('');
   countSheetOpen(pages, scu||'전체 · 고객사별 '+cus.length+'장');
 }
 /* 조사표 한 장(고객사 단위) */
-function countSheetPage(cu,rows,showCur,td,pno,ptot){
+function countSheetPage(cu,rows,showCur,td,pno,ptot,skipZero){
+  let diffN=0;
   const tr=rows.map((it,i)=>{
     const v=calc(it), b=+it.bx||0;
     const cb=b?Math.floor(v.cur/b):0, cl=b?((v.cur%b)+b)%b:v.cur;
-    return '<tr>'
+    const nm=(it.nm||'').trim();
+    return '<tr'+((i+1)%15===0?' class="d15"':'')+'>'
       +'<td class="c">'+(i+1)+'</td>'
       +'<td class="c s">'+esc(whNm(it.wh))+'</td>'
       +'<td class="pn">'+esc(it.pn)+'</td>'
-      +'<td class="s">'+esc(it.nm||'')+'</td>'
+      +'<td class="s">'+(nm?esc(nm):'<span class="mut">품명 미등록</span>')+'</td>'
       +'<td class="c s">'+esc(it.lc||'')+'</td>'
-      +'<td class="r">'+(b?nf(b):'-')+'</td>'
+      +'<td class="r">'+(b?nf(b):'<span class="mut">낱개</span>')+'</td>'
       +(showCur
-        ? '<td class="r">'+(b?nf(cb)+(cl?'+'+nf(cl):''):'-')+'</td><td class="r">'+nf(v.cur)+'</td>'
+        ? '<td class="r">'+(b?nf(cb)+(cl?'<span class="pl">+'+nf(cl)+'</span>':''):'-')+'</td>'
+          +'<td class="r'+(v.cur<0?' ng':'')+'">'+nf(v.cur)+'</td>'
         : '<td class="r"></td><td class="r"></td>')
-      +'<td class="w"></td><td class="w"></td><td class="w"></td><td class="w2"></td></tr>';
+      +'<td class="w"></td><td class="w"></td><td class="w2"></td></tr>';
   }).join('');
   return '<section class="pg">'
    +'<div class="hd"><div class="no">문서번호<br><b>TJP-QP-0803</b><br>개정번호 <b>Rev.0</b></div>'
@@ -12800,16 +12850,24 @@ function countSheetPage(cu,rows,showCur,td,pno,ptot){
    +'<span><b>재고구분</b> '+esc(WH||'전체 (현장재고 + 출하대기재고)')+'</span>'
    +'<span><b>대상</b> '+rows.length+'품목</span>'
    +(ptot>1?'<span><b>장</b> '+pno+' / '+ptot+'</span>':'')+'</div>'
-   +'<table><colgroup><col style="width:26px"><col style="width:52px"><col style="width:104px"><col>'
-   +'<col style="width:60px"><col style="width:48px"><col style="width:56px"><col style="width:62px">'
-   +'<col style="width:46px"><col style="width:46px"><col style="width:58px"><col style="width:90px"></colgroup>'
+   +'<table><colgroup><col style="width:26px"><col style="width:52px"><col style="width:110px"><col>'
+   +'<col style="width:56px"><col style="width:46px"><col style="width:58px"><col style="width:64px">'
+   +'<col style="width:52px"><col style="width:52px"><col style="width:150px"></colgroup>'
    +'<thead><tr><th>No</th><th>재고구분</th><th>품 번</th><th>품 명</th><th>보관위치</th><th>박스<br>단위</th>'
-   +'<th>전산<br>(박스)</th><th>전산<br>(EA)</th><th>실사<br>박스</th><th>실사<br>낱개</th><th>실사 합계<br>(EA)</th><th>비 고</th></tr></thead>'
-   +'<tbody>'+tr+'</tbody>'
-   +'<tfoot><tr><td colspan="12">· 실사는 박스 수를 먼저 세고, 박스에 담기지 않은 낱개를 따로 적습니다. '
-   +'· 차이가 나면 비고에 사유(파손·미등록 입출고·위치이동 등)를 적어 주세요. '
-   +'· 조사 후 앱 [재고 현황]에서 박스·낱개를 입력하면 조정전표가 자동 발행됩니다.</td></tr></tfoot>'
-   +'</table></section>';
+   +'<th>전산<br>(박스)</th><th>전산<br>(EA)</th><th class="wh">실사<br>박스</th><th class="wh">실사<br>낱개</th><th>비 고 (차이 사유)</th></tr></thead>'
+   +'<tbody>'+tr+'</tbody></table>'
+   +'<div class="sum"><div class="sl">'
+     +'<span>조사 품목 <b>'+rows.length+'</b></span>'
+     +'<span>확인 완료 <b>____</b></span>'
+     +'<span>차이 발생 <b>____</b> 품목</span>'
+     +(skipZero?'<span class="mut">· 재고 0 품목 제외</span>':'')
+   +'</div><div class="sg">'
+     +'<span>조사자 <i></i></span><span>확인자 <i></i></span>'
+   +'</div></div>'
+   +'<div class="gd">· 박스 수를 먼저 세고, 박스에 담기지 않은 낱개를 따로 적습니다. 합계는 앱이 계산하므로 적지 않아도 됩니다.<br>'
+   +'· 차이가 나면 비고에 사유(파손 · 미등록 입출고 · 위치이동 등)를 적어 주세요. 전산이 음수인 품목은 빨간색으로 표시됩니다.<br>'
+   +'· 조사 후 앱 [재고 현황]에서 고객사를 고르고 박스 · 낱개를 넣으면 조정전표가 자동 발행됩니다.</div>'
+   +'</section>';
 }
 /* 인쇄 창 열기 */
 function countSheetOpen(pages,label){
@@ -12832,7 +12890,16 @@ function countSheetOpen(pages,label){
    +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px}'
    +'td.s{font-size:9.5px;color:#333}'
    +'td.w{background:#FFFDF0}td.w2{background:#fff}'
-   +'tfoot td{border:0;padding-top:8px;font-size:10px;color:#444}'
+   +'th.wh{background:#FFF6D9}'
+   +'td.ng{color:#C0392B;font-weight:700}'
+   +'span.mut{color:#999;font-weight:400}span.pl{color:#666;font-size:8.5px}'
+   +'tr.d15 td{border-bottom:1.6px solid #333}'
+   +'.sum{display:flex;justify-content:space-between;align-items:center;margin-top:6px;'
+     +'border:1px solid #666;padding:5px 8px;font-size:10px}'
+   +'.sum .sl span{margin-right:14px}.sum b{font-size:11.5px}'
+   +'.sum .sg span{margin-left:16px}'
+   +'.sum .sg i{display:inline-block;width:74px;border-bottom:1px solid #333;margin-left:4px}'
+   +'.gd{margin-top:5px;font-size:9px;color:#444;line-height:1.55}'
    +'@media print{body{padding:8mm 6mm}thead{display:table-header-group}tr{page-break-inside:avoid}}'
    +'.pg{page-break-after:always}.pg:last-child{page-break-after:auto}'
    +'@media screen{.pg{margin-bottom:18px;padding-bottom:14px;border-bottom:2px dashed #bbb}}'
