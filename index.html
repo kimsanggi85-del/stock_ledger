@@ -176,8 +176,30 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .mbar{height:7px;background:#E3E7EB;border-radius:4px;overflow:hidden;margin-top:6px}
   .mbar i{display:block;height:100%}
 }
-@media(min-width:761px){ .m-only{display:none} }
-@media(max-width:760px){ #p-sum .fbar .pc-only{display:none!important} #p-sum .fbar{flex-wrap:nowrap;gap:6px} #p-sum .fbar #fq{flex:1;min-width:0;width:auto!important} }
+@media(min-width:761px){ .m-only{display:none!important} }
+/* 재고현황 표(PC): 열폭은 내용에 맞춰 최소로, 글자 확대 */
+@media(min-width:761px){
+  #tSum{font-size:14.5px;width:auto;min-width:0}
+  #tSum th{font-size:13px;height:34px;padding:0 10px;white-space:nowrap}
+  #tSum td{height:36px;padding:0 10px;white-space:nowrap;width:1%}
+  #tSum td.l[onclick]{font-size:15px}
+  #tSum td:nth-child(1){padding:0 6px}
+  #tSum td.bxc{padding:0 4px}
+  #tSum td.bxc input{width:72px;height:28px;font-size:14px;font-weight:700;text-align:right;border:1px solid #C9D9EA;
+    border-radius:4px;padding:0 6px;background:#F4F8FC;color:#12314F;font-family:var(--mono)}
+  #tSum td.bxc input:focus{outline:2px solid #1F3A5F;outline-offset:-2px;background:#fff}
+  #tSum td.bxc input::placeholder{color:#B8C4D0;font-weight:400}
+  #tSum td.epb{text-align:right;color:#6B7C8C;font-size:13px}
+  /* 진행 게이지는 숨기고 결과 문구만 검색바 우측에 붙여 공간을 회수한다 */
+  #p-sum .cnt-pg{padding:0;margin:0 0 0 auto;background:none;border:0;border-radius:0;gap:6px;font-size:11.5px;
+    white-space:nowrap;align-self:center}
+  #p-sum .cnt-pg .cp-bar{display:none}
+  #p-sum .cnt-pg b{font-size:12.5px}
+  #p-sum .fbar .rt{margin-left:8px}
+  #tSum td .dim{color:#A8B4C0}
+  #tSum tfoot td{font-weight:700}
+}
+@media(max-width:760px){ #p-sum .pc-only{display:none!important} #p-sum .sum{grid-template-columns:1fr!important} #p-sum .fbar{flex-wrap:nowrap;gap:6px} #p-sum .fbar #fq{flex:1;min-width:0;width:auto!important} }
 .msort{display:flex;gap:4px;flex:0 0 auto;padding:3px;background:#E4EDF7;border:1px solid #BFD2E8;border-radius:9px}
 .msort button{height:36px;padding:0 13px;border:0;border-radius:7px;background:transparent;color:#2B5A8C;
   font-size:13px;font-weight:800;font-family:inherit;white-space:nowrap}
@@ -279,6 +301,11 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 #kbPad .kb-hd b{font-size:15px;letter-spacing:.5px;color:var(--hd);flex:1;min-height:18px;overflow:hidden;white-space:nowrap}
 #kbPad .kb-hd span{font-size:17px;cursor:pointer;color:#7e8994;padding:0 2px}
 #kbPad .kb-g{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:6px}
+#kbPad.abc{width:322px}
+#kbPad.abc .kb-g{grid-template-columns:repeat(7,1fr);gap:4px}
+#kbPad.abc .kb-g button{height:40px;font-size:16px;padding:0}
+#kbPad.abc .kb-g button.w2{grid-column:span 2}
+#kbPad.abc .kb-g button.w3{grid-column:span 3}
 #kbPad button{height:42px;border:1px solid #9aa8b6;background:linear-gradient(#fff,#e1e7ec);border-radius:5px;
   font-size:18px;font-weight:800;color:#25313d;font-family:var(--sans);cursor:pointer}
 #kbPad button.f{background:linear-gradient(#dce8f5,#c3d4e8);font-size:12px;color:#1f4f8c}
@@ -649,8 +676,50 @@ body.qp-on{overflow:hidden}
 }
 
 /* ═══ PC ERP 레이아웃 ═══ */
+#pcNav{display:none}
 @media(min-width:761px){
-  :root{--top-h:0px;--l1-h:36px;--l2-h:40px;--left-w:0px;--bst-h:24px}
+  :root{--top-h:0px;--l1-h:49px;--l2-h:0px;--left-w:0px;--bst-h:24px}
+  #tbTools{display:none!important}
+  /* ── IPTK 스타일 상단 메가메뉴 ── */
+  #pcNav{position:fixed;top:0;left:0;right:0;height:var(--l1-h);z-index:95;display:flex;align-items:stretch;
+    background:#202833;color:#dce3ec;border-bottom:1px solid #394555;font-family:var(--sans)}
+  #pcNav .brand{display:flex;align-items:center;gap:9px;padding:0 14px;border-right:1px solid #394555;font-weight:800;color:#fff;white-space:nowrap;cursor:pointer}
+  #pcNav .brand small{color:#8995a7;font-weight:500;font-size:11px}
+  #pcNav .mark{width:28px;height:28px;border-radius:6px;background:#f0aa3c;color:#202833;display:grid;place-items:center;font-weight:900}
+  #pcNav .navitem{position:relative;height:100%;margin-left:2px}
+  #pcNav .navitem::after{content:"";position:absolute;left:0;right:0;top:100%;height:6px}   /* 드롭 진입 시 hover 유지 브리지 */
+  #pcNav .navitem>button{height:100%;border:0;background:transparent;color:#c7d0dc;padding:0 16px;font-weight:800;font-size:13px;
+    border-bottom:2px solid transparent;cursor:pointer;font-family:inherit}
+  #pcNav .navitem:hover>button,#pcNav .navitem.open>button{color:#fff;border-bottom-color:#f0aa3c;background:#293441}
+  #pcNav .navitem.on>button{color:#fff;border-bottom-color:#f0aa3c}
+  #pcNav .mega{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);border:1px solid #dfe3ea;
+    box-shadow:0 12px 30px rgba(20,28,40,.22);padding:12px 6px 10px;border-radius:0 0 6px 6px;min-width:200px;z-index:96;margin-top:0}
+  #pcNav .navitem:hover>.mega,#pcNav .navitem.open>.mega{display:flex}
+  #pcNav .mega-col{min-width:150px;padding:0 14px;border-right:1px solid #dfe3ea}
+  #pcNav .mega-col:last-child{border-right:0}
+  #pcNav .mega-col{min-width:168px}
+  #pcNav .mega-col a{display:flex;align-items:center;gap:7px;padding:7px 8px;font-size:12.5px;color:#1d2633;cursor:pointer;white-space:nowrap;border-radius:4px}
+  #pcNav .mega-col a i{font-style:normal;width:18px;text-align:center;font-size:13px}
+  #pcNav .mega-col a.scr{font-weight:800;font-size:13.5px;color:#12314F;border-bottom:1px solid #dfe3ea;border-radius:4px 4px 0 0;
+    padding:6px 8px 8px;margin-bottom:5px}
+  #pcNav .mega-col a.scr em{font-style:normal;margin-left:auto;font-size:9.5px;color:#9aa6b7;font-weight:600;letter-spacing:.4px;padding-left:12px}
+  #pcNav .mega-col a.scr:hover{background:#edf3f9;color:#1f4f8c}
+  #pcNav .mega-col a.scr.on{background:#dce8f5;color:#1f4f8c}
+  #pcNav .mega-col a.act{color:#3d4a58;font-weight:600}
+  #pcNav .mega-col a.act:hover{color:#1f4f8c;background:#edf3f9}
+  #pcNav .mega-col a.act.pri{color:#1f4f8c;font-weight:800}
+  /* 상단바 우측 필터 (재고구분·기준월) */
+  #pcNav .nav-f{display:flex;align-items:center;gap:6px;margin-left:auto;padding:0 12px;border-left:1px solid #394555}
+  #pcNav .nav-f label{font-size:11px;font-weight:800;color:#9aa6b7;white-space:nowrap}
+  #pcNav .nav-f select,#pcNav .nav-f input{height:28px;border:1px solid #465364;border-radius:5px;background:#293441;color:#fff;
+    font-size:12px;padding:0 6px;font-family:var(--sans);font-weight:700;margin-right:4px;color-scheme:dark}
+  #pcNav .nav-f select:focus,#pcNav .nav-f input:focus{outline:none;border-color:#f0aa3c}
+  #pcNav .tst{margin-left:0}
+  #pcNav .tst{display:flex;margin-left:auto;align-items:center;gap:10px;padding:0 14px;color:#9aa6b7;font-size:11px;
+    border-left:1px solid #394555;white-space:nowrap;pointer-events:none}
+  #pcNav .tst .dot{width:7px;height:7px;background:#2eae7a;border-radius:50%}
+  #pcNav .tst.off .dot{background:#df6254}
+  .tabs{display:none!important}
   body{background:#dfe5ea;font-size:12px;padding-top:calc(var(--top-h) + var(--l1-h) + var(--l2-h));padding-bottom:var(--bst-h)}
   .tb{height:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important}
   .tb .ttl,.tb .ham,#tbPage{display:none!important}
@@ -873,7 +942,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v13.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v14.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">📊 총괄표</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -898,6 +967,15 @@ body.qp-on{overflow:hidden}
 </div>
 <div class="scrim" id="scrim" onclick="tglDrawer(0)"></div>
 
+<nav id="pcNav">
+  <a class="brand" onclick="setTab('sum')"><span class="mark">T</span><span>⌂ 홈&nbsp; <small>TJ ERP · STOCK</small></span></a>
+  <div class="navitem" data-g="stock"><button type="button">재고관리 ▾</button><div class="mega"></div></div>
+  <div class="navitem" data-g="io"><button type="button">입출고 ▾</button><div class="mega"></div></div>
+  <div class="navitem" data-g="raw"><button type="button">원소재 ▾</button><div class="mega"></div></div>
+  <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"></div></div>
+  <div class="nav-f" id="navF"></div>
+  <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-09-02 16:15:42</span></span>
+</nav>
 <div class="tabs">
   <div class="on" data-t="sum"><span class="lg">재고 현황</span><span class="sm">재고</span></div>
   <div data-t="io"><span class="lg">입출고 내역</span><span class="sm">입출고</span></div>
@@ -911,7 +989,6 @@ body.qp-on{overflow:hidden}
       <div data-t="help">❓ 사용안내</div>
     </div>
   </div>
-  <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-09-02 16:15:42</span></span>
 </div>
 
 <!-- ══ 총괄표 ══ -->
@@ -920,7 +997,7 @@ body.qp-on{overflow:hidden}
   <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
   <div class="fbar">
     <label>품번</label>
-    <input id="fq" placeholder="품번 / 품명 검색" class="kbi" style="width:150px">
+    <input id="fq" placeholder="품번 / 품명 검색" class="kbi" inputmode="none" autocomplete="off" style="width:150px">
     <div class="m-only msort" id="mSort">
       <button type="button" data-s="gap|1" onclick="mSortSet('gap|1')">부족순</button>
       <button type="button" data-s="pn|1" class="on" onclick="mSortSet('pn|1')">품번순</button>
@@ -937,6 +1014,7 @@ body.qp-on{overflow:hidden}
     <select id="fSel" class="fsel pc-only">
       <option value="all">전체</option><option value="short">안전재고 미달</option><option value="zero">재고 0</option>
       <option value="move">당월 입출고 발생</option><option value="dead">장기 미불출</option></select>
+    <div id="sumPg" class="cnt-pg pc-only"></div>
     <div class="rt pc-only"><button class="btn" onclick="exportCsv(&#39;sum&#39;)">CSV</button></div>
     <div class="m-only qs" id="qsPad">
       <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
@@ -957,7 +1035,6 @@ body.qp-on{overflow:hidden}
       <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-02 16:15</i></span>
       <span><b>단위</b>EA</span>
     </div>
-    <div id="sumPg" class="cnt-pg"></div>
     <div class="gw"><div class="gt"><span id="gt-sum">재고 현황 · 총 <b>158</b>품목 · 기준월 2026-09</span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tSum"><thead><tr><th>No</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;wh&#39;)">구분</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;pn&#39;)">품번 ▲</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;nm&#39;)">품명</th><th>규격</th><th>단위</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;open&#39;)">전월이월</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;iq&#39;)">당월입고</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;sq&#39;)">당월출하(납품)</th><th>기타출고</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;cur&#39;)">현재고</th><th>박스</th><th>안전재고</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort(&#39;gap&#39;)">과부족</th><th>재고일수</th><th>회전율</th><th>최종 입출고</th><th>비고</th></tr></thead><tbody><tr>
        <td class="c">1</td>
        <td class="c" style="font-family:var(--sans);font-size:10.5px">현장재고</td>
@@ -3808,14 +3885,14 @@ body.qp-on{overflow:hidden}
     <div class="hint noprint">· 현재고 = 전월이월 + 당월입고 − 당월출고 · 과부족 = 현재고 − 안전재고 · 재고일수 = 현재고 ÷ 일평균출고 · 회전율 = 당월출고 ÷ 평균재고<br>· 품번을 클릭하면 해당 품목의 입출고 이력로 이동합니다.</div>
   </div>
   <div class="sum" style="grid-template-columns:repeat(7,1fr);margin:12px auto 0">
-    <div><span>관리품목</span><b id="q1">158</b><em>품목</em></div>
-    <div class="g"><span>당월 입고</span><b id="q2">120,487</b><em>EA</em></div>
-    <div class="d"><span>당월 납품(출하)</span><b id="q3">131,600</b><em>EA</em></div>
-    <div class="d"><span>오늘 출하</span><b id="q7">56,000</b><em>EA</em></div>
-    <div><span>현재고</span><b id="q4">3,477,783</b><em>EA</em></div>
+    <div class="pc-only"><span>관리품목</span><b id="q1">158</b><em>품목</em></div>
+    <div class="g pc-only"><span>당월 입고</span><b id="q2">120,487</b><em>EA</em></div>
+    <div class="d pc-only"><span>당월 납품(출하)</span><b id="q3">131,600</b><em>EA</em></div>
+    <div class="d pc-only"><span>오늘 출하</span><b id="q7">56,000</b><em>EA</em></div>
+    <div class="pc-only"><span>현재고</span><b id="q4">3,477,783</b><em>EA</em></div>
     <div class="d"><span>안전재고 미달</span><b id="q5">38</b><em>품목</em></div>
-    <div class="w"><span>장기 미불출</span><b id="q6">5</b><em>품목</em></div>
-  <div id="syncInf" style="grid-column: 1 / -1; padding: 7px 10px; font-size: 12px; font-weight: 700; text-align: center; border-top: 1px solid rgb(217, 223, 229); color: rgb(23, 138, 76); background: rgb(242, 250, 245);">✅ 서버 동기화 완료 · 서버전표 5,549건(제외 1,752) · 품목 158 · 2026-09-02 16:15</div></div>
+    <div class="w pc-only"><span>장기 미불출</span><b id="q6">5</b><em>품목</em></div>
+  <div id="syncInf" class="pc-only" style="grid-column: 1 / -1; padding: 7px 10px; font-size: 12px; font-weight: 700; text-align: center; border-top: 1px solid rgb(217, 223, 229); color: rgb(23, 138, 76); background: rgb(242, 250, 245);">✅ 서버 동기화 완료 · 서버전표 5,549건(제외 1,752) · 품목 158 · 2026-09-02 16:15</div></div>
 </div>
 
 <!-- ══ 품목별 입출고 이력 ══ -->
@@ -6450,7 +6527,7 @@ body.qp-on{overflow:hidden}
       <h3>4. 그리드 · 입력 요령</h3>
       <table class="t"><thead><tr><th style="width:180px">항목</th><th>설명</th></tr></thead><tbody>
         <tr><td class="l">행 선택</td><td class="l">행을 클릭하면 파란색으로 선택. 총괄표의 <b>품번</b>을 클릭하면 해당 품목 입출고 이력로 이동, 입출고 행 클릭은 전표 수정</td></tr>
-        <tr><td class="l">품번 검색</td><td class="l">검색란 클릭 시 숫자판이 팝업. 하이픈·공백 무시 검색(1856628 → 1856-628-1). "가나다" 키로 일반 자판 전환</td></tr>
+        <tr><td class="l">품번 검색</td><td class="l">검색란 클릭 시 알파벳 팝업 키패드. 하이픈·공백 무시 검색(1856628 → 1856-628-1). "123" 키 또는 화면 숫자판으로 숫자 모드 전환</td></tr>
         <tr><td class="l">필터(총괄표)</td><td class="l">전체 / 안전재고 미달 / 재고 0 / 당월 입출고 발생 / 장기 미불출(90일 이상 출고 없음)</td></tr>
         <tr><td class="l">실사 입력</td><td class="l">실사(박스) 칸에 박스수만 입력. EA·차이·정확도 자동 계산. 빈칸은 미실사로 처리</td></tr>
         <tr><td class="l">품목대장 셀 수정</td><td class="l">품명·박스단위·안전재고·기초재고·고객사·보관위치는 셀에서 직접 수정, 구분은 드롭다운</td></tr>
@@ -7247,6 +7324,8 @@ function isDead(it){
 
 /* ═══════ 총괄표 ═══════ */
 const SH=['No','구분','품번','품명','규격','단위','전월이월','당월입고','당월출하(납품)','기타출고','현재고','박스','안전재고','과부족','재고일수','회전율','최종 입출고','비고'];
+/* PC 화면표: 재고조사에 필요한 열만, 이 순서로 */
+const SHV=['No','구분','품번','현재고','박스','낱개','ea/박스','당월출하(납품)','안전재고','과부족','재고일수','최종 입출고'];
 /* 정렬 상태: 품번·품명·구분·현재고 등 비슷한 것끼리 모아 보기 */
 let SORT={k:'pn',d:1};
 const SORT_KEYS={'구분':'wh','품번':'pn','품명':'nm','현재고':'cur','당월입고':'iq','당월출하(납품)':'sq','과부족':'gap','전월이월':'open'};
@@ -7320,7 +7399,7 @@ function rSum(){
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym;
   let s=0,e=0,f=0,f2=0,g=0;
-  $('tSum').innerHTML=`<thead><tr>${SH.map(h=>{
+  $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
     const arr=SORT.k===k?(SORT.d>0?' ▲':' ▼'):'';
@@ -7328,32 +7407,26 @@ function rSum(){
   }).join('')}</tr></thead><tbody>`
    +(R.length?R.map(({it,v},i)=>{
       s+=v.open;e+=v.iq;f+=v.sq;f2+=v.oq-v.sq;g+=v.cur;
+      const pn=esc(it.pn), bx=+it.bx||0;
+      const cb=bx?Math.floor(v.cur/bx):0, ce=bx?((v.cur%bx)+bx)%bx:v.cur;
+      const dt=v.last?v.last.slice(2).replace(/-/g,'/'):'-';
       return `<tr>
        <td class="c">${i+1}</td>
-       <td class="c" style="font-family:var(--sans);font-size:10.5px">${esc(whNm(it.wh))}</td>
-       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
-       <td class="l" style="font-family:var(--sans)">${esc(it.nm)}</td>
-       <td class="l" style="font-family:var(--sans)">${esc(it.sp)}</td>
-       <td class="c">${esc(it.un)}</td>
-       <td>${nf(v.open)}</td>
-       <td class="${v.iq?'pos':''}">${v.iq?nf(v.iq):'-'}</td>
+       <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
+       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}</td>
+       <td class="bxc">${bx>0?`<input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="b" value="${cb||''}" title="박스 (${nf(bx)} ea/박스) · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off">`:'<span class="dim">-</span>'}</td>
+       <td class="bxc"><input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="e" value="${ce||''}" title="${bx>0?'낱개':'수량(EA)'} · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off"></td>
+       <td class="epb">${bx>0?nf(bx):'<span class="dim">-</span>'}</td>
        <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}</td>
-       <td class="${v.oq-v.sq?'wn':''}">${v.oq-v.sq?nf(v.oq-v.sq):'-'}</td>
-       <td style="font-weight:700">${nf(v.cur)}</td>
-       <td style="padding:0;white-space:nowrap">${it.bx>0
-         ? `<span class="bxin"><input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="b" value="${Math.floor(v.cur/it.bx)}" title="박스"><i>박스</i>
-            <input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="e" value="${((v.cur%it.bx)+it.bx)%it.bx}" title="낱개"><i>낱개</i></span>`
-         : `<span class="bxin"><input type="number" class="sumBx" data-pn="${esc(it.pn)}" data-k="e" value="${v.cur}" title="수량(EA)"><i>EA</i></span>`}</td>
        <td>${nf(it.sf)}</td>
        <td class="${v.gap<0?'neg':''}">${v.gap>0?'+':''}${nf(v.gap)}</td>
-       <td class="${v.doi!==null&&v.doi<7?'wn':''}">${v.doi===null?'-':v.doi.toFixed(1)}</td>
-       <td>${v.trn?v.trn.toFixed(2):'-'}</td>
-       <td class="c">${v.last||'-'}</td>
-       <td class="c ${isDead(it)?'wn':''}">${isDead(it)?'장기미불출':''}</td></tr>`;
-    }).join(''):`<tr><td colspan="18" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
-   +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}품목)</td>
-     <td>${nf(s)}</td><td>${nf(e)}</td><td>${nf(f)}</td><td>${nf(f2)}</td><td>${nf(g)}</td>
-     <td colspan="7"></td></tr></tfoot>`;
+       <td class="${v.doi!==null&&v.doi<7?'wn':''}">${v.doi===null?'-':nf(Math.round(v.doi))}</td>
+       <td class="c">${dt}</td></tr>`;
+    }).join(''):`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
+   +`</tbody><tfoot><tr><td colspan="3" class="c">합　계 (${R.length}품목)</td>
+     <td style="font-weight:800">${nf(g)}</td><td colspan="3"></td><td>${nf(f)}</td>
+     <td colspan="4"></td></tr></tfoot>`;
 }
 
 /* ═══════ 품목별 입출고 이력 (Bin Card) ═══════ */
@@ -12785,34 +12858,60 @@ function tglDrawer(f){
 const nz=s=>{ s=String(s||''); try{ s=s.normalize('NFKC'); }catch(_){}
   return s.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g,'').replace(/[^a-z0-9가-힣]/g,''); };
 /* ═══════ 숫자 키패드 팝업 ═══════ */
-let KBT=null;
-const KBKEYS=[['1','2','3','⌫'],['4','5','6','-'],['7','8','9','C'],['가나다','0','.','닫기']];
+let KBT=null, KBM='num';   /* KBM: 'num' 숫자판 / 'abc' 알파벳판 */
+const KBKEYS=[['1','2','3','⌫'],['4','5','6','-'],['7','8','9','C'],['ABC','0','.','닫기']];
+const KBABC=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','⌫','C'];
 function kbBuild(){
   if($('kbPad'))return;
   const d=document.createElement('div');d.id='kbPad';
-  d.innerHTML='<div class="kb-hd"><b id="kbVal"></b><span onclick="kbClose()">✕</span></div><div class="kb-g">'
-    +KBKEYS.flat().map(k=>`<button data-k="${k}" class="${/^[0-9.\-]$/.test(k)?'':'f'}">${k}</button>`).join('')+'</div>';
+  d.innerHTML='<div class="kb-hd"><b id="kbVal"></b><span onclick="kbClose()">✕</span></div><div class="kb-g"></div>';
   document.body.appendChild(d);
   d.querySelector('.kb-g').onclick=e=>{const b=e.target.closest('button');if(b)kbKey(b.dataset.k);};
   d.addEventListener('mousedown',e=>e.preventDefault());
 }
-function kbOpen(id){
+function kbRender(mode){
+  KBM=mode; const pad=$('kbPad'), g=pad.querySelector('.kb-g');
+  pad.classList.toggle('abc',mode==='abc');
+  if(mode==='abc'){
+    g.innerHTML=KBABC.map(k=>`<button data-k="${k}" class="${/^[A-Z]$/.test(k)?'':'f'}">${k}</button>`).join('')
+      +'<button data-k="123" class="f w3">123</button>'
+      +'<button data-k="-" class="">-</button>'
+      +'<button data-k="닫기" class="f w3">닫기</button>';
+  }else{
+    g.innerHTML=KBKEYS.flat().map(k=>`<button data-k="${k}" class="${/^[0-9.\-]$/.test(k)?'':'f'}">${k}</button>`).join('');
+  }
+}
+function kbOpen(id,mode){
   kbBuild(); KBT=$(id);
+  if(KBT.classList.contains('sumBx')&&KBT.dataset.u){ if(KBT.dataset.chg==null)KBT.dataset.chg=KBT.value; KBT.dataset.fresh='1'; }
+  kbRender(mode||(id==='fq'?'abc':'num'));
   document.querySelectorAll('.kbi').forEach(i=>i.setAttribute('inputmode','none'));
   const r=KBT.getBoundingClientRect(),pad=$('kbPad');
   let top=r.bottom+6, left=r.left;
+  const pw=KBM==='abc'?330:264;
   if(top+250>window.innerHeight)top=Math.max(8,r.top-256);
-  if(left+264>window.innerWidth)left=Math.max(8,window.innerWidth-272);
+  if(left+pw>window.innerWidth)left=Math.max(8,window.innerWidth-pw-8);
   pad.style.top=top+'px';pad.style.left=left+'px';
   $('kbVal').textContent=KBT.value||KBT.placeholder||'입력';
   $('kbPad').classList.add('on'); document.body.classList.add('kb-on');
 }
 function kbClose(){ const p=$('kbPad'); if(p)p.classList.remove('on'); document.body.classList.remove('kb-on');
-  const wasCnt=KBT&&KBT.dataset&&KBT.dataset.a==='q'; KBT=null; if(wasCnt)rCnt(); }
+  const wasCnt=KBT&&KBT.dataset&&KBT.dataset.a==='q';
+  const t=KBT; KBT=null;
+  /* 값이 바뀌었고 아직 확정되지 않은 경우만 (키보드 입력의 change 와 중복 방지) */
+  if(t&&t.classList&&t.classList.contains('sumBx')&&t.dataset.u&&t.dataset.chg!==t.value&&document.body.contains(t)){ t.dispatchEvent(new Event('change',{bubbles:true})); }
+  if(wasCnt)rCnt(); }
+/* 기기 키보드로 넘어간 칸은 포커스가 빠지면 다시 앱 팝업으로 되돌린다 */
+document.addEventListener('focusout',e=>{
+  const i=e.target;
+  if(i&&i.classList&&i.classList.contains('kbi')&&i.dataset&&i.dataset.sys==='1'){
+    i.dataset.sys=''; setTimeout(()=>i.setAttribute('inputmode','none'),120);
+  }
+},true);
 function kbKey(k){
   if(!KBT)return;
   if(k==='닫기'){kbClose();return;}
-  if(k==='가나다'){KBT.setAttribute('inputmode','text');const t=KBT;kbClose();t.blur();setTimeout(()=>t.focus(),50);return;}
+  if(k==='ABC'||k==='123'){ const id=KBT.id; kbOpen(id,k==='ABC'?'abc':'num'); return; }   /* 팝업 안에서 숫자↔문자 전환 */
   if(k==='⌫'){ KBT.value=KBT.value.slice(0,-1); if(KBT.dataset)KBT.dataset.fresh=''; }
   else if(k==='C'){ KBT.value=''; if(KBT.dataset)KBT.dataset.fresh=''; }
   else{
@@ -12824,15 +12923,22 @@ function kbKey(k){
   KBT.dispatchEvent(new Event('input',{bubbles:true}));
   if(KBT.dataset&&(KBT.dataset.a==='q'||KBT.dataset.k))KBT.dispatchEvent(new Event('change',{bubbles:true}));  /* 실사값·재고수정 저장 */
 }
-document.addEventListener('click',e=>{
-  const i=e.target.closest('.kbi');
+function kbTap(e){
+  const i=e.target.closest&&e.target.closest('.kbi');
   if(i){
     if(i.closest&&i.closest('.fixbox')){ sumEdit=true; i.dataset.fresh='1'; }   /* 재고수정 칸: 재렌더 차단 + 첫 입력 시 값 교체 */
-    if(i.getAttribute('inputmode')!=='text')kbOpen(i.id);
+    if(i.dataset&&i.dataset.sys==='1')return;                                   /* 기기 키보드 모드는 그대로 둔다 */
+    if(KBT===i&&$('kbPad')&&$('kbPad').classList.contains('on'))return;          /* 이미 열려 있으면 유지 */
+    kbOpen(i.id);
     return;
   }
-  if(KBT&&!e.target.closest('#kbPad'))kbClose();
-});
+  if(!KBT)return;
+  if(e.target&&e.target.closest&&e.target.closest('#kbPad'))return;
+  if(e.target&&document.body&&!document.body.contains(e.target))return;  /* 키 교체로 사라진 버튼은 무시 */
+  kbClose();
+}
+document.addEventListener('click',kbTap);
+document.addEventListener('pointerdown',e=>{ const i=e.target.closest&&e.target.closest('.kbi'); if(i)kbTap(e); });
 document.addEventListener('touchend',e=>{
   const i=e.target.closest&&e.target.closest('.mc-step input.kbi');
   if(i&&i.getAttribute('inputmode')!=='text'){e.preventDefault();kbOpen(i.id);}
@@ -12844,8 +12950,40 @@ document.addEventListener('focusin',e=>{
 const MORE_TABS=['bin','cnt','trc','help'];
 function tglMore(e){ if(e&&e.target.closest('.mm'))return; $('mMore').classList.toggle('show'); }
 document.addEventListener('click',e=>{ if(!e.target.closest('#tMore')){const m=$('mMore'); if(m)m.classList.remove('show');} });
+const NAV_G={sum:'stock',cnt:'stock',bin:'stock',io:'io',trc:'io',raw:'raw',cfg:'master',help:'master'};
+const NAV_GROUPS={stock:['sum','cnt','bin'],io:['io','trc'],raw:['raw'],master:['cfg','help']};
+/* 메가메뉴: 그룹 → 화면(열) → 그 화면의 소메뉴(열 하단) */
+function buildNav(){
+  document.querySelectorAll('#pcNav .navitem').forEach(n=>{
+    const g=n.dataset.g, mega=n.querySelector('.mega'); if(!mega)return;
+    mega.innerHTML=(NAV_GROUPS[g]||[]).map(k=>{
+      const tb=TABN.find(x=>x[0]===k)||[k,'',k,''];
+      const acts=(SUB[k]||[]).map(([ic,nm,fn,c])=>`<a data-t="${k}" data-fn="${fn.replace(/"/g,'&quot;')}" class="act${c==='pri'?' pri':''}"><i>${ic}</i>${nm}</a>`).join('');
+      return `<div class="mega-col"><a class="scr" data-t="${k}"><i>${tb[1]}</i>${tb[2]}<em>${tb[3]}</em></a>${acts}</div>`;
+    }).join('');
+  });
+  /* 재고구분·기준월은 PC 에서 상단바 우측으로 */
+  navFilters();
+}
+let NAVF=false;
+function navFilters(){
+  const pc=window.innerWidth>760, f=$('navF'), tools=$('tbTools'), wh=$('whSel'), ym=$('ym'); if(!f||!wh||!ym)return;
+  const lw=wh.previousElementSibling, ly=ym.previousElementSibling;
+  if(pc&&!NAVF){ f.append(lw,wh,ly,ym); NAVF=true; }
+  else if(!pc&&NAVF){ const sp=tools.querySelector('.sp'); tools.insertBefore(lw,sp); tools.insertBefore(wh,sp); tools.insertBefore(ly,sp); tools.insertBefore(ym,sp); NAVF=false; }
+}
+window.addEventListener('resize',navFilters);
+try{ buildNav(); }catch(e){ console.error(e); }
+function navRun(a){
+  const k=a.dataset.t, fn=a.dataset.fn;
+  if(k&&tab!==k)setTab(k);
+  if(fn){ setTimeout(()=>{ try{ new Function(fn)(); }catch(e){ console.error(e); } },k&&tab!==k?60:0); }
+}
 function setTab(t){
   tab=t;document.querySelectorAll('.tabs div').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  document.querySelectorAll('#pcNav .navitem').forEach(n=>n.classList.toggle('on',n.dataset.g===NAV_G[t]));
+  document.querySelectorAll('#pcNav .mega a.scr').forEach(a=>a.classList.toggle('on',a.dataset.t===t));
+  document.querySelectorAll('#pcNav .navitem.open').forEach(n=>n.classList.remove('open'));
   $('tMore').classList.toggle('on',MORE_TABS.includes(t)); $('mMore').classList.remove('show');
   window.scrollTo({top:0});
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));$('p-'+t).classList.add('on');
@@ -12854,6 +12992,12 @@ function setTab(t){
 document.addEventListener('click',e=>{
   const d=e.target.closest&&e.target.closest('.tabs div[data-t]');
   if(d)setTab(d.dataset.t);
+  const a=e.target.closest&&e.target.closest('#pcNav .mega a');
+  if(a){ navRun(a); document.querySelectorAll('#pcNav .navitem.open').forEach(n=>n.classList.remove('open')); return; }
+  const nb=e.target.closest&&e.target.closest('#pcNav .navitem>button');
+  if(nb){ const n=nb.parentElement, was=n.classList.contains('open');
+    document.querySelectorAll('#pcNav .navitem.open').forEach(x=>x.classList.remove('open')); if(!was)n.classList.add('open'); return; }
+  if(!e.target.closest('#pcNav'))document.querySelectorAll('#pcNav .navitem.open').forEach(n=>n.classList.remove('open'));
 });
 $('fSel').onchange=e=>{F=e.target.value;rSum();};
 $('cSel').onchange=e=>{C=e.target.value;rCnt();};
@@ -12874,6 +13018,9 @@ $('fq').addEventListener('change',rSum);
     else if(k==='⌫') f.value=f.value.slice(0,-1);
     else f.value+=k;
     f.dispatchEvent(new Event('input',{bubbles:true}));
+    /* 팝업이 떠 있으면 숫자 모드로 맞춰 준다 */
+    const pad=$('kbPad');
+    if(pad&&pad.classList.contains('on')&&KBT===f){ if(KBM!=='num')kbOpen('fq','num'); else $('kbVal').textContent=f.value||f.placeholder||'입력'; }
   });
   pad.addEventListener('mousedown',e=>e.preventDefault());
 })();
@@ -13169,16 +13316,28 @@ function closeOf(r){
 }
 function isCloseRow(r){ return String((r&&r.src)||'').indexOf('CLOSE|')===0; }
 
+/* 박스·낱개 칸: 숫자만, Enter 는 확정 */
+$('tSum').addEventListener('input',e=>{
+  const t=e.target; if(!t.classList||!t.classList.contains('sumBx')||!t.dataset.u)return;
+  const v=t.value.replace(/[^0-9]/g,''); if(v!==t.value)t.value=v;
+  const kv=$('kbVal'); if(kv&&KBT===t)kv.textContent=t.value||'0';
+});
+$('tSum').addEventListener('keydown',e=>{
+  const t=e.target; if(!t.classList||!t.classList.contains('sumBx')||!t.dataset.u)return;
+  if(e.key==='Enter'){ e.preventDefault(); kbClose(); t.blur(); }
+});
 /* 재고현황(총괄표)에서 재고를 바로 고친다 */
 $('tSum').addEventListener('change',e=>{
   const t=e.target;
   if(!t.classList||!t.classList.contains('sumBx'))return;
+  t.dataset.chg=t.value;
   const pn=t.dataset.pn, it=S.items.find(x=>x.pn===pn);
   if(!it){ rSum(); return; }
   /* 같은 행의 박스·낱개 칸을 모아 EA 로 환산한다 */
-  const wrap=t.closest('.bxin'); let ea=0;
-  wrap.querySelectorAll('input').forEach(i=>{
-    ea += i.dataset.k==='b' ? (+i.value||0)*(+it.bx||0) : (+i.value||0);
+  const wrap=t.closest('tr'); let ea=0;
+  wrap.querySelectorAll('input.sumBx').forEach(i=>{
+    const u=i.dataset.u||i.dataset.k;
+    ea += u==='b' ? (+i.value||0)*(+it.bx||0) : (+i.value||0);
   });
   fixStock(it, ea);
 });
