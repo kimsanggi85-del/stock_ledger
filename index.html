@@ -970,7 +970,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v14.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7681,14 +7681,18 @@ function saveCust(){
    → 소재 LOT ↔ 생산일 ↔ 제품 LOT ↔ 출하 를 양방향으로 잇는다.
    ═══════════════════════════════════════════════════════════════ */
 /* "260818/19" → ['260818','260819'] · "260622/0710" → ['260622','260710'] */
+/* 출하 전표의 제품 LOT(생산일자) 목록을 뽑는다.
+   앱마다 적는 방식이 달라 8자리(20260622)·6자리(260622)·뒷자리만(0623) 이 섞여 들어온다.
+   모두 6자리(YYMMDD)로 맞춘다. */
 function parseShipLots(v){
   const out=[];
   String(v||'').split(/[\/,·]/).map(x=>x.trim()).filter(Boolean).forEach(t2=>{
     const d=t2.replace(/\D/g,''); if(!d)return;
-    if(d.length>=6){ out.push(d.slice(0,6)); return; }
+    if(d.length>=8){ out.push(d.slice(2,8)); return; }   /* 20260622 → 260622 (출하일반 앱) */
+    if(d.length>=6){ out.push(d.slice(0,6)); return; }   /* 260622 그대로 */
     const prev=out[out.length-1];
     if(!prev)return;
-    out.push(prev.slice(0,6-d.length)+d);       /* 앞자리는 직전 값에서 물려받는다 */
+    out.push(prev.slice(0,6-d.length)+d);                /* 0623 → 앞자리는 직전 값에서 */
   });
   return [...new Set(out)];
 }
