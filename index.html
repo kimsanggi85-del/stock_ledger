@@ -964,13 +964,22 @@ body.qp-on{overflow:hidden}
 .trc-more>summary::before{content:"▸ ";color:#93A0AB}
 .trc-more[open]>summary::before{content:"▾ "}
 @media print{ .trc-more{display:block} .trc-more>summary{display:none} }
+
+/* 재고 실사표 — 품번·품명·보관위치는 내용 길이에 맞춰 줄어든다 */
+#tCnt{table-layout:auto}
+#tCnt col.cFit{width:auto}
+#tCnt td.fit,#tCnt th{white-space:nowrap}
+#tCnt td.pnc{font-weight:700;width:1%}
+#tCnt td.nmc{font-family:var(--sans);width:1%;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+#tCnt td.lcc{font-family:var(--sans);width:1%}
+#tCnt tbody td input{width:100%;box-sizing:border-box}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -2746,7 +2755,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>4,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="0" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="0" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2755,7 +2764,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>3,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="1" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="1" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2764,7 +2773,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>3,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="2" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="2" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2773,7 +2782,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>3,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="3" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="3" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2782,7 +2791,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>50</td><td>800</td><td>16</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="4" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="4" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2791,7 +2800,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>3,806</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="5" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="5" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2800,7 +2809,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>330</td><td>6,600</td><td>20</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="6" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="6" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2809,7 +2818,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>2,000</td><td>48,000</td><td>24</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="7" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="7" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2818,7 +2827,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>2,500</td><td>12,500</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="8" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="8" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2827,7 +2836,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,400</td><td>16,800</td><td>12</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="9" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="9" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2836,7 +2845,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="10" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="10" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2845,7 +2854,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>1,200</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="11" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="11" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2854,7 +2863,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>2,400</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="12" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="12" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2863,7 +2872,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>9,600</td><td>16</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="13" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="13" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2872,7 +2881,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="14" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="14" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2881,7 +2890,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>32,000</td><td>32</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="15" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="15" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2890,7 +2899,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>10,000</td><td>40,000</td><td>4</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="16" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="16" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2899,7 +2908,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>12,000</td><td>20</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="17" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="17" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2908,7 +2917,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>4,800</td><td>8</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="18" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="18" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2917,7 +2926,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>5,000</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="19" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="19" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2926,7 +2935,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>6,000</td><td>6</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="20" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="20" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2935,7 +2944,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)">10</td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>400</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="21" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="21" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2944,7 +2953,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,400</td><td>2,800</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="22" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="22" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2953,7 +2962,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="23" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="23" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2962,7 +2971,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>29,000</td><td>29</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="24" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="24" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2971,7 +2980,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="25" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="25" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2980,7 +2989,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>160</td><td>4,160</td><td>26</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="26" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="26" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2989,7 +2998,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>400</td><td>2,000</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="27" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="27" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -2998,7 +3007,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="28" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="28" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3007,7 +3016,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>6,300</td><td>9</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="29" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="29" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3016,7 +3025,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>32,400</td><td>54</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="30" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="30" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3025,7 +3034,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>800</td><td>1</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="31" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="31" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3034,7 +3043,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="32" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="32" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3043,7 +3052,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>3,000</td><td>15,000</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="33" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="33" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3052,7 +3061,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="34" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="34" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3061,7 +3070,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>2,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="35" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="35" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3070,7 +3079,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>23,500</td><td>47</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="36" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="36" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3079,7 +3088,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>5,000</td><td>60,000</td><td>12</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="37" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="37" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3088,7 +3097,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>3,000</td><td>18,000</td><td>6</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="38" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="38" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3097,7 +3106,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="39" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="39" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3106,7 +3115,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>4,000</td><td>8</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="40" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="40" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3115,7 +3124,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>5,600</td><td>7</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="41" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="41" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3124,7 +3133,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>4,000</td><td>4</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="42" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="42" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3133,7 +3142,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>800</td><td>800</td><td>1</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="43" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="43" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3142,7 +3151,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>7,000</td><td>7</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="44" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="44" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3151,7 +3160,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="45" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="45" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3160,7 +3169,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="46" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="46" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3169,7 +3178,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>3,000</td><td>3</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="47" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="47" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3178,7 +3187,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="48" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="48" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3187,7 +3196,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>21,000</td><td>21</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="49" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="49" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3196,7 +3205,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="50" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="50" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3205,7 +3214,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>4,000</td><td>4</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="51" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="51" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3214,7 +3223,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="52" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="52" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3223,7 +3232,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>19,800</td><td>33</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="53" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="53" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3232,7 +3241,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>700</td><td>1</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="54" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="54" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3241,7 +3250,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>800</td><td>40,800</td><td>51</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="55" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="55" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3250,7 +3259,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>112,000</td><td>160</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="56" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="56" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3259,7 +3268,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>800</td><td>35,200</td><td>44</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="57" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="57" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3268,7 +3277,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>1,600</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="58" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="58" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3277,7 +3286,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="59" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="59" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3286,7 +3295,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>40,323</td><td>57</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="60" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="60" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3295,7 +3304,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>900</td><td>27,900</td><td>31</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="61" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="61" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3304,7 +3313,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>700</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="62" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="62" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3313,7 +3322,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>2,500</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="63" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="63" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3322,7 +3331,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="64" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="64" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3331,7 +3340,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>700</td><td>1,400</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="65" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="65" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3340,7 +3349,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>24,500</td><td>49</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="66" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="66" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3349,7 +3358,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>28,000</td><td>56</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="67" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="67" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3358,7 +3367,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>9,100</td><td>13</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="68" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="68" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3367,7 +3376,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>700</td><td>4,900</td><td>7</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="69" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="69" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3376,7 +3385,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>15,500</td><td>31</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="70" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="70" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3385,7 +3394,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>600</td><td>13,200</td><td>22</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="71" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="71" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3394,7 +3403,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="72" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="72" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3403,7 +3412,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>510</td><td>7,650</td><td>15</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="73" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="73" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3412,7 +3421,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>400</td><td>7,600</td><td>19</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="74" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="74" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3421,7 +3430,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="75" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="75" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3430,7 +3439,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>400</td><td>4,800</td><td>12</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="76" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="76" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3439,7 +3448,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="77" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="77" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3448,7 +3457,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,800</td><td>18,000</td><td>10</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="78" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="78" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3457,7 +3466,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,400</td><td>8,400</td><td>6</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="79" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="79" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3466,7 +3475,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,200</td><td>21,600</td><td>18</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="80" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="80" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3475,7 +3484,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>55,300</td><td>79</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="81" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="81" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3484,7 +3493,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>77,000</td><td>77</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="82" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="82" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3493,7 +3502,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>2,400</td><td>2</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="83" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="83" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3502,7 +3511,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>5,000</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="84" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="84" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3511,7 +3520,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="85" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="85" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3520,7 +3529,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="86" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="86" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3529,7 +3538,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>9,000</td><td>9</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="87" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="87" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3538,7 +3547,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,500</td><td>109,500</td><td>73</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="88" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="88" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3547,7 +3556,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,000</td><td>73,000</td><td>73</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="89" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="89" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3556,7 +3565,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="90" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="90" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3565,7 +3574,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>1,200</td><td>1</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="91" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="91" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3574,7 +3583,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>1,000</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="92" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="92" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3583,7 +3592,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="93" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="93" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3592,7 +3601,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="94" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="94" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3601,7 +3610,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>600</td><td>3,000</td><td>5</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="95" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="95" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3610,7 +3619,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>43,200</td><td>36</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="96" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="96" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3619,7 +3628,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>22,400</td><td>28</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="97" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="97" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3628,7 +3637,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>59,069</td><td>73</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="98" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="98" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3637,7 +3646,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>10,800</td><td>9</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="99" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="99" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3646,7 +3655,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>18,200</td><td>26</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="100" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="100" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3655,7 +3664,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>700</td><td>13,300</td><td>19</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="101" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="101" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3664,7 +3673,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>1,200</td><td>26,400</td><td>22</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="102" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="102" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3673,7 +3682,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>69,000</td><td>115</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="103" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="103" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3682,7 +3691,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="104" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="104" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3691,7 +3700,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>4,800</td><td>6</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="105" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="105" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3700,7 +3709,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>76,800</td><td>128</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="106" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="106" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3709,7 +3718,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>13,800</td><td>23</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="107" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="107" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3718,7 +3727,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="108" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="108" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3727,7 +3736,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>500</td><td>22,000</td><td>44</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="109" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="109" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3736,7 +3745,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>32,500</td><td>65</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="110" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="110" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3745,7 +3754,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>500</td><td>26,500</td><td>53</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="111" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="111" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3754,7 +3763,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>12,000</td><td>20</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="112" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="112" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3763,7 +3772,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>700</td><td>12,600</td><td>18</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="113" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="113" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3772,7 +3781,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>49,000</td><td>98</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="114" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="114" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3781,7 +3790,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>700</td><td>13,300</td><td>19</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="115" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="115" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3790,7 +3799,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>33,600</td><td>56</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="116" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="116" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3799,7 +3808,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="117" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="117" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3808,7 +3817,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)">LF-FRT FLINGER</td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="118" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="118" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3817,7 +3826,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)">LF-FRT FLINGER</td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="119" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="119" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3826,7 +3835,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>800</td><td>8,000</td><td>10</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="120" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="120" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3835,7 +3844,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)">9</td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>900</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="121" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="121" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3844,7 +3853,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>900</td><td>8,100</td><td>9</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="122" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="122" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3853,7 +3862,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>600</td><td>18,000</td><td>30</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="123" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="123" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3862,7 +3871,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>103,200</td><td>172</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="124" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="124" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3871,7 +3880,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>6,600</td><td>11</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="125" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="125" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3880,7 +3889,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>13,000</td><td>26</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="126" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="126" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3889,7 +3898,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>21,000</td><td>35</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="127" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="127" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3898,7 +3907,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>400</td><td>78,400</td><td>196</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="128" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="128" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3907,7 +3916,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="129" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="129" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3916,7 +3925,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>7,500</td><td>15</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="130" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="130" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3925,7 +3934,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>187,500</td><td>375</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="131" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="131" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3934,7 +3943,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>500</td><td>5,000</td><td>10</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="132" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="132" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3943,7 +3952,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>500</td><td>8,500</td><td>17</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="133" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="133" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3952,7 +3961,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>600</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="134" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="134" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3961,7 +3970,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>400</td><td>32,000</td><td>80</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="135" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="135" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3970,7 +3979,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>300</td><td>41,400</td><td>138</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="136" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="136" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3979,7 +3988,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>55,761</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="137" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="137" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3988,7 +3997,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>57,762</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="138" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="138" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -3997,7 +4006,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>-96</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="139" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="139" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4006,7 +4015,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>-34</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="140" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="140" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4015,7 +4024,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>57,537</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="141" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="141" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4024,7 +4033,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>-91</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="142" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="142" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4033,7 +4042,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>45,489</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="143" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="143" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4042,7 +4051,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="144" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="144" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4051,7 +4060,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>51,419</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="145" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="145" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4060,7 +4069,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>173,303</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="146" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="146" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4069,7 +4078,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>51,182</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="147" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="147" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4078,7 +4087,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>480</td><td>1,440</td><td>3</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="148" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="148" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4087,7 +4096,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>300</td><td>27,300</td><td>91</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="149" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="149" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4096,7 +4105,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>400</td><td>9,600</td><td>24</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="150" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="150" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4105,7 +4114,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>100</td><td>1,500</td><td>15</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="151" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="151" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4114,7 +4123,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>150</td><td>1,800</td><td>12</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="152" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="152" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4123,7 +4132,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>188,472</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="153" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="153" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4132,7 +4141,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>172,970</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="154" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="154" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4141,7 +4150,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="155" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="155" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4150,7 +4159,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>238,540</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="156" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="156" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4159,7 +4168,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>34,175</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="157" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="157" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4168,7 +4177,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>195,192</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="158" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="158" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4177,7 +4186,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>76,497</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="159" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="159" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4186,7 +4195,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>34,952</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="160" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="160" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4195,7 +4204,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>385,564</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="161" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="161" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4204,7 +4213,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)"></td>
       <td>0</td><td>0</td><td>0</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="162" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="162" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4213,7 +4222,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>350</td><td>17,150</td><td>49</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="163" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="163" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -4222,7 +4231,7 @@ body.qp-on{overflow:hidden}
       <td class="l" style="font-family:var(--sans)"></td>
       <td class="c" style="font-family:var(--sans)">출하대기장</td>
       <td>300</td><td>18,000</td><td>60</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="164" value="" placeholder="－"></td>
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="164" value="" placeholder="－"></td>
       <td>-</td>
       <td class="">-</td>
       <td>-</td>
@@ -6773,21 +6782,27 @@ function rCnt(){
   }
   if($('tCnt').tagName!=='TABLE'){$('tCnt').outerHTML='<table class="t" id="tCnt"></table>';}
   $('gt-cnt').innerHTML='재고 실사 · 총 <b>'+R.length+'</b>품목 · 실사입력 <b>'+n+'</b>';
-  $('tCnt').innerHTML=`<thead><tr><th>No</th><th>품번</th><th>품명</th><th>보관위치</th><th>박스단위</th>
+  /* 품번·품명은 글자 수에 맞춰 줄어들게 한다 (colgroup 없이 두면 브라우저가 폭을 과하게 벌린다) */
+  $('tCnt').innerHTML=`<colgroup>
+     <col style="width:40px"><col class="cFit"><col class="cFit"><col class="cFit">
+     <col style="width:76px"><col style="width:96px"><col style="width:78px">
+     <col style="width:78px"><col style="width:88px"><col style="width:84px">
+     <col style="width:70px"><col style="width:44px"></colgroup>
+   <thead><tr><th>No</th><th>품번</th><th>품명</th><th>보관위치</th><th>박스단위</th>
     <th>전산재고(EA)</th><th>전산(박스)</th><th>실사(박스)</th><th>실사(EA)</th><th>차이(EA)</th><th>정확도</th><th>확인</th></tr></thead><tbody>`
    +R.map(({it,v,real,df},i)=>{
      const idx=S.items.indexOf(it);
      return `<tr>
-      <td class="c">${i+1}</td><td class="l" style="font-weight:700">${esc(it.pn)}</td>
-      <td class="l" style="font-family:var(--sans)">${esc(it.nm)}</td>
-      <td class="c" style="font-family:var(--sans)">${esc(it.lc)}</td>
+      <td class="c">${i+1}</td><td class="l fit pnc">${esc(it.pn)}</td>
+      <td class="l fit nmc">${esc(it.nm)}</td>
+      <td class="c fit lcc">${esc(it.lc)}</td>
       <td>${nf(it.bx)}</td><td>${nf(v.cur)}</td><td>${v.box}</td>
-      <td style="background:#FFFDE7;width:74px"><input type="number" inputmode="numeric" data-i="${idx}"
+      <td style="background:#FFFDE7"><input type="number" inputmode="numeric" data-i="${idx}"
         value="${it.cnt==null?'':it.cnt}" placeholder="－"></td>
       <td>${real===null?'-':nf(real)}</td>
       <td class="${df?'neg':''}">${df===null?'-':(df>0?'+':'')+nf(df)}</td>
       <td>${df===null||v.cur<=0?'-':(100-Math.abs(df)/v.cur*100).toFixed(1)+'%'}</td>
-      <td class="c" style="width:44px"></td></tr>`;
+      <td class="c"></td></tr>`;
    }).join('')+`</tbody>`;
 }
 function applyCount(){
