@@ -973,13 +973,18 @@ body.qp-on{overflow:hidden}
 #tCnt td.nmc{font-family:var(--sans);width:1%;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 #tCnt td.lcc{font-family:var(--sans);width:1%}
 #tCnt tbody td input{width:100%;box-sizing:border-box}
+
+/* 품목별 입출고 이력 — 품번 콤보 */
+.binHit{font-size:11.5px;color:#5A6875;font-family:var(--sans);margin-left:6px;white-space:nowrap}
+.binHit.ng{color:#B3261E;font-weight:700}
+#binPn{font-weight:700}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -2664,7 +2669,10 @@ body.qp-on{overflow:hidden}
   <div class="pt"><h2>품목별 입출고 이력</h2><span class="sub">품번 1개의 일자별 입·출고·잔량</span><div class="pa"><button class="btn" onclick="window.print()">인쇄</button></div></div>
   <div class="fbar">
     <label>품번</label>
-    <select id="binPn" style="min-width:200px" data-n="164|"><option value="1G26-014">1G26-014 — 1G</option><option value="1G34-015">1G34-015 — 1G</option><option value="1G35-013">1G35-013 — 1G</option><option value="1G36-012">1G36-012 — 1G</option><option value="1GE0-0009-01">1GE0-0009-01</option><option value="1GE0-0009-1">1GE0-0009-1</option><option value="1515-196">1515-196 — X69F</option><option value="1520-172">1520-172 — PS</option><option value="1547-102-1">1547-102-1 — 0092</option><option value="1547-102-2">1547-102-2 — 0092</option><option value="1549-156">1549-156 — GAMMA</option><option value="1549-157">1549-157 — GAMMA</option><option value="1551-189">1551-189 — GAMMA(신형)</option><option value="1553-101-1">1553-101-1 — 0030</option><option value="1553-101-2">1553-101-2 — 0030</option><option value="1560-006">1560-006 — 0</option><option value="1560-0018-01">1560-0018-01</option><option value="1561-0017-00">1561-0017-00</option><option value="1570-54-1">1570-54-1 — 6906</option><option value="1570-56-1">1570-56-1 — 4047</option><option value="1583-176(1883-626)">1583-176(1883-626)</option><option value="1642-118-1">1642-118-1 — 0101</option><option value="1648-115-1">1648-115-1 — 4099BA</option><option value="1654-119-1">1654-119-1 — 0060</option><option value="1654-119-2">1654-119-2 — 0060</option><option value="1657-127">1657-127</option><option value="1657-130">1657-130 — SACC(가공품)</option><option value="1660-131">1660-131</option><option value="1660-132">1660-132 — L38(가공)</option><option value="1664-128-1">1664-128-1 — L43</option><option value="1664-128-2">1664-128-2 — L43</option><option value="1752-293-1">1752-293-1 — JB</option><option value="1752-297">1752-297 — KIA</option><option value="1753-295-1">1753-295-1 — UB</option><option value="1755-296">1755-296 — KIA</option><option value="1781-0001-00">1781-0001-00 — SK OP/S</option><option value="1807-653">1807-653 — 퓨트로닉</option><option value="1816-0010-00">1816-0010-00 — 완리양</option><option value="1837-0033-01">1837-0033-01 — 길리기차</option><option value="1839-629">1839-629 — A/S용</option><option value="1853-515-1">1853-515-1 — 6908BA</option><option value="1853-515-2">1853-515-2 — 6908BA</option><option value="1853-586">1853-586 — 0106B</option><option value="1856-627-1">1856-627-1 — A/S용 (628 공용)</option><option value="1856-627-2">1856-627-2 — A/S용 (628 공용)</option><option value="1858-618-1">1858-618-1 — A/S용</option><option value="1858-619-2">1858-619-2 — A/S용</option><option value="1859-650-1">1859-650-1 — MP(IN/S) 가공품</option><option value="1861-596">1861-596 — BMW PL7</option><option value="1861-597">1861-597 — BMW PL7</option><option value="1862-0041-21">1862-0041-21 — FORO V713 (실린더)</option><option value="1862-0041(0042)-01">1862-0041(0042)-01</option><option value="1862-0042-21">1862-0042-21 — V713 (OUT) 실린더</option><option value="1862-604">1862-604 — FS(가공품)</option><option value="1862-624">1862-624 — CD</option><option value="1862-651">1862-651 — MP(가공품)</option><option value="1863-607-1">1863-607-1 — FORD 1톤</option><option value="1863-607-2">1863-607-2 — FORD(가공품)</option><option value="1866-599">1866-599 — A/S용</option><option value="1866-617-1">1866-617-1 — A/S용</option><option value="1866-617-2">1866-617-2 — A/S용(가공품)</option><option value="1867-608-1">1867-608-1 — FORD2톤(가공품)</option><option value="1869-621">1869-621 — LY</option><option value="1870-602-1">1870-602-1 — A/S용(생산)</option><option value="1870-602-2">1870-602-2 — A/S용(개발팀)</option><option value="1871-0043-01">1871-0043-01 — VX1 (단조금형)</option><option value="1871-0043-21">1871-0043-21 — VX1 실린더</option><option value="1872-625-1">1872-625-1 — Hi Pack Seal FM사(AS용)</option><option value="1873-0044">1873-0044 — VX1 Outboard Seal Slinger</option><option value="1873-0044-21">1873-0044-21 — VX1 Outboard Seal Slinger</option><option value="1873-0045-01">1873-0045-01 — VX1 (프로금형) OUT</option><option value="1874-623">1874-623 — LY(가공품)</option><option value="1883-626">1883-626</option><option value="1888-0005">1888-0005 — DUST CAP V30</option><option value="1939-357-1">1939-357-1 — HA-RR</option><option value="1945-349-1">1945-349-1 — RB</option><option value="1945-349-2">1945-349-2 — RB</option><option value="1946-0053-01">1946-0053-01 — BI3 OPEN SEAL INSERT</option><option value="1947-353">1947-353 — MD</option><option value="1950-354-1">1950-354-1 — MD</option><option value="1950-354-2">1950-354-2 — MD</option><option value="1950-358-1">1950-358-1 — HA-FRT</option><option value="1950-358-2">1950-358-2 — HA-FRT</option><option value="1950-374-1">1950-374-1 — XDC-RR</option><option value="1951-386">1951-386 — YB-RR</option><option value="1952-0056-01">1952-0056-01 — JA_WPS4K</option><option value="1952-0056-21">1952-0056-21 — JA_WPS4K</option><option value="1952-346-1">1952-346-1 — YF</option><option value="1952-346-2">1952-346-2 — YF</option><option value="1952-347-1">1952-347-1 — RD</option><option value="1952-367-2">1952-367-2 — MX-FRT</option><option value="1958-365-1">1958-365-1 — MD-FRT</option><option value="1958-365-2(2호)">1958-365-2(2호) — MD-FRT (2호)</option><option value="1958-373-1">1958-373-1 — XDC-FRT</option><option value="1959-0024-01">1959-0024-01 — TL 4WD RR Pack Seal INSERT</option><option value="1959-0024-21">1959-0024-21 — TL 4WD RR Pack Seal FLINGER</option><option value="1959-360-1">1959-360-1 — 3G-GDE</option><option value="1960-0031-01">1960-0031-01 — CN7 (단조금형)</option><option value="1960-0031-21">1960-0031-21 — CN7 (실린더)</option><option value="1960-361">1960-361 — BH - RR</option><option value="1962-0030">1962-0030 — SU2 RR OPEN SEAL INSERT</option><option value="1963-0055-01">1963-0055-01 — GSr Pack Seal INSERT</option><option value="1963-0055-02">1963-0055-02</option><option value="1963-0055-21">1963-0055-21 — GSr Pack Seal FLINGER</option><option value="1965-326-1">1965-326-1 — 0187</option><option value="1965-326-2">1965-326-2 — 0187</option><option value="1967-0052-01">1967-0052-01 — US4 RR (단조금형)</option><option value="1967-0052-21">1967-0052-21 — US4 RR (실린더)</option><option value="1967-391">1967-391 — IK/CK</option><option value="1967-392">1967-392 — IK/CK</option><option value="1968-0016-01">1968-0016-01 — LF-FRT INSERT</option><option value="1968-0016-21">1968-0016-21 — LF-FRT FLINGER</option><option value="1968-362">1968-362 — BH - FRT</option><option value="1968-364-1">1968-364-1 — (DM-FRT)</option><option value="1968-364-2">1968-364-2 — (DM-FRT)신형</option><option value="1969-0030-01">1969-0030-01 — CN7 RR Open Seal Insert</option><option value="1970-363">1970-363 — 비대칭베어링</option><option value="1970-372-1">1970-372-1 — GM</option><option value="1970-372-2">1970-372-2 — GM</option><option value="1972-383">1972-383 — HI O/P</option><option value="1972-383(2호금형)">1972-383(2호금형) — HI O/P</option><option value="1973-325">1973-325 — 0177</option><option value="1973-370">1973-370 — DH (가공품)</option><option value="1974-0023-01">1974-0023-01 — UM (단조금형)</option><option value="1974-0023-21">1974-0023-21 — UM (실린더)</option><option value="1976-0004-01">1976-0004-01 — CN7 (프로금형)</option><option value="1979-0051-01">1979-0051-01 — US4 RR (프로금형)</option><option value="1982-371">1982-371 — GM</option><option value="45524-26210">45524-26210 — 6AT SPRING O/D CLUTCH RETIRN</option><option value="45624-2F010-L">45624-2F010-L — SPRING U/D BRAKE RETURN RETAINER LOWER</option><option value="45624-2F010-U">45624-2F010-U — SPRING U/D BRAKE RETURN RETAINER UPPER</option><option value="45631-26010A">45631-26010A</option><option value="45631-26010B">45631-26010B</option><option value="45631-26010C">45631-26010C</option><option value="48338-2H010">48338-2H010 — IVT RETAINER</option><option value="54610-C1000-(TR)">54610-C1000-(TR) — JF MAIN TR</option><option value="54610-C1001-(BK)">54610-C1001-(BK) — JF MAIN BK</option><option value="54610-D3000-(TR)">54610-D3000-(TR)</option><option value="54610-D3500-(TR)">54610-D3500-(TR) — SV MAIN TR</option><option value="54610-D3501-(BK)">54610-D3501-(BK) — JF MAIN BK</option><option value="116080-ST0">116080-ST0 — CAP</option><option value="116090-ST2">116090-ST2 — ENCODER RING</option><option value="AB3038-SC">AB3038-SC — SEALING CAP</option><option value="AB3248-SC-01">AB3248-SC-01 — 9BUX GREASE CAP</option><option value="AB3248-SC-01">AB3248-SC-01 — 9BUX GREASE CAP</option><option value="AT3037-GC-00">AT3037-GC-00 — T1XX GREASE CAP</option><option value="C873-622-2">C873-622-2</option><option value="DUST CAP V30">DUST CAP V30</option><option value="IJ12041-SD-00">IJ12041-SD-00</option><option value="IJ223101-SC">IJ223101-SC</option><option value="IJZZ3127-DD">IJZZ3127-DD</option><option value="IW/OW-BDA-1106-1">IW/OW-BDA-1106-1 — MSBU RING</option><option value="IW/OW-BDA-1106-2">IW/OW-BDA-1106-2 — MSBU RING</option><option value="IW/OW-BDA-1106-3">IW/OW-BDA-1106-3 — MSBU RING</option><option value="IW/OW-BDA-1113-1">IW/OW-BDA-1113-1 — MSBU RING</option><option value="IW/OW-BDA-1113-2">IW/OW-BDA-1113-2 — MSBU RING</option><option value="IW/OW-BDA-1113D">IW/OW-BDA-1113D — MSBU RING</option><option value="IW/OW-BDA-1159B">IW/OW-BDA-1159B — MSBU RING</option><option value="IW/OW-BDA-1165A">IW/OW-BDA-1165A — MSBU RING</option><option value="IW/OW-BDA-1179-1">IW/OW-BDA-1179-1 — MSBU RING</option><option value="IW/OW-BDA-1179-2">IW/OW-BDA-1179-2 — MSBU RING</option><option value="IW/OW-BDA-1179-3">IW/OW-BDA-1179-3 — MSBU RING</option><option value="SEALING CAP">SEALING CAP</option><option value="T1XX GREASE CAP">T1XX GREASE CAP</option></select>
+    <input id="binPn" list="dlBinPn" placeholder="품번 입력 또는 선택" autocomplete="off"
+      style="min-width:240px;font-family:var(--mono)" data-n="">
+    <datalist id="dlBinPn"></datalist>
+    <span id="binHit" class="binHit"></span>
     <div class="rt"><button class="btn" onclick="printAllBins()">전 품목 일괄 인쇄</button></div>
   </div>
   <div id="binWrap"><div class="sheet" style="margin-bottom:12px">
@@ -6661,18 +6669,43 @@ function binHtml(it){
         <td class="c" style="font-family:var(--sans)">차월이월</td></tr></tfoot>
     </table></div>`;
 }
+/* 품번 칸은 드롭다운 + 직접 입력 겸용.
+   품번 일부만 쳐도 찾고, 품명으로도 찾는다. */
+function binFind(q){
+  const L=S.items.filter(inWh);
+  const t=nz(String(q||'').trim());
+  if(!t) return null;
+  const exact=L.find(i=>i.pn.toUpperCase()===t.toUpperCase());
+  if(exact) return exact;
+  const cp=canonPn(t);                                   /* 별칭으로 친 경우 */
+  const byAlias=L.find(i=>i.pn===cp);
+  if(byAlias) return byAlias;
+  const head=L.filter(i=>nz(i.pn).startsWith(t));        /* 앞글자 일치 */
+  if(head.length===1) return head[0];
+  const part=L.filter(i=>nz(i.pn+' '+(i.nm||'')).includes(t));
+  if(part.length===1) return part[0];
+  return head[0]||part[0]||null;
+}
 function rBin(){
   const sel=$('binPn');
   const L=S.items.filter(inWh);
-  if(sel.dataset.n!==L.length+'|'+WH){
+  const dl=$('dlBinPn');
+  if(dl && sel.dataset.n!==L.length+'|'+WH){
     sel.dataset.n=L.length+'|'+WH;
-    sel.innerHTML=L.map(i=>`<option value="${esc(i.pn)}">${esc(i.pn)}${i.nm?' — '+esc(i.nm):''}</option>`).join('');
+    dl.innerHTML=L.map(i=>`<option value="${esc(i.pn)}">${i.nm?esc(i.nm):''}</option>`).join('');
   }
-  const it=L.find(x=>x.pn===sel.value)||L[0];
-  $('binWrap').innerHTML=it?binHtml(it):'<div class="empty">등록된 품목이 없습니다.</div>';
+  const q=String(sel.value||'').trim();
+  const it=(q?binFind(q):null)||(q?null:L[0]);
+  const hit=$('binHit');
+  if(hit) hit.textContent = it ? (it.pn!==q ? '→ '+it.pn+(it.nm?' · '+it.nm:'') : (it.nm||''))
+                              : (q?'찾는 품번이 없습니다':'');
+  if(hit) hit.className='binHit'+(it?'':' ng');
+  $('binWrap').innerHTML=it?binHtml(it)
+    :(q?'<div class="empty">'+esc(q)+' — 품목대장에 없는 품번입니다.</div>'
+       :'<div class="empty">품번을 입력하거나 목록에서 고르세요.</div>');
 }
 function goBin(pn){
-  setTab('bin'); $('binPn').value=pn; rBin(); window.scrollTo({top:0});
+  setTab('bin'); $('binPn').value=pn; $('binPn').dataset.n=''; rBin(); window.scrollTo({top:0});
 }
 function printAllBins(){
   $('binWrap').innerHTML=S.items.filter(it=>{
@@ -12314,6 +12347,9 @@ $('cfgEx').onchange=e=>{
   save(); render(); toast('관리제외 '+(t.i+t.l?'적용: 품목 '+t.i+' / 전표 '+t.l:'목록 저장됨'));
 };
 $('binPn').onchange=rBin;
+$('binPn').oninput=(()=>{ let t; return ()=>{ clearTimeout(t); t=setTimeout(rBin,220); }; })();
+$('binPn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); rBin(); } };
+$('binPn').onfocus=e=>e.target.select();
 /* ── 원소재 이벤트 ── */
 $('rawQ').oninput=rRaw; $('rawSt').onchange=rRaw;
 $('trcQ').onkeydown=e=>{if(e.key==='Enter')rTrc();};
