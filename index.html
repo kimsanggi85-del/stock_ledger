@@ -984,7 +984,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.4 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.5 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7077,6 +7077,8 @@ function itRow(it){
     if(c==='bd') v=(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:null;
     else if(['bx','sf','bs'].includes(c)) v=Math.round(+v||0);   /* 정수 칸 — 소수 입력 시 저장 실패 방지 */
     else if(c==='pn') v=String(v||'').trim();
+    else if(c==='base'||c==='pair'||c==='setp') v=(v==null||String(v).trim()==='')?null:String(v).trim();  /* 연결 칸은 비면 NULL */
+    else if(c==='hide') v=!!v;
     else v=v==null?'':String(v);
     o[c]=v;
   });
