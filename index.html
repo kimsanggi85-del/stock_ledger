@@ -1024,13 +1024,57 @@ body.qp-on{overflow:hidden}
 .bm-b i{display:block;font-style:normal;font-size:10px;color:#7d8b99}
 .bm .empty{padding:24px;text-align:center;color:#93A0AB;font-size:13px}
 @media print{ .bm{display:none} }
+
+/* 수불부 품번 콤보 (자체 드롭다운) */
+.binCombo{position:relative;display:flex;align-items:stretch;flex:1;max-width:520px}
+.binCombo #binPn{flex:1;border-radius:6px 0 0 6px}
+.binArrow{width:38px;border:1px solid #D7DCE1;border-left:0;border-radius:0 6px 6px 0;background:#F4F7F9;
+  font-size:14px;color:#5A6875;cursor:pointer}
+.binDrop{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;max-height:340px;overflow-y:auto;
+  background:#fff;border:1px solid #C9D2DB;border-radius:0 0 10px 10px;box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.binDrop.on{display:block}
+.bdi{padding:9px 12px;border-bottom:1px solid #EEF1F4;cursor:pointer;font-family:var(--mono);font-size:13px}
+.bdi:active,.bdi:hover{background:#F0F6F2}
+.bdi b{font-weight:800}.bdi span{margin-left:8px;color:#5A6875;font-family:var(--sans);font-size:12px}
+.bdi em{float:right;font-style:normal;font-size:10.5px;padding:1px 7px;border-radius:99px;background:#E6EBF2;color:#1E2A36}
+.bdi.none{color:#93A0AB;cursor:default}
+/* 전 품목 현황 */
+.ba{background:#fff;border:1px solid #D7DCE1;border-radius:12px;overflow:hidden}
+.ba-hd{padding:11px 14px;font-weight:800;font-size:14px;border-bottom:1px solid #E9EDF1}
+.ba-hd span{font-weight:600;font-size:11.5px;color:#7d8b99;margin-left:8px}
+.ba-tot{display:grid;grid-template-columns:repeat(4,1fr);background:#F7F9FB;border-bottom:1px solid #E9EDF1}
+.ba-tot>div{padding:9px 6px;text-align:center;border-right:1px solid #E9EDF1}
+.ba-tot>div:last-child{border-right:0}
+.ba-tot i{display:block;font-style:normal;font-size:10.5px;color:#7d8b99;font-weight:700}
+.ba-tot b{display:block;font-size:14px;margin-top:2px;font-variant-numeric:tabular-nums}
+.ba-tot .cur{background:#E7F3EC}.ba-tot .cur b{color:#0B4A2B}
+.ba-tot .pos{color:#0B6B3A}.ba-tot .neg{color:#B3261E}
+.ba-cols{display:grid;grid-template-columns:1fr 70px 76px 76px 88px;padding:6px 10px;font-size:10.5px;font-weight:800;
+  color:#7d8b99;background:#F4F7F9;border-bottom:1px solid #E9EDF1}
+.ba-cols span:not(:first-child){text-align:right}
+.ba-r{display:grid;grid-template-columns:1fr 70px 76px 76px 88px;align-items:center;padding:8px 10px;
+  border-bottom:1px solid #EEF1F4;cursor:pointer;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ba-r>div:not(:first-child){text-align:right}
+.ba-r:active,.ba-r:hover{background:#F4F7F9}
+.ba-pn b{font-family:var(--mono);font-size:13px}
+.ba-pn span{display:block;font-size:10.5px;color:#7d8b99;font-family:var(--sans)}
+.ba-pn em{font-style:normal;font-size:10px;padding:0 6px;border-radius:99px;background:#E6EBF2;color:#1E2A36;margin-left:4px}
+.ba-r .pos{color:#0B6B3A}.ba-r .neg{color:#B3261E}
+.ba-r .c b{font-size:13.5px}.ba-r .c i{display:block;font-style:normal;font-size:10px;color:#7d8b99}
+@media (max-width:760px){
+  .binCombo{max-width:none;flex:1 1 100%}
+  #p-bin #binPn{border-radius:10px 0 0 10px}
+  .binArrow{width:48px;border:2px solid #1E2A36;border-left:0;border-radius:0 10px 10px 0;font-size:18px}
+  .ba-cols,.ba-r{grid-template-columns:1fr 62px 66px 66px 80px;font-size:12px}
+}
+@media print{ .ba{display:none} }
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -2716,9 +2760,12 @@ body.qp-on{overflow:hidden}
   <div class="pt"><h2>품목별 입출고 이력</h2><span class="sub">품번 1개의 일자별 입·출고·잔량</span><div class="pa"><button class="btn" onclick="window.print()">인쇄</button></div></div>
   <div class="fbar">
     <label>품번</label>
-    <input id="binPn" list="dlBinPn" placeholder="품번 입력 또는 선택" autocomplete="off"
-      style="min-width:240px;font-family:var(--mono)" data-n="">
-    <datalist id="dlBinPn"></datalist>
+    <div class="binCombo">
+      <input id="binPn" placeholder="품번 입력 또는 선택" autocomplete="off" inputmode="text"
+        style="min-width:240px;font-family:var(--mono)" data-n="">
+      <button type="button" class="binArrow" onclick="binDropToggle()" aria-label="목록">▾</button>
+      <div id="binDrop" class="binDrop"></div>
+    </div>
     <span id="binHit" class="binHit"></span>
     <div class="rt"><button class="btn" onclick="printAllBins()">전 품목 일괄 인쇄</button></div>
   </div>
@@ -6811,23 +6858,61 @@ function binFind(q){
   if(part.length===1) return part[0];
   return head[0]||part[0]||null;
 }
+/* 앱 자체 드롭다운 — 휴대폰 브라우저의 datalist 가 뜨지 않는 문제를 피한다 */
+function binDropList(q){
+  const L=S.items.filter(inWh);
+  const t=nz(String(q||'').trim());
+  const list=t?L.filter(i=>nz(i.pn+' '+(i.nm||'')+' '+(i.al||'')).includes(t)):L;
+  return list.slice(0,200);
+}
+function binDropRender(q){
+  const dp=$('binDrop'); if(!dp)return;
+  const list=binDropList(q);
+  dp.innerHTML=list.length
+    ? list.map(i=>`<div class="bdi" data-pn="${esc(i.pn)}"><b>${esc(i.pn)}</b>${i.nm?'<span>'+esc(i.nm)+'</span>':''}${it2wh(i)}</div>`).join('')
+    : '<div class="bdi none">해당 품번이 없습니다</div>';
+}
+function it2wh(i){ return (i.wh&&i.wh!=='현장')?'<em>'+esc(whNm(i.wh))+'</em>':''; }
+function binDropOpen(){ binDropRender($('binPn').value); $('binDrop').classList.add('on'); }
+function binDropClose(){ const dp=$('binDrop'); if(dp)dp.classList.remove('on'); }
+function binDropToggle(){ const dp=$('binDrop'); if(dp.classList.contains('on'))binDropClose(); else { $('binPn').focus(); binDropOpen(); } }
+function binPick(pn){ $('binPn').value=pn; binDropClose(); rBin(); }
+
+/* 품번을 고르기 전에는 전 품목의 당월 입출고 현황을 보여준다 */
+function binAll(){
+  const L=S.items.filter(inWh);
+  const rows=L.map(it=>({it,v:calc(it)})).filter(({v})=>v.iq||v.oq||v.open||v.cur)
+    .sort((a,b)=>a.it.pn.localeCompare(b.it.pn,'en',{numeric:true}));
+  if(!rows.length) return '<div class="empty">등록된 품목이 없습니다.</div>';
+  const tot=rows.reduce((a,{v})=>({open:a.open+v.open,iq:a.iq+v.iq,oq:a.oq+v.oq,cur:a.cur+v.cur}),{open:0,iq:0,oq:0,cur:0});
+  return `<div class="ba">
+    <div class="ba-hd">전 품목 입출고 현황 <span>${ym} · ${rows.length}품목 · 품번을 누르면 상세</span></div>
+    <div class="ba-tot"><div><i>전월이월</i><b>${nf(tot.open)}</b></div><div><i>당월입고</i><b class="pos">+${nf(tot.iq)}</b></div>
+      <div><i>당월출고</i><b class="neg">−${nf(tot.oq)}</b></div><div class="cur"><i>현재고</i><b>${nf(tot.cur)}</b></div></div>
+    <div class="ba-cols"><span>품번</span><span>이월</span><span>입고</span><span>출고</span><span>현재고</span></div>
+    ${rows.map(({it,v})=>`<div class="ba-r" onclick="binPick('${esc(it.pn)}')">
+      <div class="ba-pn"><b>${esc(it.pn)}</b>${it.nm?'<span>'+esc(it.nm)+'</span>':''}${it2wh(it)}</div>
+      <div>${nf(v.open)}</div><div class="pos">${v.iq?'+'+nf(v.iq):'-'}</div><div class="neg">${v.oq?'−'+nf(v.oq):'-'}</div>
+      <div class="c ${v.cur<0?'neg':''}"><b>${nf(v.cur)}</b>${it.bx?'<i>'+Math.floor(v.cur/it.bx)+'박스</i>':''}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
 function rBin(){
   const sel=$('binPn');
   const L=S.items.filter(inWh);
-  const dl=$('dlBinPn');
-  if(dl && sel.dataset.n!==L.length+'|'+WH){
-    sel.dataset.n=L.length+'|'+WH;
-    dl.innerHTML=L.map(i=>`<option value="${esc(i.pn)}">${i.nm?esc(i.nm):''}</option>`).join('');
-  }
   const q=String(sel.value||'').trim();
-  const it=(q?binFind(q):null)||(q?null:L[0]);
   const hit=$('binHit');
+  if(!q){                                             /* 검색 전: 전 품목 현황 */
+    if(hit){ hit.textContent=''; hit.className='binHit'; }
+    $('binWrap').innerHTML=binAll();
+    return;
+  }
+  const it=binFind(q);
   if(hit) hit.textContent = it ? (it.pn!==q ? '→ '+it.pn+(it.nm?' · '+it.nm:'') : (it.nm||''))
-                              : (q?'찾는 품번이 없습니다':'');
+                              : '찾는 품번이 없습니다';
   if(hit) hit.className='binHit'+(it?'':' ng');
-  $('binWrap').innerHTML=it?binHtml(it)
-    :(q?'<div class="empty">'+esc(q)+' — 품목대장에 없는 품번입니다.</div>'
-       :'<div class="empty">품번을 입력하거나 목록에서 고르세요.</div>');
+  $('binWrap').innerHTML=it?binHtml(it):'<div class="empty">'+esc(q)+' — 품목대장에 없는 품번입니다.</div>';
 }
 function goBin(pn){
   setTab('bin'); $('binPn').value=pn; $('binPn').dataset.n=''; rBin(); window.scrollTo({top:0});
@@ -12473,10 +12558,12 @@ $('cfgEx').onchange=e=>{
   }
   save(); render(); toast('관리제외 '+(t.i+t.l?'적용: 품목 '+t.i+' / 전표 '+t.l:'목록 저장됨'));
 };
-$('binPn').onchange=rBin;
-$('binPn').oninput=(()=>{ let t; return ()=>{ clearTimeout(t); t=setTimeout(rBin,220); }; })();
-$('binPn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); rBin(); } };
-$('binPn').onfocus=e=>e.target.select();
+$('binPn').oninput=(()=>{ let t; return ()=>{ binDropRender($('binPn').value); $('binDrop').classList.add('on');
+  clearTimeout(t); t=setTimeout(rBin,260); }; })();
+$('binPn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); binDropClose(); rBin(); } if(e.key==='Escape')binDropClose(); };
+$('binPn').onfocus=e=>{ e.target.select(); binDropOpen(); };
+$('binDrop').addEventListener('click',e=>{ const x=e.target.closest('.bdi[data-pn]'); if(x)binPick(x.dataset.pn); });
+document.addEventListener('click',e=>{ if(!e.target.closest('.binCombo'))binDropClose(); });
 /* ── 원소재 이벤트 ── */
 $('rawQ').oninput=rRaw; $('rawSt').onchange=rRaw;
 $('trcQ').onkeydown=e=>{if(e.key==='Enter')rTrc();};
