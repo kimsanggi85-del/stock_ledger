@@ -978,13 +978,18 @@ body.qp-on{overflow:hidden}
 .binHit{font-size:11.5px;color:#5A6875;font-family:var(--sans);margin-left:6px;white-space:nowrap}
 .binHit.ng{color:#B3261E;font-weight:700}
 #binPn{font-weight:700}
+
+/* 휴대폰 간이표 머리글 정렬 */
+.mx-h .mxs{cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.mx-h .mxs.on{color:#0B6B3A;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.mx-h .mxs:active{opacity:.6}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.5 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6558,7 +6563,8 @@ let SORT={k:'pn',d:1};
 const SORT_KEYS={'구분':'wh','품번':'pn','품명':'nm','현재고':'cur','당월입고':'iq','당월출하(납품)':'sq','과부족':'gap','전월이월':'open'};
 function sortRows(rows){
   const k=SORT.k,d=SORT.d;
-  const val=({it,v})=>({wh:it.wh||'현장',pn:it.pn||'',nm:it.nm||'',cur:v.cur,iq:v.iq,sq:v.sq,gap:v.gap,open:v.open})[k];
+  const val=({it,v})=>({wh:it.wh||'현장',pn:it.pn||'',nm:it.nm||'',cur:v.cur,iq:v.iq,sq:v.sq,gap:v.gap,open:v.open,
+    sf:+it.sf||0,bx:+it.bx||0,last:v.last||''})[k];
   return rows.slice().sort((a,b)=>{
     const x=val(a),y=val(b);
     if(typeof x==='number'||typeof y==='number')return d*((+x||0)-(+y||0));
@@ -6567,6 +6573,14 @@ function sortRows(rows){
   });
 }
 function setSort(k){ if(SORT.k===k)SORT.d=-SORT.d; else SORT={k,d:1}; rSum(); }
+/* 휴대폰 간이표 머리글 — 누르면 그 열로 정렬, 다시 누르면 반대로 */
+function mxHead(){
+  const cols=[['품번','pn'],['현재고','cur'],['안전재고','sf'],['과부족','gap'],['ea/박스','bx'],['기준일','last']];
+  return cols.map(([t,k])=>{
+    const on=SORT.k===k;
+    return `<div class="mxs${on?' on':''}" onclick="setSort('${k}')" role="button">${t}${on?(SORT.d>0?' ▲':' ▼'):''}</div>`;
+  }).join('');
+}
 let sumEdit=false;
 function fillSumCu(){
   const sel=$('sCu'); if(!sel)return;
@@ -6618,7 +6632,7 @@ function rSum(){
   if(isMob()&&CARD){
     $('tSum').outerHTML='<div id="tSum"></div>';
     $('tSum').innerHTML=R.length
-      ?'<div class="mx"><div class="mx-h"><div>품번</div><div>현재고</div><div>안전재고</div><div>과부족</div><div>ea/박스</div><div>기준일</div></div>'
+      ?'<div class="mx"><div class="mx-h">'+mxHead()+'</div>'
         +R.map(({it,v})=>mcSum(it,v)).join('')+'</div>'
       :'<div class="empty">해당 품목이 없습니다.</div>';
     return;
