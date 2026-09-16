@@ -984,7 +984,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1034,7 +1034,7 @@ body.qp-on{overflow:hidden}
 </div>
 
 <!-- ══ 총괄표 ══ -->
-<div class="page" id="p-sum">
+<div class="page on" id="p-sum">
   <button class="m-only" onclick="syncMes(false)" style="width:100%;padding:13px;margin:0 0 10px;border:0;border-radius:10px;background:#1F3A5F;color:#fff;font-size:15px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.15)">🔃 새로고침</button>
   <div class="pt"><h2>재고 현황</h2><span class="sub">품목별 월간 입출고 집계 · 현재고 · 안전재고</span><div class="pa"><button class="btn" onclick="render()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportXls()">엑셀</button></div></div>
   <div class="fbar">
@@ -5166,7 +5166,7 @@ body.qp-on{overflow:hidden}
 </div>
 
 <!-- ══ LOT 추적 ══ -->
-<div class="page on" id="p-trc">
+<div class="page" id="p-trc">
   <div class="pt"><h2>LOT 추적</h2><span class="sub">TRACEABILITY · 소재 밀시트 ↔ 생산 ↔ 출하</span>
     <div class="pa"><button class="btn" onclick="window.print()">인쇄</button>
       <button class="btn" onclick="exportTrc()">엑셀</button></div></div>
@@ -7040,8 +7040,6 @@ function itRow(it){
     let v=it[c];
     if(c==='bd') v=(v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:null;
     else if(['bx','sf','bs'].includes(c)) v=Math.round(+v||0);   /* 정수 칸 — 소수 입력 시 저장 실패 방지 */
-    else if(c==='setx') v=(v!==''&&v!=null&&+v>0)?Math.round(+v):null;   /* 정수 칸 — 빈값 "" 전송 시 22P02 오류 */
-    else if(c==='hide') v=(v===true||v==='true'||v===1||v==='1');        /* boolean 칸 */
     else if(c==='pn') v=String(v||'').trim();
     else v=v==null?'':String(v);
     o[c]=v;
@@ -12758,6 +12756,13 @@ function init(){
 }
 load();
 unblockSBC();
+/* 저장된 HTML 에 다른 화면이 켜져 있어도 시작은 항상 재고현황.
+   (편집 중 열려 있던 화면이 그대로 박혀 나오던 문제를 막는다) */
+try{
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const p0=document.getElementById('p-'+(tab||'sum'))||document.getElementById('p-sum');
+  if(p0) p0.classList.add('on');
+}catch(e){}
 S.lastSync='';S.lastSyncN=0;      /* 이 세션에서 동기화 성공 전까지는 '미동기화' 로 표시 */
 init();
 syncDot('busy','최신 자료를 가져오는 중…');   /* 열자마자 자동으로 받아온다 — 새로고침 누를 필요 없음 */
