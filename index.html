@@ -983,13 +983,54 @@ body.qp-on{overflow:hidden}
 .mx-h .mxs{cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .mx-h .mxs.on{color:#0B6B3A;font-weight:800;text-decoration:underline;text-underline-offset:3px}
 .mx-h .mxs:active{opacity:.6}
+
+/* ═══ 휴대폰 수불부 ═══ */
+@media (max-width:760px){
+  #p-bin .fbar{flex-wrap:wrap;gap:8px}
+  #p-bin .fbar label{display:none}
+  #p-bin #binPn{flex:1 1 100%;min-height:48px;font-size:17px;font-weight:800;padding:8px 12px;
+    border:2px solid #1E2A36;border-radius:10px}
+  #p-bin .binHit{flex:1 1 100%;margin:0;font-size:12.5px}
+  #p-bin .pt{display:none}
+}
+.bm{background:#fff;border:1px solid #D7DCE1;border-radius:12px;overflow:hidden;margin-bottom:12px}
+.bm-hd{padding:12px 14px 8px;border-bottom:1px solid #E9EDF1}
+.bm-pn{font-size:18px;font-weight:800;font-family:var(--mono);color:#16202B}
+.bm-pn small{display:block;font-size:12px;font-weight:600;color:#5A6875;font-family:var(--sans);margin-top:2px}
+.bm-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.bm-tags span{font-size:11px;padding:2px 8px;border-radius:99px;background:#E6EBF2;color:#1E2A36;font-weight:700}
+.bm-sum{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #E9EDF1;background:#F7F9FB}
+.bm-sum>div{padding:9px 6px;text-align:center;border-right:1px solid #E9EDF1}
+.bm-sum>div:last-child{border-right:0}
+.bm-sum i{display:block;font-style:normal;font-size:10.5px;color:#7d8b99;font-weight:700}
+.bm-sum b{display:block;font-size:15px;margin-top:2px;font-variant-numeric:tabular-nums}
+.bm-sum .cur{background:#E7F3EC}.bm-sum .cur b{font-size:17px;color:#0B4A2B}
+.bm-sum .cur em{display:block;font-style:normal;font-size:10.5px;color:#0B6B3A;font-weight:700}
+.bm-sum .pos{color:#0B6B3A}.bm-sum .neg{color:#B3261E}
+.bm-cols{display:grid;grid-template-columns:52px 1fr 78px 82px;padding:6px 10px;font-size:10.5px;
+  font-weight:800;color:#7d8b99;background:#F4F7F9;border-bottom:1px solid #E9EDF1}
+.bm-cols span:nth-child(3),.bm-cols span:nth-child(4){text-align:right}
+.bm-r{display:grid;grid-template-columns:52px 1fr 78px 82px;align-items:center;padding:9px 10px;
+  border-bottom:1px solid #EEF1F4;border-left:4px solid #D7DCE1}
+.bm-r.in{border-left-color:#1DB954}.bm-r.out{border-left-color:#E5484D}
+.bm-r:active{background:#F4F7F9}
+.bm-d{font-family:var(--mono);font-size:12.5px;font-weight:700;color:#16202B}
+.bm-m b{display:block;font-size:12.5px;color:#16202B}
+.bm-m span{display:block;font-size:10.5px;color:#7d8b99;line-height:1.35;word-break:keep-all}
+.bm-q{text-align:right;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.bm-q.pos{color:#0B6B3A}.bm-q.neg{color:#B3261E}
+.bm-b{text-align:right}
+.bm-b b{display:block;font-size:13.5px;font-variant-numeric:tabular-nums}
+.bm-b i{display:block;font-style:normal;font-size:10px;color:#7d8b99}
+.bm .empty{padding:24px;text-align:center;color:#93A0AB;font-size:13px}
+@media print{ .bm{display:none} }
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6678,7 +6719,41 @@ function ledFor(it){
   if(it.pair) return S.led.filter(r=>r.pn===it.pn&&r.k!=='출하');
   return S.led.filter(r=>r.pn===it.pn);
 }
+/* 휴대폰용 수불부 — 문서 양식 대신 카드로. 잔량 흐름이 한눈에 보이게 */
+function binMobile(it){
+  const a=mStart(),b=mEnd();
+  let bal=it.bs;
+  S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
+  const R=ledFor(it).filter(r=>r.d>=a&&r.d<=b).sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
+  const open=bal; let ti=0,to=0;
+  const rows=R.map(r=>{
+    const io=kindIO(r.k); if(io==='I'){bal+=r.q;ti+=r.q;}else{bal-=r.q;to+=r.q;}
+    const who=partyNm(r.p,r.k,r.pn);
+    return `<div class="bm-r ${io==='I'?'in':'out'}" onclick="openIO(${r.id})">
+      <div class="bm-d">${r.d.slice(5).replace('-','/')}</div>
+      <div class="bm-m"><b>${esc(r.k)}</b><span>${[who,r.lot?'LOT '+r.lot:'',r.n].filter(Boolean).map(esc).join(' · ')}</span></div>
+      <div class="bm-q ${io==='I'?'pos':'neg'}">${io==='I'?'+':'−'}${nf(r.q)}</div>
+      <div class="bm-b"><b>${nf(bal)}</b><i>${it.bx?Math.floor(bal/it.bx)+'박스':''}</i></div>
+    </div>`;
+  }).join('');
+  const cur=bal;
+  return `<div class="bm">
+    <div class="bm-hd">
+      <div class="bm-pn">${esc(it.pn)}${it.nm?'<small>'+esc(it.nm)+'</small>':''}</div>
+      <div class="bm-tags"><span>${esc(whNm(it.wh))}</span>${it.cu?'<span>'+esc(it.cu)+'</span>':''}<span>${nf(it.bx)} ea/박스</span></div>
+    </div>
+    <div class="bm-sum">
+      <div><i>전월이월</i><b>${nf(open)}</b></div>
+      <div><i>당월입고</i><b class="pos">+${nf(ti)}</b></div>
+      <div><i>당월출고</i><b class="neg">−${nf(to)}</b></div>
+      <div class="cur"><i>현재고</i><b>${nf(cur)}</b><em>${it.bx?Math.floor(cur/it.bx)+'박스':''}</em></div>
+    </div>
+    <div class="bm-cols"><span>일자</span><span>구분 · 거래처 · 비고</span><span>수량</span><span>잔량</span></div>
+    ${rows||'<div class="empty">당월 입출고 내역이 없습니다.</div>'}
+  </div>`;
+}
 function binHtml(it){
+  if(isMob()&&CARD) return binMobile(it);
   const a=mStart(),b=mEnd();
   let bal=it.bs;
   S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
