@@ -1074,7 +1074,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7301,14 +7301,24 @@ async function pullItems(silent,strict){
        영영 달라질 여지를 제거한다. 편집은 touchItem→즉시 업로드로 서버가 먼저 바뀐다. ═══ */
     if(itDirty){ try{ await pushItems(true); }catch(e){} }   /* 밀어올리기 전의 내 편집 보호 */
     const cntMap=new Map(S.items.map(i=>[i.pn,i.cnt]));      /* 실사 입력값 보존 */
+    const localMap=new Map(S.items.map(i=>[i.pn,i]));
     const mine=S.items.filter(i=>!rows.some(r=>r.pn===i.pn)  /* 서버에 없는 로컬 품목: */
       &&String(i.ua||'')>=SESSION_T0);                       /* 이 세션에서 만든 것만 보존 */
     const before=S.items.length;
+    let kept=0;
     S.items=rows.filter(r=>!isExcl(r.pn)).map(r=>{
+      /* ═══ 내가 방금 고친 품목은 서버가 옛값을 돌려줘도 지킨다 ═══
+         (저장 → 2.5초 뒤 업로드 사이, 또는 서버 반영이 늦은 사이에 새로고침이 돌면
+          편집이 원래 값으로 되돌아가던 문제) — 로컬 ua 가 서버 ua 보다 최신이면 로컬 우선 */
+      const lc=localMap.get(r.pn);
+      if(lc && lc.ua && String(lc.ua)>String(r.ua||'') && String(lc.ua)>=SESSION_T0){
+        kept++; return lc;
+      }
       const o={no:0,cnt:cntMap.has(r.pn)?cntMap.get(r.pn):null,ua:r.ua};
       IT_COLS.forEach(c=>o[c]=(c==='bd')?(r.bd||'2025-12-31'):(r[c]==null?(['bx','sf','bs'].includes(c)?0:''):r[c]));
       return o;
     });
+    if(kept){ itDirty=true; schedPush(); }               /* 지킨 편집은 다시 올린다 */
     S.items.push(...mine);
     S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
     if(mine.length)schedPush();
