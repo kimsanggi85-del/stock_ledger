@@ -984,7 +984,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v15.4 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1013,9 +1013,10 @@ body.qp-on{overflow:hidden}
   <div class="navitem" data-g="raw"><button type="button">원소재 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="raw"><i>🧱</i>원소재(코일)<em>RAW COIL</em></a><a data-t="raw" data-fn="refreshAll()" class="act pri"><i>🔄</i>새로고침</a><a data-t="raw" data-fn="setRV('sup')" class="act"><i>🏢</i>업체별</a><a data-t="raw" data-fn="setRV('eq')" class="act"><i>🏭</i>설비현황</a><a data-t="raw" data-fn="setRV('coil')" class="act"><i>🧱</i>코일목록</a><a data-t="raw" data-fn="openCoil(-1)" class="act"><i>➕</i>코일등록</a><a data-t="raw" data-fn="exportRaw()" class="act"><i>📗</i>엑셀</a><a data-t="raw" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
   <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
   <div class="nav-f" id="navF"><label style="font-size:12px">재고구분</label><select id="whSel" style="font-weight:700">
-    <option value="">전체 (현장+출하대기)</option>
+    <option value="">전체 (현장+출하대기+2층검사실)</option>
     <option value="현장">현장재고 · 생산팀</option>
-    <option value="출하대기">출하대기재고 · 검사실</option></select><label style="font-size:12px">기준월</label><input type="month" id="ym"></div>
+    <option value="출하대기">출하대기재고 · 검사실</option>
+    <option value="검사실2F">2층 검사실재고 · 검사실</option></select><label style="font-size:12px">기준월</label><input type="month" id="ym"></div>
   <span class="tst"><span class="dot"></span><span id="tstMes">MES Connected</span><span id="clk">2026-09-14 15:29:15</span></span>
 </nav>
 <div class="tabs">
@@ -1072,7 +1073,7 @@ body.qp-on{overflow:hidden}
       <table class="appr"><colgroup><col style="width:20px"><col><col><col></colgroup><tbody><tr><td class="v" rowspan="2">결<br>재</td><td class="t">담당</td><td class="t">검토</td><td class="t">승인</td></tr><tr><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td></tr></tbody></table>
     </div>
     <div class="doc-info">
-      <span><b>기준월</b><i id="i1">2026-09</i></span><span><b>재고구분</b><i id="iw1">전체 (현장재고 + 출하대기재고)</i></span>
+      <span><b>기준월</b><i id="i1">2026-09</i></span><span><b>재고구분</b><i id="iw1">전체 (현장 + 출하대기 + 2층검사실)</i></span>
       <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-14 15:27</i></span>
       <span><b>단위</b>EA</span>
     </div>
@@ -2754,7 +2755,7 @@ body.qp-on{overflow:hidden}
     <div class="doc-hd"><div class="doc-no">문서번호 <b>TJP-QP-0803</b><br>개정번호 <b>Rev.0</b></div>
       <h1>재 고 실 사 표</h1>
       <table class="appr"><colgroup><col style="width:20px"><col><col><col></colgroup><tbody><tr><td class="v" rowspan="2">결<br>재</td><td class="t">실사자</td><td class="t">입회자</td><td class="t">승인</td></tr><tr><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td><td class="s" onclick="sign(this)">인</td></tr></tbody></table></div>
-    <div class="doc-info"><span><b>실사일자</b><i id="i4">2026-09-14</i></span><span><b>재고구분</b><i id="iw2">전체 (현장재고 + 출하대기재고)</i></span>
+    <div class="doc-info"><span><b>실사일자</b><i id="i4">2026-09-14</i></span><span><b>재고구분</b><i id="iw2">전체 (현장 + 출하대기 + 2층검사실)</i></span>
       <span><b>실사방법</b>전수 실사</span></div>
     <div id="cntPg" class="cnt-pg"></div>
     <div class="gw"><div class="gt"><span id="gt-cnt">재고 실사 · 총 <b>165</b>품목 · 실사입력 <b>0</b></span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tCnt"><thead><tr><th>No</th><th>품번</th><th>품명</th><th>보관위치</th><th>박스단위</th>
@@ -6382,7 +6383,7 @@ function mergeAdd(){
   if(n)setTimeout(()=>toast('SKF씰 출하대기 품목 '+n+'건이 추가되었습니다'),700);
 }
 
-const WHS=[['현장','현장재고','생산팀'],['출하대기','출하대기재고','검사실']];
+const WHS=[['현장','현장재고','생산팀'],['출하대기','출하대기재고','검사실'],['검사실2F','2층 검사실재고','검사실']];
 const whNm=w=>(WHS.find(x=>x[0]===w)||WHS[0])[1];
 const whDp=w=>(WHS.find(x=>x[0]===w)||WHS[0])[2];
 let S={user:'',items:[],led:[],seq:1,party:PARTY.split(','),
@@ -6493,13 +6494,41 @@ function calc(it){
   const a=mStart(), b=mEnd();
   let open=it.bs, iq=0, oq=0, sq=0, last='';
   const setp=it.setp?String(it.setp):'';
+  /* ═══ 현장 / 2층 검사실 분리 ═══
+     base 가 있는 품목( '1853-515-2 [2F]' )은 2층 검사실 계정:
+       원 품번 전표 중 검사입고(+)·출하(−) 만 물려받는다.
+     pair 가 있는 품목(원 품번, 현장 계정):
+       생산입고(+) · 검사입고(−, 2층으로 이동) · 검사폐기·불량폐기(−). 출하는 2층에서 뺀다.
+     재고조정 전표는 각자 자기 품번에 붙은 것만. */
+  const base=it.base?String(it.base):'';
+  const isF2=!!base, hasPair=!!it.pair;
+  const take=r=>{
+    if(isF2){
+      if(r.pn===it.pn) return r.k.indexOf('재고조정')===0 ? {q:r.q,io:kindIO(r.k)} : null;
+      if(r.pn===base){
+        if(r.k==='검사입고') return {q:r.q,io:'I'};
+        if(r.k==='출하')     return {q:r.q,io:'O'};
+      }
+      return null;
+    }
+    if(hasPair){
+      if(!(r.pn===it.pn||(setp&&r.pn===setp))) return null;
+      if(r.k==='생산입고') return {q:effQ(r,it),io:'I'};
+      if(r.k==='검사입고') return {q:r.q,io:'O'};          /* 현장 → 2층 이동 */
+      if(r.k==='검사폐기'||r.k==='불량폐기'||r.k==='선별제외') return {q:r.q,io:'O'};
+      if(r.k.indexOf('재고조정')===0) return {q:r.q,io:kindIO(r.k)};
+      return null;                                         /* 출하는 2층 계정 */
+    }
+    if(!(r.pn===it.pn||(setp&&r.pn===setp))) return null;
+    return {q:effQ(r,it),io:kindIO(r.k)};
+  };
   S.led.forEach(r=>{
-    if(!(r.pn===it.pn||(setp&&r.pn===setp))||r.d<=it.bd) return;
-    if(r.d<a){ open+=dlt(r,it); return; }
+    if(r.d<=it.bd) return;
+    const t=take(r); if(!t) return;
+    if(r.d<a){ open+=(t.io==='I'?t.q:-t.q); return; }
     if(r.d>b) return;
-    const q=effQ(r,it);
-    if(kindIO(r.k)==='I') iq+=q; else oq+=q;
-    if(r.k==='출하') sq+=q;
+    if(t.io==='I') iq+=t.q; else oq+=t.q;
+    if(r.k==='출하') sq+=t.q;
     if(r.d>last) last=r.d;
   });
   const cur=open+iq-oq;
@@ -6628,11 +6657,18 @@ function rSum(){
 }
 
 /* ═══════ 품목별 입출고 이력 (Bin Card) ═══════ */
+/* 품목별 수불부용 전표 — calc 와 같은 규칙 */
+function ledFor(it){
+  const base=it.base?String(it.base):'';
+  if(base) return S.led.filter(r=>r.pn===it.pn||(r.pn===base&&(r.k==='검사입고'||r.k==='출하')));
+  if(it.pair) return S.led.filter(r=>r.pn===it.pn&&r.k!=='출하');
+  return S.led.filter(r=>r.pn===it.pn);
+}
 function binHtml(it){
   const a=mStart(),b=mEnd();
   let bal=it.bs;
   S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
-  const R=S.led.filter(r=>r.pn===it.pn&&r.d>=a&&r.d<=b)
+  const R=ledFor(it).filter(r=>r.d>=a&&r.d<=b)
     .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
   const open=bal; let ti=0,to=0;
   const body=R.map(r=>{
@@ -6868,7 +6904,7 @@ function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실�
 /* ═══════ 품목대장 ═══════ */
 /* ═══════ 품목대장 공유 동기화 (stock_item) ═══════ */
 const IT_TABLE='stock_item';
-const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al','setx','setp','hide'];
+const IT_COLS=['pn','nm','sp','un','bx','sf','bs','bd','cu','lc','wh','al','setx','setp','hide','base','pair'];
 const SESSION_T0=new Date().toISOString();
 /* ═══ 박스단위 일괄 교정 (박스단위_20260901.xlsx, SKF씰 기준) ═══
    수량 0(미정) 품번은 제외. 품목을 찾을 때 별칭(canonPn)으로 표기 차이 흡수.
@@ -7310,7 +7346,7 @@ function rCfg(){
    +R.map(({it,i})=>`<tr>
      <td class="c">${i+1}</td>
      <td class="c" style="padding:0"><select class="whs" data-i="${i}" style="min-width:62px;font-size:11px;padding:6px 2px">${WHS.map(([v,n])=>
-       `<option value="${v}" ${(it.wh||'현장')===v?'selected':''}>${v==='현장'?'현장':'출하대기'}</option>`).join('')}</select></td>
+       `<option value="${v}" ${(it.wh||'현장')===v?'selected':''}>${v==='현장'?'현장':(v==='출하대기'?'출하대기':'2층검사실')}</option>`).join('')}</select></td>
      <td class="l" style="font-weight:700;cursor:pointer" onclick="openItem(${i})">${esc(it.pn)}${it.al?'<div style="font-size:9px;color:#888;font-weight:400">별칭 '+esc(it.al)+'</div>':''}</td>
      <td class="l"><input class="l" data-i="${i}" data-f="nm" value="${esc(it.nm)}"></td>
      <td class="c">${esc(it.un)}</td>
@@ -11016,7 +11052,7 @@ function exportXls(){
   const binT=bins.map(it=>{
     const a=mStart(),b=mEnd();let bal=it.bs;
     S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
-    const R=S.led.filter(r=>r.pn===it.pn&&r.d>=a&&r.d<=b).sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
+    const R=ledFor(it).filter(r=>r.d>=a&&r.d<=b).sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
     const rows=[['','전월이월','','','','',bal]];
     R.forEach(r=>{const io=kindIO(r.k);bal+=io==='I'?r.q:-r.q;
       rows.push([r.d,r.k,r.p||'',r.lot||'',io==='I'?r.q:'',io==='O'?r.q:'',bal]);});
@@ -12076,7 +12112,7 @@ function mcSum(it,v){
   const sfB=bx?Math.round(sf/bx):0;
   const dt=v.last?v.last.slice(5).replace('-','/'):'-';
   return `<div class="mx-r ${cls}" data-pn="${pn}">
-    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh==='출하대기'?'<u>출하대기</u>':''}</div>
+    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}</div>
     <button type="button" class="mx-c cur" onclick="event.stopPropagation();openQty('${pn}','cur')"><b class="${v.cur<0?'neg':''}">${nf(v.cur)}</b><i>${v.box}박스</i></button>
     <button type="button" class="mx-c sf" onclick="event.stopPropagation();openQty('${pn}','sf')"><b>${nf(sf)}</b><i>${sfB}박스</i></button>
     <div class="mx-c gap ${gc}"><b>${v.gap>0?'+':''}${nf(v.gap)}</b><i>${bx?((v.gap/bx).toFixed(1)+'박스'):''}</i></div>
@@ -12089,7 +12125,7 @@ function mcCnt(o,idx){
   const cls=df===null?'':(df===0?'ok':'neg');
   return `<div class="mc ${cls}" data-i="${idx}">
     <div class="mc-h"><span class="mc-pn">${esc(it.pn)}</span>
-      <span class="mc-tag ${it.wh==='출하대기'?'w':''}">${esc(whNm(it.wh))}</span></div>
+      <span class="mc-tag ${it.wh&&it.wh!=='현장'?'w':''}">${esc(whNm(it.wh))}</span></div>
     <div class="mc-sub">${nf(it.bx)} ea/박스${it.lc?' · '+esc(it.lc):''} · 전산 <b>${v.box}</b>박스 (${nf(v.cur)} EA)</div>
     <div class="mc-step">
       <button data-a="dec">−</button>
@@ -12440,7 +12476,7 @@ function countSheetPage(cu,rows,showCur,td,pno,ptot,skipZero){
    +'<h1>재고조사표</h1><div class="ap"><div><b>담당</b><i></i></div><div><b>검토</b><i></i></div><div><b>승인</b><i></i></div></div></div>'
    +'<div class="meta"><span><b>조사일자</b> '+td+'</span><span><b>조사자</b> ____________</span>'
    +'<span><b>고객사</b> '+esc(cu)+'</span>'
-   +'<span><b>재고구분</b> '+esc(WH||'전체 (현장재고 + 출하대기재고)')+'</span>'
+   +'<span><b>재고구분</b> '+esc(WH||'전체 (현장 + 출하대기 + 2층검사실)')+'</span>'
    +'<span><b>대상</b> '+rows.length+'품목</span>'
    +(ptot>1?'<span><b>장</b> '+pno+' / '+ptot+'</span>':'')+'</div>'
    +'<table><colgroup><col style="width:26px"><col style="width:52px"><col style="width:110px"><col>'
@@ -12722,7 +12758,7 @@ function anim(id,val){
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');
   clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1800);}
 function whLabel(){
-  const t=WH?whNm(WH)+' · '+whDp(WH)+' 관리':'전체 (현장재고 + 출하대기재고)';
+  const t=WH?whNm(WH)+' · '+whDp(WH)+' 관리':'전체 (현장 + 출하대기 + 2층검사실)';
   $('iw1').textContent=t;$('iw2').textContent=t;
   $('tbNow').textContent=' · '+(WH?whNm(WH):'전체')+' · '+ym;
   $('bsWh').textContent=WH?whNm(WH):'전체'; $('bsYm').textContent=ym; $('bsUser').textContent=S.user||'-';
