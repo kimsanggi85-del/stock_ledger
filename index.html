@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.5 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12658,9 +12658,9 @@ function printMonthReport(){
     <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th>
     <th rowspan="2">③합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
     <tr><th class="bl">제품재고(EA)</th><th>단가(₩)</th><th>소계</th><th>원자재재고(kg)</th><th>단가(₩)</th><th>소계</th></tr></thead>`;
-  const colg=`<colgroup><col style="width:26px"><col style="width:46px"><col style="width:76px"><col>
-    <col style="width:30px"><col style="width:50px"><col style="width:70px"><col style="width:46px"><col style="width:78px">
-    <col style="width:62px"><col style="width:46px"><col style="width:66px"><col style="width:80px"><col style="width:70px"></colgroup>`;
+  const colg=`<colgroup><col style="width:26px"><col style="width:64px"><col style="width:78px"><col>
+    <col style="width:30px"><col style="width:52px"><col style="width:74px"><col style="width:48px"><col style="width:82px">
+    <col style="width:80px"><col style="width:48px"><col style="width:68px"><col style="width:84px"><col style="width:84px"></colgroup>`;
 
   /* 1) 업체별 품목표 → 페이지 조각 */
   const chunks=[]; const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
@@ -12670,7 +12670,7 @@ function printMonthReport(){
     rows.forEach((it,i)=>{
       const v=calc(it), cur=v.cur||0, pr=+it.price||0, sub=pr?cur*pr:0, dead=isDead(it)&&cur>0;
       q+=cur; amt+=sub; if(dead)lq+=cur;
-      lines.push(`<tr><td class="c">${i+1}</td><td class="c">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
+      lines.push(`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
         <td class="pn">${esc(it.pn)}${it.base?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
         <td class="r">${it.bx?nf(it.bx):''}</td>
         <td class="r bl${dead?' lg':(cur<0?' ng':'')}">${cur?nf(cur):'-'}</td><td class="r">${pr?nf(pr):''}</td><td class="r">${sub?nf(sub):'-'}</td>
@@ -12716,10 +12716,12 @@ function printMonthReport(){
    +'.ttl span{letter-spacing:0;font-size:16px}'
    +'.meta{font-size:10.5px;margin-bottom:3px;line-height:1.55}.meta .sub{margin-left:26px;font-size:10px}.meta .rt{float:right}'
    +'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}'
-   +'th,td{border:1px solid #444;padding:1px 4px;height:16px;line-height:1.25;overflow:hidden;white-space:nowrap}'
+   +'th,td{border:1px solid #444;padding:1px 4px;height:16px;line-height:1.25;white-space:nowrap}'
+   +'td.pn,td.s,td.c{overflow:visible;text-overflow:clip}td.r{overflow:hidden}'
    +'th{background:#D8F0DE;font-weight:700;line-height:1.2;font-size:9.5px}th.bl{background:#CDE6F5}'
    +'td.c{text-align:center}td.r{text-align:right;font-variant-numeric:tabular-nums}td.b{font-weight:700}'
-   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px}td.s{font-size:9px}'
+   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px;letter-spacing:0}td.s{font-size:9px}'
+   +'td.cu{font-size:9px;letter-spacing:-.3px}'
    +'td.bl{background:#DDEFFA}td.ng{color:#C0392B}td.lg{color:#E0442E;font-weight:700}'
    +'.f2{font-size:8px;background:#1E2A36;color:#fff;padding:0 3px;border-radius:2px;margin-left:3px}'
    +'tfoot td{background:#EEF3F0;font-weight:700}'
