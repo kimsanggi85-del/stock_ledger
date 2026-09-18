@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.3 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1143,6 +1143,7 @@ body.qp-on{overflow:hidden}
     <label class="pc-only">고객사</label>
     <select id="sCu" class="fsel pc-only" style="font-family:var(--sans);min-width:130px"><option value="">전체 (166)</option><option value="SKF씰">SKF씰 (131)</option><option value="SBC">SBC (12)</option><option value="부강스프링">부강스프링 (7)</option><option value="우창산업">우창산업 (6)</option><option value="세동산업">세동산업 (5)</option><option value="일진글로벌">일진글로벌 (3)</option><option value="진양오일씰">진양오일씰 (2)</option></select>
     <button class="btn pc-only" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다" style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
+    <button class="btn pc-only" onclick="printMonthReport()" title="기준월 말일 재고 · 금액 · 생산/납품 분석 — 대표 보고용 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
       <option value="pn|1">품번순</option><option value="nm|1">품명순</option><option value="wh|1">구분순</option>
       <option value="cur|-1">현재고 많은순</option><option value="cur|1">현재고 적은순</option>
