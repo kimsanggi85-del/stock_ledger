@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12624,10 +12624,11 @@ document.addEventListener('click',e=>{
   const cur=it.cnt==null?boxOf(it,calc(it).cur):it.cnt;
   it.cnt=Math.max(0,cur+(b.dataset.a==='inc'?1:-1));save();rCnt();});
 /* ═══════ 월말 재고조사서 (대표 보고용) ═══════
-   기준월 말일 재고를 고객사별로 정리한다. 재고조사서 양식(금형재번·공정·포장단위·제품재고·단가·소계·비고)
-   + 하단 분석(생산량·납품량·전월 비교·장기보관품). 원자재 금액란은 수기 기입용으로 비워 둔다. */
+   생산팀 재고조사서 양식 그대로: 초록 제목 → 업체·조사일자 → 품목표(제품재고 열 파랑, 장기보관품 빨강)
+   → 재고합계 → 마지막에 업체별 분석표(수주·생산·납품·전월비교·장기보관품 합계). 페이지마다 "N페이지 중 M페이지". */
 function prevYm(y){ const [a,b]=y.split('-').map(Number); const d=new Date(a,b-2,1); return d.getFullYear()+'-'+p2(d.getMonth()+1); }
-function procOf(it){ const t=String(it.pn||''); if(/-2(\D|$)/.test(t)&&!/-21(\D|$)/.test(t)) return 2; if(/-21(\D|$)/.test(t)) return 2; if(/-0?1(\D|$)/.test(t)) return 1; return ''; }
+function procOf(it){ const t=String(it.pn||''); if(/-2(\D|$)/.test(t)||/-21(\D|$)/.test(t)||/-02(\D|$)/.test(t)) return 2; if(/-1(\D|$)/.test(t)||/-01(\D|$)/.test(t)||/-00(\D|$)/.test(t)) return 1; return ''; }
+const CU_FULL={'SKF씰':'한국SKF씰','일진글로벌':'일진 글로벌'};
 function monthStat(cu,y){
   const a=y+'-01', b=(()=>{const[Y,M]=y.split('-').map(Number);return y+'-'+p2(new Date(Y,M,0).getDate());})();
   const pns=new Set(S.items.filter(i=>(i.cu||'').trim()===cu).map(i=>i.pn));
@@ -12643,79 +12644,93 @@ function monthStat(cu,y){
 }
 function printMonthReport(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
-  const last=y+'-'+p2(new Date(Y,M,0).getDate());
+  const lastD=new Date(Y,M,0).getDate();
+  const ROWS=34;
   const items=S.items.filter(i=>!i.hide);
   const byCu={};
   items.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
   const cus=Object.keys(byCu).sort((a,b)=>byCu[b].length-byCu[a].length||a.localeCompare(b,'ko'));
-  const st={color:'#111'};
-  let totalQ=0,totalAmt=0,longQ=0;
-  const pages=cus.map(cu=>{
+
+  const meta=cu=>`<div class="meta"><div>■조사업체 : ${esc(CU_FULL[cu]||cu)}</div>
+    <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (오후14:00 기준) -<b>"외주가공재고 별도"</b>
+      <span class="sub">(공정 1번고무작업 / 2번조립품)</span><span class="rt">■담당부서 : 생산팀</span></div></div>`;
+  const thead=`<thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품 번</th><th rowspan="2">공정</th>
+    <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th>
+    <th rowspan="2">③합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
+    <tr><th class="bl">제품재고(EA)</th><th>단가(₩)</th><th>소계</th><th>원자재재고(kg)</th><th>단가(₩)</th><th>소계</th></tr></thead>`;
+  const colg=`<colgroup><col style="width:26px"><col style="width:46px"><col style="width:76px"><col>
+    <col style="width:30px"><col style="width:50px"><col style="width:70px"><col style="width:46px"><col style="width:78px">
+    <col style="width:62px"><col style="width:46px"><col style="width:66px"><col style="width:80px"><col style="width:70px"></colgroup>`;
+
+  /* 1) 업체별 품목표 → 페이지 조각 */
+  const chunks=[]; const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
+  cus.forEach(cu=>{
     const rows=byCu[cu].sort((a,b)=>String(a.sp||'').localeCompare(String(b.sp||''),'en',{numeric:true})||a.pn.localeCompare(b.pn,'en',{numeric:true}));
-    let q=0,amt=0,lq=0,lines='';
+    let q=0,amt=0,lq=0; const lines=[];
     rows.forEach((it,i)=>{
-      const v=calc(it), cur=v.cur||0, pr=+it.price||0, sub=pr?cur*pr:0;
-      const dead=isDead(it), note=dead?'장기보관품':'';
+      const v=calc(it), cur=v.cur||0, pr=+it.price||0, sub=pr?cur*pr:0, dead=isDead(it)&&cur>0;
       q+=cur; amt+=sub; if(dead)lq+=cur;
-      lines+=`<tr${dead?' class="lg"':''}><td class="c">${i+1}</td><td class="c">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
+      lines.push(`<tr><td class="c">${i+1}</td><td class="c">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
         <td class="pn">${esc(it.pn)}${it.base?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
         <td class="r">${it.bx?nf(it.bx):''}</td>
-        <td class="r q${cur<0?' ng':''}${dead?' lg':''}">${cur?nf(cur):'-'}</td><td class="r">${pr?nf(pr):''}</td><td class="r">${sub?nf(sub):'-'}</td>
-        <td class="r"></td><td class="r"></td><td class="r"></td>
-        <td class="r b">${sub?nf(sub):'-'}</td><td class="s">${note}</td></tr>`;
+        <td class="r bl${dead?' lg':(cur<0?' ng':'')}">${cur?nf(cur):'-'}</td><td class="r">${pr?nf(pr):''}</td><td class="r">${sub?nf(sub):'-'}</td>
+        <td class="r"></td><td class="r"></td><td class="r">-</td>
+        <td class="r">${sub?nf(sub):'-'}</td><td class="s">${dead?'장기보관품':''}</td></tr>`);
     });
-    totalQ+=q; totalAmt+=amt; longQ+=lq;
-    const cur=monthStat(cu,y), prv=monthStat(cu,prevYm(y));
-    const rate=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';
-    const trend=(a,b)=>a>b?'증가':(a<b?'감소':'동일');
-    return `<section class="pg">
-      <div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月)</span></div>
-      <div class="meta"><div>■ 조사업체 : <b>${esc(cu)}</b></div>
-        <div>■ 조사일자 : ${Y}년 ${M}월 ${new Date(Y,M,0).getDate()}일 (기준월 말일 마감) - <b>"외주가공재고 별도"</b></div>
-        <div class="rt">■ 담당부서 : 생산팀</div></div>
-      <table class="inv"><colgroup><col style="width:24px"><col style="width:44px"><col style="width:72px"><col>
-        <col style="width:30px"><col style="width:48px"><col style="width:66px"><col style="width:46px"><col style="width:76px">
-        <col style="width:60px"><col style="width:46px"><col style="width:64px"><col style="width:78px"><col style="width:66px"></colgroup>
-       <thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품 번</th><th rowspan="2">공정</th>
-        <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3" class="g1">① 제품재고 금액산출(EA)</th><th colspan="3" class="g2">② 원자재재고 금액산출</th>
-        <th rowspan="2">③ 합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
-        <tr><th class="g1">제품재고(EA)</th><th class="g1">단가(₩)</th><th class="g1">소계</th><th class="g2">원자재재고(kg)</th><th class="g2">단가(₩)</th><th class="g2">소계</th></tr></thead>
-       <tbody>${lines}</tbody>
-       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td><td colspan="3"></td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot>
-      </table>
+    stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
+    for(let k=0;k<lines.length;k+=ROWS){
+      const first=k===0, last=k+ROWS>=lines.length;
+      chunks.push(`<section class="pg">${first?`<div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月)</span></div>`+meta(cu):''}
+        <table class="inv">${colg}${thead}<tbody>${lines.slice(k,k+ROWS).join('')}</tbody>
+        ${last?`<tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
+          <td class="r">-</td><td></td><td class="r">-</td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot>`:''}</table></section>`);
+    }
+  });
+
+  /* 2) 마지막 페이지: 업체별 분석표 */
+  const rate=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';
+  const trend=(a,b)=>a>b?'증가':(a<b?'감소':'동일');
+  const pm=prevYm(y);
+  const anal=cus.map(cu=>{
+    const c=monthStat(cu,y), pv=monthStat(cu,pm);
+    return `${meta(cu)}
       <table class="an"><tbody>
-       <tr><th rowspan="2">분 석</th><th>수주량</th><th>생산량<br>(${p2(M)}/01~${p2(M)}/${new Date(Y,M,0).getDate()})</th><th>수주대비<br>생산달성율</th><th>납품량<br>(${p2(M)}/01~${p2(M)}/${new Date(Y,M,0).getDate()})</th><th>납품대비<br>생산달성율</th></tr>
-       <tr><td class="r">　</td><td class="r">${nf(cur.prod)}</td><td class="r">-</td><td class="r">${nf(cur.ship)}</td><td class="r">${rate(cur.prod,cur.ship)}</td></tr>
-       <tr><th>전월비교 (${prevYm(y).slice(5)}월)</th><td class="r">　</td><td class="r">${trend(cur.prod,prv.prod)} · ${nf(prv.prod)}</td><td class="r">-</td><td class="r">${trend(cur.ship,prv.ship)} · ${nf(prv.ship)}</td><td class="r">${rate(prv.prod,prv.ship)}</td></tr>
-       <tr><th>비 고</th><td colspan="5" class="c"><b>(3개월 이상) 장기보관 제품 총합계 수량 : ${nf(lq)} EA</b>　·　수주량은 수기 기입</td></tr>
-      </tbody></table>
-    </section>`;
-  }).join('');
+       <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
+       <tr><td class="r hand">　</td><td class="r">${nf(c.prod)}</td><td class="r hand">　</td><td class="r">${nf(c.ship)}</td><td class="r">${rate(c.prod,c.ship)}</td></tr>
+       <tr><th class="v">전 월 비 교 (${+pm.slice(5)}월)</th><td class="r hand">　</td><td class="r">${trend(c.prod,pv.prod)}　${nf(pv.prod)}</td><td class="r hand">　</td><td class="r">${trend(c.ship,pv.ship)}　${nf(pv.ship)}</td><td class="r">${rate(pv.prod,pv.ship)}</td></tr>
+       <tr><th class="v">비　고</th><td colspan="5" class="c big">(3개월이상) 장기보관 제품 총합계 수량 : <b>${nf(stat[cu].lq)}EA</b></td></tr>
+      </tbody></table>`;
+  }).join('<div style="height:14px"></div>');
+  chunks.push(`<section class="pg">${anal}
+    <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.length}개 업체)</div>
+    <div class="nt">· 제품재고는 기준월 말일 마감 재고 · 단가 없는 품목은 소계 제외 · 원자재재고·수주량·수주대비달성율은 수기 기입란 · 장기보관품 = 3개월 이상 입출고 없는 품목(빨간색)</div></section>`);
+
+  const N=chunks.length;
+  const pages=chunks.map((h,i)=>h.replace('</section>',`<div class="pno">${N}페이지 중 ${i+1}페이지</div></section>`)).join('');
 
   const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>재고조사서 '+y+'</title><style>'
-   +'*{box-sizing:border-box}body{margin:0;padding:8mm 7mm;font-family:"맑은 고딕",Malgun Gothic,sans-serif;color:#111}'
-   +'.pg{page-break-after:always}.pg:last-child{page-break-after:auto}'
-   +'@media screen{.pg{margin-bottom:18px;padding-bottom:14px;border-bottom:2px dashed #bbb}}'
-   +'.ttl{display:inline-block;background:#8FD4A8;padding:6px 18px;font-size:18px;font-weight:900;letter-spacing:5px;margin-bottom:8px}'
-   +'.ttl span{letter-spacing:0;font-size:15px}'
-   +'.meta{font-size:11px;margin-bottom:5px;display:flex;flex-wrap:wrap;gap:4px 20px}.meta .rt{margin-left:auto}'
+   +'@page{size:A4 landscape;margin:9mm 8mm}*{box-sizing:border-box}'
+   +'body{margin:0;font-family:"맑은 고딕",Malgun Gothic,sans-serif;color:#111}'
+   +'.pg{position:relative;min-height:180mm;page-break-after:always;padding-bottom:16px}.pg:last-child{page-break-after:auto}'
+   +'@media screen{body{padding:10mm}.pg{margin-bottom:22px;padding-bottom:26px;border-bottom:2px dashed #bbb}}'
+   +'.ttl{display:inline-block;background:#8ED99A;color:#0B3A1F;padding:7px 22px;font-size:20px;font-weight:900;letter-spacing:6px;margin-bottom:12px;border:1px solid #6CBF7C}'
+   +'.ttl span{letter-spacing:0;font-size:16px}'
+   +'.meta{font-size:11px;margin-bottom:4px;line-height:1.7}.meta .sub{margin-left:26px;font-size:10.5px}.meta .rt{float:right}'
    +'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}'
-   +'th,td{border:1px solid #555;padding:3px 4px;height:20px;overflow:hidden;white-space:nowrap}'
-   +'th{background:#DFF0E5;font-weight:700;line-height:1.2}th.g1{background:#CFE8D8}th.g2{background:#E4EEE8}'
+   +'th,td{border:1px solid #444;padding:2px 4px;height:19px;overflow:hidden;white-space:nowrap}'
+   +'th{background:#D8F0DE;font-weight:700;line-height:1.2;font-size:9.5px}th.bl{background:#CDE6F5}'
    +'td.c{text-align:center}td.r{text-align:right;font-variant-numeric:tabular-nums}td.b{font-weight:700}'
-   +'td.pn{font-family:Consolas,monospace;font-weight:700}td.s{font-size:9px;color:#333}'
-   +'td.q{background:#E6F2FA}td.ng{color:#C0392B}td.lg{color:#C0392B}tr.lg td.s{color:#C0392B;font-weight:700}'
+   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px}td.s{font-size:9px}'
+   +'td.bl{background:#DDEFFA}td.ng{color:#C0392B}td.lg{color:#E0442E;font-weight:700}'
    +'.f2{font-size:8px;background:#1E2A36;color:#fff;padding:0 3px;border-radius:2px;margin-left:3px}'
-   +'tfoot td{background:#F2F4F6}'
-   +'.an{margin-top:10px}.an th{background:#DFF0E5;width:auto}'
+   +'tfoot td{background:#EEF3F0;font-weight:700}'
+   +'.an{margin-top:2px}.an th{background:#D8F0DE;height:26px}.an th.v{width:118px}.an td{height:26px;font-size:11px}'
+   +'.an td.hand{background:#fff}.an td.big{font-size:13px;height:40px}'
+   +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;font-size:12px;background:#F6FAF7}'
+   +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
+   +'.pno{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:10px;color:#333}'
    +'@media print{thead{display:table-header-group}tr{page-break-inside:avoid}}'
-   +'</style></head><body>'+pages
-   +'<section class="pg"><div class="ttl">재고 총괄 <span>('+Y+'年 '+p2(M)+'月)</span></div>'
-   +'<table class="an"><tbody><tr><th>고객사 수</th><th>제품재고 합계(EA)</th><th>제품재고 금액 합계(₩)</th><th>장기보관품 합계(EA)</th></tr>'
-   +'<tr><td class="c">'+cus.length+'</td><td class="r b">'+nf(totalQ)+'</td><td class="r b">'+nf(totalAmt)+'</td><td class="r b">'+nf(longQ)+'</td></tr></tbody></table>'
-   +'<div style="margin-top:14px;font-size:10.5px;color:#444">· 제품재고는 기준월 말일 마감 재고입니다. · 단가가 없는 품목은 금액 소계에서 제외됩니다. '
-   +'· 원자재재고·수주량은 수기 기입란입니다. · 장기보관품 = 3개월 이상 입출고 없는 품목(빨간색).</div></section>'
-   +'</body></html>';
+   +'</style></head><body>'+pages+'</body></html>';
   const wn=window.open('','_blank');
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
   wn.document.write(html); wn.document.close();
