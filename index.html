@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12634,14 +12634,22 @@ function monthStat(cu,y){
   const a=y+'-01', b=(()=>{const[Y,M]=y.split('-').map(Number);return y+'-'+p2(new Date(Y,M,0).getDate());})();
   const pns=new Set(S.items.filter(i=>(i.cu||'').trim()===cu).map(i=>i.pn));
   const pairs=new Set(S.items.filter(i=>(i.cu||'').trim()===cu&&i.base).map(i=>i.base));
+  /* 세트 구성품(SBC Inner/Outer): 생산은 타발수(세트)로 들어오므로 납품도 세트로 환산한다.
+     Inner+Outer 를 더한 EA 를 구성품 수(2)로 나눈다 → 생산과 같은 단위 */
+  const setCnt={};
+  S.items.filter(i=>(i.cu||'').trim()===cu&&i.setp).forEach(i=>{ setCnt[i.setp]=(setCnt[i.setp]||0)+1; });
+  const setOf={};
+  S.items.filter(i=>(i.cu||'').trim()===cu&&i.setp).forEach(i=>{ setOf[i.pn]=setCnt[i.setp]||1; });
+  const isSet=Object.keys(setCnt).length>0;
   let prod=0, ship=0;
   S.led.forEach(r=>{
     if(r.d<a||r.d>b) return;
-    if(!(pns.has(r.pn)||pairs.has(r.pn))) return;
+    const cp=canonPn(r.pn);                          /* 별칭(AB3248-SC-01 → 9BUX GREASE CAP)도 잡는다 */
+    if(!(pns.has(r.pn)||pairs.has(r.pn)||pns.has(cp)||pairs.has(cp))) return;
     if(r.k==='생산입고') prod+=r.q;
-    if(r.k==='출하') ship+=r.q;
+    if(r.k==='출하') ship+=r.q/(setOf[r.pn]||setOf[cp]||1);
   });
-  return {prod,ship};
+  return {prod,ship:Math.round(ship),isSet};
 }
 function printMonthReport(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
@@ -12649,7 +12657,9 @@ function printMonthReport(){
   const items=S.items.filter(i=>!i.hide);
   const byCu={};
   items.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
-  const cus=Object.keys(byCu).sort((a,b)=>byCu[b].length-byCu[a].length||a.localeCompare(b,'ko'));
+  /* 대표 보고 대상 4개 업체만, 이 순서로 */
+  const REPORT_CUS=['SKF씰','일진글로벌','SBC','부강스프링'];
+  const cus=REPORT_CUS.filter(c=>byCu[c]&&byCu[c].length);
 
   const meta=cu=>`<div class="meta"><div>■조사업체 : ${esc(CU_FULL[cu]||cu)}</div>
     <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (오후14:00 기준) -<b>"외주가공재고 별도"</b>
@@ -12693,14 +12703,14 @@ function printMonthReport(){
     const c=monthStat(cu,y), pv=monthStat(cu,pm);
     return `<div class="ab">${meta(cu)}
       <table class="an"><tbody>
-       <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
+       <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량${c.isSet?' (세트)':''}<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량${c.isSet?' (세트)':''}<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
        <tr><td class="r hand">　</td><td class="r">${nf(c.prod)}</td><td class="r hand">　</td><td class="r">${nf(c.ship)}</td><td class="r">${rate(c.prod,c.ship)}</td></tr>
        <tr><th class="v">전 월 비 교 (${+pm.slice(5)}월)</th><td class="r hand">　</td><td class="r">${trend(c.prod,pv.prod)}　${nf(pv.prod)}</td><td class="r hand">　</td><td class="r">${trend(c.ship,pv.ship)}　${nf(pv.ship)}</td><td class="r">${rate(pv.prod,pv.ship)}</td></tr>
-       <tr><th class="v">비　고</th><td colspan="5" class="c big">(3개월이상) 장기보관 제품 총합계 수량 : <b>${nf(stat[cu].lq)}EA</b></td></tr>
+       <tr><th class="v">비　고</th><td colspan="5" class="c big">(3개월이상) 장기보관 제품 총합계 수량 : <b>${nf(stat[cu].lq)}EA</b>${c.isSet?'<span style="font-size:10px;font-weight:400;margin-left:14px">※ 생산·납품은 세트(Inner+Outer 1조) 기준</span>':''}</td></tr>
       </tbody></table></div>`;
   }).join('');
   chunks.push(`<section class="pg">${anal}
-    <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.length}개 업체)</div>
+    <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.map(c=>CU_FULL[c]||c).join(' · ')})</div>
     <div class="nt">· 제품재고는 기준월 말일 마감 재고 · 단가 없는 품목은 소계 제외 · 원자재재고·수주량·수주대비달성율은 수기 기입란 · 장기보관품 = 3개월 이상 입출고 없는 품목(빨간색)<br>· 페이지 번호는 인쇄 창의 [머리글 및 바닥글] 옵션을 켜면 "1/7" 형식으로 찍힙니다.</div></section>`);
 
   const pages=chunks.join('');
