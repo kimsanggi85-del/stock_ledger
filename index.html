@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v16.9 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12634,22 +12634,16 @@ function monthStat(cu,y){
   const a=y+'-01', b=(()=>{const[Y,M]=y.split('-').map(Number);return y+'-'+p2(new Date(Y,M,0).getDate());})();
   const pns=new Set(S.items.filter(i=>(i.cu||'').trim()===cu).map(i=>i.pn));
   const pairs=new Set(S.items.filter(i=>(i.cu||'').trim()===cu&&i.base).map(i=>i.base));
-  /* 세트 구성품(SBC Inner/Outer): 생산은 타발수(세트)로 들어오므로 납품도 세트로 환산한다.
-     Inner+Outer 를 더한 EA 를 구성품 수(2)로 나눈다 → 생산과 같은 단위 */
-  const setCnt={};
-  S.items.filter(i=>(i.cu||'').trim()===cu&&i.setp).forEach(i=>{ setCnt[i.setp]=(setCnt[i.setp]||0)+1; });
-  const setOf={};
-  S.items.filter(i=>(i.cu||'').trim()===cu&&i.setp).forEach(i=>{ setOf[i.pn]=setCnt[i.setp]||1; });
-  const isSet=Object.keys(setCnt).length>0;
+  /* 납품량은 총 납품수량(EA) 그대로 — SBC 도 Inner+Outer 를 더한 값 (세트 환산 안 함) */
   let prod=0, ship=0;
   S.led.forEach(r=>{
     if(r.d<a||r.d>b) return;
     const cp=canonPn(r.pn);                          /* 별칭(AB3248-SC-01 → 9BUX GREASE CAP)도 잡는다 */
     if(!(pns.has(r.pn)||pairs.has(r.pn)||pns.has(cp)||pairs.has(cp))) return;
     if(r.k==='생산입고') prod+=r.q;
-    if(r.k==='출하') ship+=r.q/(setOf[r.pn]||setOf[cp]||1);
+    if(r.k==='출하') ship+=r.q;
   });
-  return {prod,ship:Math.round(ship),isSet};
+  return {prod,ship,isSet:false};
 }
 function printMonthReport(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
@@ -12703,10 +12697,10 @@ function printMonthReport(){
     const c=monthStat(cu,y), pv=monthStat(cu,pm);
     return `<div class="ab">${meta(cu)}
       <table class="an"><tbody>
-       <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량${c.isSet?' (세트)':''}<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량${c.isSet?' (세트)':''}<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
+       <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
        <tr><td class="r hand">　</td><td class="r">${nf(c.prod)}</td><td class="r hand">　</td><td class="r">${nf(c.ship)}</td><td class="r">${rate(c.prod,c.ship)}</td></tr>
        <tr><th class="v">전 월 비 교 (${+pm.slice(5)}월)</th><td class="r hand">　</td><td class="r">${trend(c.prod,pv.prod)}　${nf(pv.prod)}</td><td class="r hand">　</td><td class="r">${trend(c.ship,pv.ship)}　${nf(pv.ship)}</td><td class="r">${rate(pv.prod,pv.ship)}</td></tr>
-       <tr><th class="v">비　고</th><td colspan="5" class="c big">(3개월이상) 장기보관 제품 총합계 수량 : <b>${nf(stat[cu].lq)}EA</b>${c.isSet?'<span style="font-size:10px;font-weight:400;margin-left:14px">※ 생산·납품은 세트(Inner+Outer 1조) 기준</span>':''}</td></tr>
+       <tr><th class="v">비　고</th><td colspan="5" class="c big">(3개월이상) 장기보관 제품 총합계 수량 : <b>${nf(stat[cu].lq)}EA</b></td></tr>
       </tbody></table></div>`;
   }).join('');
   chunks.push(`<section class="pg">${anal}
