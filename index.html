@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.0 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12705,7 +12705,7 @@ function printMonthReport(){
   }).join('');
   chunks.push(`<section class="pg">${anal}
     <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.map(c=>CU_FULL[c]||c).join(' · ')})</div>
-    <div class="nt">· 제품재고는 기준월 말일 마감 재고 · 단가 없는 품목은 소계 제외 · 원자재재고·수주량·수주대비달성율은 수기 기입란 · 장기보관품 = 3개월 이상 입출고 없는 품목(빨간색)<br>· 페이지 번호는 인쇄 창의 [머리글 및 바닥글] 옵션을 켜면 "1/7" 형식으로 찍힙니다.</div></section>`);
+    </section>`);
 
   const pages=chunks.join('');
 
@@ -12731,7 +12731,7 @@ function printMonthReport(){
    +'tfoot td{background:#EEF3F0;font-weight:700}'
    +'.an{margin-top:2px}.an th{background:#D8F0DE;height:26px}.an th.v{width:118px}.an td{height:26px;font-size:11px}'
    +'.an td.hand{background:#fff}.an td.big{font-size:13px;height:40px}'
-   +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;font-size:12px;background:#F6FAF7}'
+   +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;font-size:12px;background:#F6FAF7;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
