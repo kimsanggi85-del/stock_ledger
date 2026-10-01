@@ -694,7 +694,7 @@ body.qp-on{overflow:hidden}
   #pcNav .navitem.on>button{color:#fff;border-bottom-color:#f0aa3c}
   #pcNav .mega{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);border:1px solid #dfe3ea;
     box-shadow:0 12px 30px rgba(20,28,40,.22);padding:12px 6px 10px;border-radius:0 0 6px 6px;min-width:200px;z-index:96;margin-top:0}
-  #pcNav .navitem:hover>.mega,#pcNav .navitem.open>.mega{display:flex}
+  #pcNav .navitem.open>.mega{display:flex}   /* 클릭으로만 연다 — 마우스가 스치기만 해도 펼쳐져 아래 고객사·필터 칸을 덮던 문제 */
   #pcNav .mega-col{min-width:150px;padding:0 14px;border-right:1px solid #dfe3ea}
   #pcNav .mega-col:last-child{border-right:0}
   #pcNav .mega-col{min-width:168px}
@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.5 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.6 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1141,7 +1141,7 @@ body.qp-on{overflow:hidden}
       <button type="button" data-s="pn|1" class="on" onclick="mSortSet('pn|1')">품번순</button>
     </div>
     <label class="pc-only">고객사</label>
-    <select id="sCu" class="fsel pc-only" style="font-family:var(--sans);min-width:130px"><option value="">전체 (166)</option><option value="SKF씰">SKF씰 (131)</option><option value="SBC">SBC (12)</option><option value="부강스프링">부강스프링 (7)</option><option value="우창산업">우창산업 (6)</option><option value="세동산업">세동산업 (5)</option><option value="일진글로벌">일진글로벌 (3)</option><option value="진양오일씰">진양오일씰 (2)</option></select>
+    <select id="sCu" class="fsel" style="font-family:var(--sans);min-width:130px" title="고객사별 보기 — 고르면 전 재고구분에서 그 고객사 품목만 표시"><option value="">전체 (166)</option><option value="SKF씰">SKF씰 (131)</option><option value="SBC">SBC (12)</option><option value="부강스프링">부강스프링 (7)</option><option value="우창산업">우창산업 (6)</option><option value="세동산업">세동산업 (5)</option><option value="일진글로벌">일진글로벌 (3)</option><option value="진양오일씰">진양오일씰 (2)</option></select>
     <button class="btn pc-only" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다" style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
     <button class="btn pc-only" onclick="printMonthReport()" title="기준월 말일 재고 · 금액 · 생산/납품 분석 — 대표 보고용 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -12628,8 +12628,22 @@ document.addEventListener('click',e=>{
   const nb=e.target.closest&&e.target.closest('#pcNav .navitem>button');
   if(nb){ const n=nb.parentElement, was=n.classList.contains('open');
     document.querySelectorAll('#pcNav .navitem.open').forEach(x=>x.classList.remove('open')); if(!was)n.classList.add('open'); return; }
-  if(!e.target.closest('#pcNav'))document.querySelectorAll('#pcNav .navitem.open').forEach(n=>n.classList.remove('open'));
+  /* 메뉴 바깥 또는 메뉴판의 빈 곳(링크가 아닌 곳)을 누르면 닫는다 */
+  document.querySelectorAll('#pcNav .navitem.open').forEach(n=>n.classList.remove('open'));
 });
+/* 열린 메뉴판이 아래 입력칸을 덮지 않도록: 포인터가 메뉴를 벗어나면 잠시 뒤 닫고, Esc 로도 닫는다 */
+(function(){
+  const nav=document.getElementById('pcNav'); if(!nav) return;
+  let tm=null;
+  const closeAllNav=()=>nav.querySelectorAll('.navitem.open').forEach(n=>n.classList.remove('open'));
+  nav.querySelectorAll('.navitem').forEach(n=>{
+    n.addEventListener('mouseleave',()=>{ clearTimeout(tm); tm=setTimeout(closeAllNav,350); });
+    n.addEventListener('mouseenter',()=>{ clearTimeout(tm);
+      /* 다른 메뉴가 열린 채 옆 메뉴로 옮기면 그 메뉴를 바로 연다 (hover 메뉴 느낌 유지) */
+      const o=nav.querySelector('.navitem.open'); if(o&&o!==n){ o.classList.remove('open'); n.classList.add('open'); } });
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAllNav(); });
+})();
 $('fSel').onchange=e=>{F=e.target.value;rSum();};
 $('cSel').onchange=e=>{C=e.target.value;rCnt();};
 $('whSel').onchange=e=>{WH=e.target.value;render();};
