@@ -1079,7 +1079,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.1 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.2 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6518,6 +6518,18 @@ function canonPn(pn){
 const boxOf=(it,cur)=>it&&it.bx?Math.floor((+cur||0)/it.bx):Math.round(+cur||0);
 const p2=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());};
+/* 어제(또는 지정일 하루 전) — 신규 품목의 기초일자 기본값.
+   calc() 는 기초일자 '이후' 전표만 세므로, 기초일자가 오늘이면 오늘 발행한
+   재고조정·입출고 전표가 전부 무시된다 (신규 품목 재고 등록이 안 되던 원인). */
+const dayBefore=(ds)=>{const d=new Date((ds||today())+'T00:00:00');d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());};
+/* 전표 일자 d 가 기초일자와 같거나 빠르면 기초일자를 하루 앞당겨 전표가 집계되게 한다 (bdGuard(d) 와 다른 함수) */
+function baseDateGuard(it,d){
+  if(!it) return false;
+  const dd=d||today();
+  if(it.bd && it.bd>=dd){ it.bd=dayBefore(dd); touchItem(it); return true; }
+  return false;
+}
 const nf=n=>Math.round(n||0).toLocaleString('ko-KR');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const kindIO=k=>(KINDS.find(x=>x[0]===k)||['','O'])[1];
@@ -7074,7 +7086,9 @@ function applyCount(){
     mk='재고조정(-)'; $('cntKindM').value=mk;
   }
   const pk=$('cntKind').value;
+  let gN=0;
   t.forEach(it=>{
+    if(baseDateGuard(it,d)) gN++;
     const df=it.cnt*it.bx-calc(it).cur;
     const k=df>0?pk:mk;
     const nt=(k==='생산입고')?'검사합격 일일등록'
@@ -7082,6 +7096,7 @@ function applyCount(){
     S.led.push({id:S.seq++,d,pn:it.pn,k,q:Math.abs(df),p:'',lot:'',n:nt,by:S.user});
   });
   S.items.forEach(it=>it.cnt=null);
+  if(gN) pushItems(true);
   save();render();toast(t.length+'건 조정전표가 발행되었습니다');
 }
 function clearCount(){S.items.forEach(it=>it.cnt=null);save();rCnt();toast('실사값을 지웠습니다');}
@@ -11141,6 +11156,7 @@ function saveIO(){
   if(q<=0){toast('수량을 입력하세요');return;}
   const o={d:$('xD').value||today(),pn,k:$('xK').value,q,p:$('xP').value.trim(),
     lot:$('xL').value.trim(),n:$('xN').value.trim(),by:S.user};
+  if(baseDateGuard(it,o.d)){ pushItems(true); toast(pn+' 기초일자를 '+it.bd+' 로 앞당겨 이 전표가 집계되게 했습니다'); }
   const id=+$('xId').value;
   if(id){ const t=S.led.find(x=>x.id===id); Object.assign(t,o);
     if(t.src&&String(t.src).indexOf('MAN|')===0){ t.md=1; }    /* 같은 키로 서버값을 덮어쓴다 */
@@ -11163,13 +11179,14 @@ function wireBoxPair(bF,eF){
   $(eF).oninput=()=>{$(bF).value=bx()&&$(eF).value!==''?+(+$(eF).value/bx()).toFixed(2):'';};
 }
 function openItem(i){
-  const n=i<0, it=n?{pn:'',nm:'',sp:'',un:'EA',bx:'',sf:'',bs:0,bd:today(),cu:'',lc:'',wh:WH||'현장',al:''}:S.items[i];
+  const n=i<0, it=n?{pn:'',nm:'',sp:'',un:'EA',bx:'',sf:'',bs:0,bd:dayBefore(),cu:'',lc:'',wh:WH||'현장',al:''}:S.items[i];
   $('yWh').innerHTML=WHS.map(([v,nm,dp])=>`<option value="${v}">${nm} · ${dp}</option>`).join('');
   $('yWh').value=it.wh||'현장';
   $('itT').firstChild.textContent=n?'품목 등록':'품목 수정';
   $('yIdx').value=i;
   [['yPn','pn'],['yNm','nm'],['ySp','sp'],['yUn','un'],['yBx','bx'],['ySf','sf'],['yBs','bs'],['yBd','bd'],['yCu','cu'],['yLc','lc'],['yAl','al']]
     .forEach(([f,k])=>$(f).value=it[k]==null?'':it[k]);
+  if(n){ $('yBs').value=''; $('ySf').value=''; }        /* 신규: 0 대신 빈칸 — 박스 수 입력 시 환산값이 들어간다 */
   if($('ySetx')) $('ySetx').value=(it.setx!=null&&+it.setx>0)?it.setx:'';
   if($('ySetp')) $('ySetp').value=it.setp||'';
   if($('yHide')) $('yHide').value=it.hide?'1':'';
@@ -11197,8 +11214,22 @@ function openItem(i){
 function saveItem(){
   const i=+$('yIdx').value, pn=$('yPn').value.trim();
   if(!pn){toast('품번을 입력하세요');return;}
+  /* 박스 칸만 적고 EA 칸이 비어 있으면 저장 시점에 환산한다 (oninput 이 빠진 경우 대비) */
+  const bxN=+$('yBx').value||0;
+  [['ySfB','ySf'],['yBsB','yBs']].forEach(([b,e])=>{
+    const ev=String($(e).value).trim(), bv=String($(b).value).trim();
+    if((ev===''||+ev===0)&&bv!==''&&+bv!==0){
+      if(bxN) $(e).value=Math.round(+bv*bxN);
+    }
+  });
+  const bsE=String($('yBs').value).trim(), bsB=String($('yBsB').value).trim();
+  if(!bxN&&bsB!==''&&+bsB!==0&&(bsE===''||+bsE===0)){
+    toast('박스단위(ea/박스)를 먼저 입력해야 박스 수가 EA 로 환산됩니다'); $('yBx').focus(); return;
+  }
+  let bdv=$('yBd').value||dayBefore();
+  if(i<0&&bdv>=today()) bdv=dayBefore();          /* 신규 품목: 오늘 이후면 오늘 전표가 무시되므로 어제로 */
   const o={pn,nm:$('yNm').value.trim(),sp:$('ySp').value.trim(),un:$('yUn').value.trim()||'EA',
-    bx:+$('yBx').value||0,sf:+$('ySf').value||0,bs:+$('yBs').value||0,bd:$('yBd').value||today(),
+    bx:bxN,sf:+$('ySf').value||0,bs:+$('yBs').value||0,bd:bdv,
     cu:$('yCu').value.trim(),lc:$('yLc').value.trim(),wh:$('yWh').value,
     al:$('yAl').value.trim(),
     setx:(+($('ySetx')&&$('ySetx').value)||0)||null,
@@ -11324,7 +11355,7 @@ $('fCsv').onchange=async e=>{const f=e.target.files[0];if(!f)return;
       if(ex){set(ex,'nm',p[1]);set(ex,'sp',p[2]);set(ex,'bx',p[3],1);set(ex,'sf',p[4],1);
              set(ex,'bs',p[5],1);set(ex,'cu',p[6]);touchItem(ex);u++;}
       else{const o={no:0,pn:p[0],nm:p[1]||'',sp:p[2]||'',un:'EA',bx:+p[3]||0,sf:+p[4]||0,
-             bs:+p[5]||0,cu:p[6]||'',bd:today(),lc:'',cnt:null,ua:new Date().toISOString()};
+             bs:+p[5]||0,cu:p[6]||'',bd:dayBefore(),lc:'',cnt:null,ua:new Date().toISOString()};
            S.items.push(o);a++;}});
     S.items.sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
     save();render();pushItems(true);toast('신규 '+a+'건 / 갱신 '+u+'건');}
@@ -11868,6 +11899,22 @@ function unblockSBC(){
   }
   S.excl='';                     /* 기능 제거 — 더 이상 아무 품목도 숨기지 않는다 */
   S.exclFix=EXCL_FIX; save();
+}
+/* ═══ 신규 품목 기초일자 보정 (1회성 복구) ═══
+   v17.1 까지 신규 품목의 기초일자가 '등록 당일' 로 들어가, 같은 날 발행한
+   '재고 직접수정' 조정전표가 집계에서 빠져 재고가 0 으로 남았다.
+   9/16 기초 재설정 이후에 만들어진 품목만 대상으로, 기초일자와 같은 날짜의
+   직접수정 전표가 있으면 기초일자를 하루 앞당긴다. (9/15 기초 재설정분은 건드리지 않는다) */
+function fixNewItemBd(){
+  const CUT='2026-09-16'; let n=0;
+  (S.items||[]).forEach(it=>{
+    if(!it.bd||it.bd<=CUT) return;
+    const hit=(S.led||[]).some(r=>r.pn===it.pn&&r.d===it.bd&&String(r.k||'').indexOf('재고조정')===0
+      &&String(r.n||'').indexOf('재고 직접수정')===0);
+    if(hit){ it.bd=dayBefore(it.bd); touchItem(it); n++; console.log('기초일자 하루 앞당김:',it.pn,'→',it.bd); }
+  });
+  if(n){ save(); try{toast('신규 품목 '+n+'건의 기초일자를 하루 앞당겨 당일 재고조정이 집계됩니다');}catch(e){} }
+  return n;
 }
 const CLOSE_DAYS=14;      /* 생산마감 보정을 확인할 기간(일) — 뒤늦은 마감·정정도 반영 */
 function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n);
@@ -12739,8 +12786,9 @@ function printMonthReport(){
   const wn=window.open('','_blank');
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
   wn.document.write(html); wn.document.close();
-  wn.onload=()=>{ wn.focus(); wn.print(); };
-  setTimeout(()=>{ try{ wn.focus(); wn.print(); }catch(e){} },350);
+  { let printed=false;                                 /* 인쇄창을 두 번 띄우지 않는다 */
+    const go=()=>{ if(printed) return; printed=true; try{ wn.focus(); wn.print(); }catch(e){} };
+    wn.onload=go; setTimeout(go,600); }
 }
 
 /* ═══════ 재고조사표 출력 ═══════
@@ -12748,8 +12796,12 @@ function printMonthReport(){
 function printCountSheet(){
   const scu=($('sCu')&&$('sCu').value)||'';
   const q=nz(($('fq').value||'').trim());
-  const all=S.items.filter(inWh).filter(it=>{
-    if(scu){ const c=(it.cu||'').trim()||'(미지정)'; if(c!==scu) return false; }
+  const cuOf=it=>(it.cu||'').trim()||'(미지정)';
+  /* ═══ 인쇄 대상 = 품목대장의 모든 품목(숨김 제외) ═══
+     화면의 재고구분(현장/출하대기/2층) 토글·검색어와 무관하게, 고객사만 고른 대로 전부 넣는다.
+     (재고구분 토글이 켜진 채 인쇄하면 다른 구분의 고객사 한 장이 통째로 빠지던 문제) */
+  const all=S.items.filter(it=>!it.hide).filter(it=>{
+    if(scu && cuOf(it)!==scu) return false;
     if(q&&!nz(it.pn+' '+(it.nm||'')).includes(q)) return false;
     return true;
   });
@@ -12757,14 +12809,24 @@ function printCountSheet(){
   const showCur=confirm('전산 재고를 함께 인쇄할까요?\n\n[확인] 전산재고 표시 — 대조하며 빠르게 확인\n[취소] 빈 양식 — 선입견 없이 실제 수량만 기록');
   const zeroN=all.filter(it=>Math.round(calc(it).cur||0)===0).length;
   let skipZero=false;
-  if(zeroN) skipZero=confirm('재고가 0 인 '+zeroN+'품목을 뺄까요?\n\n[확인] 빼고 인쇄 — 셀 물건이 있는 품목만 ('+(all.length-zeroN)+'품목)\n[취소] 전부 인쇄 ('+all.length+'품목)');
+  if(zeroN) skipZero=confirm('재고가 0 인 '+zeroN+'품목을 뺄까요?\n\n[확인] 빼고 인쇄 — 셀 물건이 있는 품목만 ('+(all.length-zeroN)+'품목)\n[취소] 전부 인쇄 ('+all.length+'품목)\n\n※ 재고가 전부 0 인 고객사도 한 장은 반드시 인쇄됩니다.');
 
   /* 고객사를 고르지 않았으면 고객사마다 한 장씩 (페이지 나눔) */
-  const tgt=skipZero?all.filter(it=>Math.round(calc(it).cur||0)!==0):all;
-  if(!tgt.length){ toast('출력할 품목이 없습니다'); return; }
   const byCu={};
-  tgt.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
+  all.forEach(it=>{ const c=cuOf(it); (byCu[c]=byCu[c]||[]).push(it); });
+  Object.keys(byCu).forEach(c=>{
+    if(!skipZero) return;
+    const keep=byCu[c].filter(it=>Math.round(calc(it).cur||0)!==0);
+    if(keep.length) byCu[c]=keep;                 /* 전부 0 인 고객사는 그대로 두어 한 장이 빠지지 않게 */
+  });
   const cus=Object.keys(byCu).sort((a,b)=>byCu[b].length-byCu[a].length||a.localeCompare(b,'ko'));
+  const tgtN=cus.reduce((a,c)=>a+byCu[c].length,0);
+  /* 숨김 품목은 세트 부모(집계 전용)라 뺀다 — 몇 건이 빠졌는지만 알려준다 */
+  const hidN=S.items.filter(it=>it.hide&&(!scu||cuOf(it)===scu)).length;
+  if(!confirm('재고조사표 '+cus.length+'장 · '+tgtN+'품목을 인쇄합니다.\n\n'
+      +cus.map((c,i)=>(i+1)+'. '+c+' — '+byCu[c].length+'품목').join('\n')
+      +(hidN?'\n\n(집계 전용 숨김 품목 '+hidN+'건은 제외)':'')
+      +'\n\n계속할까요?')) return;
   const sortRows=(rows)=>rows.sort((a,b)=>String(a.wh||'').localeCompare(String(b.wh||''),'ko')
       || String(a.lc||'').localeCompare(String(b.lc||''),'ko')
       || a.pn.localeCompare(b.pn,'en',{numeric:true}));
@@ -12802,7 +12864,7 @@ function countSheetPage(cu,rows,showCur,td,pno,ptot,skipZero){
    +'<h1>재고조사표</h1><div class="ap"><div><b>담당</b><i></i></div><div><b>검토</b><i></i></div><div><b>승인</b><i></i></div></div></div>'
    +'<div class="meta"><span><b>조사일자</b> '+td+'</span><span><b>조사자</b> ____________</span>'
    +'<span><b>고객사</b> '+esc(cu)+'</span>'
-   +'<span><b>재고구분</b> '+esc(WH||'전체 (현장 + 출하대기 + 2층검사실)')+'</span>'
+   +'<span><b>재고구분</b> 전체 (현장 + 출하대기 + 2층검사실)</span>'
    +'<span><b>대상</b> '+rows.length+'품목</span>'
    +(ptot>1?'<span><b>장</b> '+pno+' / '+ptot+'</span>':'')+'</div>'
    +'<table><colgroup><col style="width:24px"><col style="width:48px"><col style="width:104px"><col>'
@@ -12868,8 +12930,9 @@ function countSheetOpen(pages,label){
   const wn=window.open('','_blank');
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
   wn.document.write(html); wn.document.close();
-  wn.onload=()=>{ wn.focus(); wn.print(); };
-  setTimeout(()=>{ try{ wn.focus(); wn.print(); }catch(e){} },350);
+  { let printed=false;                                 /* 인쇄창을 두 번 띄우지 않는다 */
+    const go=()=>{ if(printed) return; printed=true; try{ wn.focus(); wn.print(); }catch(e){} };
+    wn.onload=go; setTimeout(go,600); }
 }
 
 /* 휴대폰 재고현황 카드에서 바로 재고를 맞춘다 (실사 탭을 거치지 않는다) */
@@ -13063,6 +13126,7 @@ async function fixStock(it, val){
     rCfg(); return;
   }
   const d=today();
+  if(baseDateGuard(it,d)) pushItems(true);               /* 기초일자가 오늘이면 어제로 — 오늘 조정전표가 집계되게 */
   /* src 를 미리 붙이지 않는다 — pushManual 이 src 없는 전표를 올리면서 키를 부여한다 */
   /* 박스 단위 품목은 박스 수도 함께 남긴다 — SKF씰은 박스로 세고 박스로 확인한다 */
   const bxs=(n)=>{ const b=+it.bx||0; if(!b) return nf(n)+' EA';
@@ -13144,7 +13208,7 @@ async function autoSync(reason){
   if(autoDone) return;                    /* 접속 후 한 번만 — 화면이 계속 새로 그려지지 않게 */
   try{
     const r=await syncMes(true);
-    if(r&&r.ok){ autoDone=true; autoTry=0; render(); return; }
+    if(r&&r.ok){ autoDone=true; autoTry=0; try{ if(fixNewItemBd()) pushItems(true); }catch(e){} render(); return; }
   }catch(e){}
   if(++autoTry<=3){                       /* 실패했을 때만 5초 → 15초 → 45초 재시도 */
     setTimeout(()=>autoSync('재시도'), 5000*Math.pow(3,autoTry-1));
