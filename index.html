@@ -1080,7 +1080,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.7 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.8 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6227,6 +6227,7 @@ body.qp-on{overflow:hidden}
     </div>
     <div class="itBtns">
       <button class="btn k" onclick="saveItem()">저장</button>
+      <button class="btn" id="ySplit" onclick="splitItem()" title="같은 품번을 현장 계정과 2층 검사실 계정으로 나눕니다" style="background:#E4EFE7;border-color:#9CC3A8;color:#0B4A2B;font-weight:700">현장 / 2층 분리</button>
       <button class="btn r" id="yDel" onclick="delItem()">삭제</button>
     </div>
     <div class="itSpacer"></div>
@@ -11255,7 +11256,48 @@ function openItem(i){
   $('yBx').oninput=()=>{[['ySfB','ySf'],['yBsB','yBs']].forEach(([f,e])=>{
     if($(f).value!==''&&+$('yBx').value)$(e).value=Math.round(+$(f).value*+$('yBx').value);});};
   $('yDel').style.display=n?'none':'block';
+  if($('ySplit')) $('ySplit').style.display=(!n&&!it.base&&!it.pair)?'block':'none';   /* 이미 나뉜 품목에는 숨김 */
   $('mIt').classList.add('on');
+}
+/* ═══ 현장 / 2층 검사실 분리 ═══
+   같은 품번은 하나만 등록되므로(서버 키 = 품번) 현장 재고를 따로 두려면 계정을 나눈다.
+   · 이 품번(X)         → 현장 계정 (생산입고 + · 검사입고 − · 폐기 −)        pair = 'X [2F]'
+   · 새 품목 'X [2F]'   → 2층 검사실 계정 (검사입고 + · 출하 −)                 base = X
+   전표는 손대지 않고, 두 계정의 현재고가 입력한 값이 되도록 기초재고만 맞춘다. */
+function splitItem(){
+  const i=+$('yIdx').value; if(i<0) return;
+  const it=S.items[i]; if(!it) return;
+  if(it.base||it.pair){ toast('이미 현장/2층으로 나뉜 품목입니다'); return; }
+  const f2pn=it.pn+' [2F]';
+  if(S.items.some(x=>x.pn===f2pn)){ toast(f2pn+' 품목이 이미 있습니다'); return; }
+  const cur=Math.round(calc(it).cur||0), bx=+it.bx||0;
+  const bxs=n=>bx?(Math.floor(n/bx)+'박스'+(((n%bx)+bx)%bx?'+'+nf(((n%bx)+bx)%bx):'')+' = '+nf(n)+' EA'):(nf(n)+' EA');
+  const isF2=(it.wh||'현장')==='검사실2F';
+  if(!confirm(it.pn+' 을(를) 현장 / 2층 검사실 두 계정으로 나눕니다.\n\n'
+    +'· 현재 전산재고 '+bxs(cur)+'\n'
+    +'· '+it.pn+'  → 현장 계정 (생산 입고 · 검사실로 이동분 차감)\n'
+    +'· '+f2pn+'  → 2층 검사실 계정 (검사입고 · 출하)\n\n'
+    +'다음 창에서 두 계정의 현재 재고를 입력합니다. 계속할까요?')) return;
+  const ask=(label,def)=>{ const v=prompt(label+(bx?' — 박스 수 또는 EA 로 입력 (예: 35박스 / 10500)':' (EA)'),String(def)); if(v===null) return null;
+    const t=String(v).trim(); const m=t.match(/^([\d.]+)\s*(박스|box|b)$/i); if(m) return Math.round(+m[1]*bx);
+    return Math.round(+t.replace(/[^0-9.-]/g,'')||0); };
+  const q2=ask('2층 검사실 재고', isF2?cur:0); if(q2===null) return;
+  const q1=ask('현장 재고', isF2?0:cur); if(q1===null) return;
+  /* 기초일자가 오늘이면 어제로 (오늘 전표가 집계되게) */
+  if(!it.bd||it.bd>=today()) it.bd=dayBefore();
+  const f2={pn:f2pn,nm:it.nm||'',sp:it.sp||'',un:it.un||'EA',bx:it.bx||0,sf:0,bs:0,bd:it.bd,cu:it.cu||'',
+    lc:it.lc||'',wh:'검사실2F',al:'',setx:null,setp:it.setp||null,hide:false,base:it.pn,pair:null,price:it.price==null?null:it.price,
+    cnt:null,pend:1,ua:new Date().toISOString()};
+  it.pair=f2pn; it.wh='현장'; it.cnt=null;
+  S.items.push(f2);
+  /* 기초재고 역산: 전표를 그대로 둔 채 현재고가 입력값이 되도록 */
+  it.bs=0;  const d1=Math.round(calc(it).cur||0);  it.bs=q1-d1;
+  f2.bs=0;  const d2=Math.round(calc(f2).cur||0);  f2.bs=q2-d2;
+  if(DEL_PNS.has(f2pn)){ DEL_PNS.delete(f2pn); itPushDel().catch(()=>{}); }
+  touchItem(it); touchItem(f2);
+  S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true}));
+  save(); render(); closeAll(); pushItems(true);
+  toast(it.pn+' 현장 '+nf(q1)+' EA / '+f2pn+' 2층 '+nf(q2)+' EA 로 나눴습니다');
 }
 function saveItem(){
   const i=+$('yIdx').value, pn=$('yPn').value.trim();
@@ -11285,7 +11327,7 @@ function saveItem(){
   let tgt;
   if(i<0){
     const dup=S.items.find(x=>String(x.pn).trim()===pn);
-    if(dup){ toast(pn+' 은(는) 이미 등록된 품번입니다 — 기존 품목을 수정하세요'); return; }
+    if(dup){ toast(pn+' 은(는) 이미 등록된 품번입니다 — 현장 재고를 따로 두려면 그 품목을 열어 [현장 / 2층 분리]를 누르세요'); return; }
     tgt=Object.assign({cnt:null,pend:1},o);S.items.push(tgt);   /* pend: 서버 저장 확인 전 — 새로고침에도 지키고 다시 올린다 */
   }
   else{Object.assign(S.items[i],o);tgt=S.items[i];}
