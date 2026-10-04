@@ -1104,7 +1104,7 @@ body.qp-on{overflow:hidden}
 
 <nav id="pcNav">
   <a class="brand" onclick="setTab('sum')"><span class="mark">T</span><span>⌂ 홈&nbsp; <small>TJ ERP · STOCK</small></span></a>
-  <div class="navitem" data-g="stock"><button type="button">재고관리 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="sum"><i>📊</i>재고 현황<em>STOCK</em></a><a data-t="sum" data-fn="syncMes(false)" class="act pri"><i>🔃</i>새로고침</a><a data-t="sum" data-fn="render()" class="act"><i>🔄</i>조회</a><a data-t="sum" data-fn="diag()" class="act"><i>🩺</i>진단</a><a data-t="sum" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a><a data-t="sum" data-fn="exportXls()" class="act"><i>📗</i>엑셀</a><a data-t="sum" data-fn="exportCsv('sum')" class="act"><i>📄</i>CSV</a></div><div class="mega-col"><a class="scr" data-t="cnt"><i>✅</i>재고 실사<em>COUNT</em></a><a data-t="cnt" data-fn="applyCount()" class="act pri"><i>✅</i>조정전표발행</a><a data-t="cnt" data-fn="exportCnt()" class="act"><i>⬇</i>실사표받기</a><a data-t="cnt" data-fn="pick('fCnt')" class="act"><i>📄</i>실사CSV</a><a data-t="cnt" data-fn="clearCount()" class="act"><i>🧹</i>실사값지우기</a><a data-t="cnt" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr" data-t="bin"><i>📒</i>품목별 입출고 이력<em>HISTORY</em></a><a data-t="bin" data-fn="window.print()" class="act pri"><i>🖨</i>인쇄</a><a data-t="bin" data-fn="printAllBins()" class="act"><i>📚</i>일괄인쇄</a></div></div></div>
+  <div class="navitem" data-g="stock"><button type="button">재고관리 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="sum"><i>📊</i>재고 현황<em>STOCK</em></a><a data-t="sum" data-fn="syncMes(false)" class="act pri"><i>🔃</i>새로고침</a><a data-t="sum" data-fn="render()" class="act"><i>🔄</i>조회</a><a data-t="sum" data-fn="diag()" class="act"><i>🩺</i>진단</a><a data-t="sum" data-fn="sumOut('print')" class="act"><i>🖨</i>인쇄</a><a data-t="sum" data-fn="sumOut('xls')" class="act"><i>📗</i>엑셀</a><a data-t="sum" data-fn="sumOut('csv')" class="act"><i>📄</i>CSV</a></div><div class="mega-col"><a class="scr" data-t="cnt"><i>✅</i>재고 실사<em>COUNT</em></a><a data-t="cnt" data-fn="applyCount()" class="act pri"><i>✅</i>조정전표발행</a><a data-t="cnt" data-fn="exportCnt()" class="act"><i>⬇</i>실사표받기</a><a data-t="cnt" data-fn="pick('fCnt')" class="act"><i>📄</i>실사CSV</a><a data-t="cnt" data-fn="clearCount()" class="act"><i>🧹</i>실사값지우기</a><a data-t="cnt" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr" data-t="bin"><i>📒</i>품목별 입출고 이력<em>HISTORY</em></a><a data-t="bin" data-fn="window.print()" class="act pri"><i>🖨</i>인쇄</a><a data-t="bin" data-fn="printAllBins()" class="act"><i>📚</i>일괄인쇄</a></div></div></div>
   <div class="navitem on" data-g="io"><button type="button">입출고 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="io"><i>↔</i>입출고 내역<em>IN / OUT</em></a><a data-t="io" data-fn="openIO()" class="act pri"><i>➕</i>입출고등록</a><a data-t="io" data-fn="openImp()" class="act"><i>📥</i>엑셀실적</a><a data-t="io" data-fn="exportCsv('io')" class="act"><i>📄</i>CSV</a><a data-t="io" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr on" data-t="trc"><i>🔗</i>LOT 추적<em>TRACE</em></a><a data-t="trc" data-fn="rTrc()" class="act pri"><i>🔍</i>추적</a><a data-t="trc" data-fn="openCust()" class="act"><i>🏢</i>고객사</a><a data-t="trc" data-fn="exportTrc()" class="act"><i>📗</i>엑셀</a><a data-t="trc" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
   <div class="navitem" data-g="raw"><button type="button">원소재 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="raw"><i>🧱</i>원소재(코일)<em>RAW COIL</em></a><a data-t="raw" data-fn="refreshAll()" class="act pri"><i>🔄</i>새로고침</a><a data-t="raw" data-fn="setRV('sup')" class="act"><i>🏢</i>업체별</a><a data-t="raw" data-fn="setRV('eq')" class="act"><i>🏭</i>설비현황</a><a data-t="raw" data-fn="setRV('coil')" class="act"><i>🧱</i>코일목록</a><a data-t="raw" data-fn="openCoil(-1)" class="act"><i>➕</i>코일등록</a><a data-t="raw" data-fn="exportRaw()" class="act"><i>📗</i>엑셀</a><a data-t="raw" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
   <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
@@ -12512,7 +12512,7 @@ window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목대장','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
 const SUB={
-  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','window.print()'],['📗','엑셀','exportXls()'],['📄','CSV','exportCsv(\'sum\')']],
+  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','sumOut(\'print\')'],['📗','엑셀','sumOut(\'xls\')'],['📄','CSV','sumOut(\'csv\')']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
@@ -12805,18 +12805,34 @@ function monthStat(cu,y){
   return {prod,ship,isSet:false};
 }
 /* 마감 대상월 — 월초(1~10일)에 당월이 선택돼 있으면 전월로 마감한다 */
-function closeYm(){
+/* 기본 기준월 — 월초(1~10일)는 전월 마감 기간이므로 전월, 11일부터 당월 */
+function defYm(){
   const cur=today().slice(0,7), d=+today().slice(8,10);
-  return (ym===cur&&d<=10)?prevYm(cur):ym;
+  return d<=10?prevYm(cur):cur;
+}
+/* 월말 재고조사서 마감월 — 화면이 당월이고 월초(1~10일)면 전월, 그 외에는 화면 기준월 */
+function closeYm(){ return ym===today().slice(0,7)?defYm():ym; }
+/* 재고현황 인쇄·엑셀·CSV — 월초(1~10일)에는 전월 말일 마감 기준으로 출력하고 화면은 원래 월로 되돌린다 */
+function sumOut(kind){
+  const run=()=>kind==='print'?window.print():kind==='xls'?exportXls():exportCsv('sum');
+  const c=ym; if(c===ym) return run();   /* 재고현황 출력은 화면 기준월 그대로 */
+  const bk=ym;
+  const setY=v=>{ ym=v; $('ym').value=v; $('i1').textContent=v; $('ioF').value=mStart(); $('ioT').value=mEnd(); };
+  setY(c); render(); toast(c.replace('-','년 ')+'월 마감 기준으로 출력합니다');
+  if(kind==='print'){
+    let done=false; const back=()=>{ if(done)return; done=true; window.removeEventListener('afterprint',back); setY(bk); render(); };
+    window.addEventListener('afterprint',back);
+    setTimeout(()=>{ window.print(); setTimeout(back,1500); },60);   /* afterprint 미지원 브라우저 대비 */
+    return;
+  }
+  try{ run(); } finally { setY(bk); render(); }
 }
 function printMonthReport(){
-  const def=closeYm();
-  const v=prompt('마감 대상월 (YYYY-MM)\n\n월초에는 전월이 기본값입니다.\n해당 월 말일 기준 재고·생산·납품으로 작성합니다.',def);
-  if(v===null) return;
-  const y2=String(v).trim().replace(/[./]/g,'-');
-  if(!/^\d{4}-\d{2}$/.test(y2)){ toast('월 형식이 맞지 않습니다 (예: '+def+')'); return; }
-  const bk=ym; ym=y2;                      /* calc()·isDead() 가 말일 기준으로 계산되게 잠시 전환 */
+  /* 확인창 없이 바로 마감월로 출력 — 월초(1~10일)는 전월, 다른 달을 보려면 화면 기준월을 그 달로 바꾸고 누른다 */
+  const y2=closeYm();
+  const bk=ym; ym=y2;                      /* calc()·isDead() 가 마감월 말일 기준으로 계산되게 잠시 전환 */
   try{ _printMonthReport(); } finally { ym=bk; }
+  if(y2!==bk) toast(+y2.slice(5)+'월 마감 재고조사서를 출력합니다 ('+y2.slice(0,4)+'년 '+(+y2.slice(5))+'월 말일 기준)');
 }
 function _printMonthReport(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
