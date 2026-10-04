@@ -1145,6 +1145,8 @@ body.qp-on{overflow:hidden}
     <select id="sCu" class="fsel" style="font-family:var(--sans);min-width:130px" title="고객사별 보기 — 고르면 전 재고구분에서 그 고객사 품목만 표시"><option value="">전체 (166)</option><option value="SKF씰">SKF씰 (131)</option><option value="SBC">SBC (12)</option><option value="부강스프링">부강스프링 (7)</option><option value="우창산업">우창산업 (6)</option><option value="세동산업">세동산업 (5)</option><option value="일진글로벌">일진글로벌 (3)</option><option value="진양오일씰">진양오일씰 (2)</option></select>
     <button class="btn pc-only" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다" style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
     <button class="btn pc-only" onclick="printMonthReport()" title="마감월 말일 재고 · 금액 · 생산/납품 분석 — 월초에는 전월 기준 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
+    <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
+    <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
       <option value="pn|1">품번순</option><option value="nm|1">품명순</option><option value="wh|1">구분순</option>
       <option value="cur|-1">현재고 많은순</option><option value="cur|1">현재고 적은순</option>
@@ -6491,7 +6493,7 @@ const whNm=w=>(WHS.find(x=>x[0]===w)||WHS[0])[1];
 const whDp=w=>(WHS.find(x=>x[0]===w)||WHS[0])[2];
 let S={user:'',items:[],led:[],seq:1,party:PARTY.split(','),
        coils:[],mled:[],bom:[],msf:{},cseq:1,mseq:1};
-let tab='sum', ym='', F='all', C='all', WH='';
+let tab='sum', ym='', F='all', C='all', WH='', CUT='';   /* CUT: 재고조사서 재고 마감일(다음달 2일) */
 const inWh=it=>!it.hide&&(!WH||(it.wh||'현장')===WH);
 const whOf=pn=>{const i=S.items.find(x=>x.pn===pn);return i?(i.wh||'현장'):'현장';};
 /* 관리제외 품번: 목록에 있으면 마스터·전표에서 제외하고 유입도 차단 ( * 접두 와일드카드 ) */
@@ -6606,7 +6608,7 @@ function effQ(r,it){
 const dlt=(r,it)=>kindIO(r.k)==='I'?effQ(r,it):-effQ(r,it);
 
 function calc(it){
-  const a=mStart(), b=mEnd();
+  const a=mStart(), b=CUT||mEnd();
   let open=it.bs, iq=0, oq=0, sq=0, last='';
   const setp=it.setp?String(it.setp):'';
   /* ═══ 현장 / 2층 검사실 분리 ═══
@@ -6661,7 +6663,7 @@ function lastOut(it){
 function isDead(it){
   if(!ledgerOf(it).length) return false;   /* 입출고 이력 없는 신규품목은 제외 */
   const l=lastOut(it); if(!l) return false;
-  return (new Date(mEnd())-new Date(l))/864e5>90;
+  return (new Date(CUT||mEnd())-new Date(l))/864e5>90;
 }
 
 /* ═══════ 총괄표 ═══════ */
@@ -12706,7 +12708,7 @@ document.addEventListener('click',e=>{
 $('fSel').onchange=e=>{F=e.target.value;rSum();};
 $('cSel').onchange=e=>{C=e.target.value;rCnt();};
 $('whSel').onchange=e=>{WH=e.target.value;render();};
-$('ym').onchange=()=>{ym=$('ym').value;$('i1').textContent=ym;
+$('ym').onchange=()=>{ym=$('ym').value;$('i1').textContent=ym;mcPaint();
   $('ioF').value=mStart();$('ioT').value=mEnd();render();};
 $('fq').oninput=rSum;
 $('fq').addEventListener('compositionend',rSum);
@@ -12827,30 +12829,107 @@ function sumOut(kind){
   }
   try{ run(); } finally { setY(bk); render(); }
 }
+/* ═══ 월마감 확정 — 확정 시점 재고를 품번별로 고정 저장(서버 kv_store 공유).
+   확정 후 재고조사서는 이 값으로만 출력 → 나중에 전표가 늘어도 마감 재고가 바뀌지 않는다 ═══ */
+const MC_KEY='tj_month_close_v1';
+function mcAll(){ if(!S.mclose||typeof S.mclose!=='object') S.mclose={}; return S.mclose; }
+function mcGet(y){ return mcAll()[y]||null; }
+async function mcPull(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+MC_KEY+'&select=value',{headers:itHeaders()});
+    if(!r.ok) return;
+    const j=await r.json(); const v=j&&j[0]&&j[0].value;
+    if(v&&v.months&&typeof v.months==='object'){ S.mclose=v.months; save(); }
+  }catch(e){}
+  mcPaint();
+}
+async function mcPush(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
+      {method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+       body:JSON.stringify([{key:MC_KEY,value:{months:mcAll(),ua:nowIso()},updated_at:nowIso()}])});
+    return r.ok;
+  }catch(e){ return false; }
+}
+function mcPaint(){
+  const b=$('mcBtn'); if(!b) return;
+  const y=closeYm(), m=+y.slice(5), c=mcGet(y);
+  const inf=$('mcInfo');
+  if(inf){ const [cy,cm]=y.split('-').map(Number), ld=new Date(cy,cm,0).getDate();
+    inf.textContent=c?('✔ '+cy+'년 '+m+'월분 마감완료 ('+m+'/1~'+m+'/'+ld+' · 재고 '+(+c.cut.slice(5,7))+'/'+(+c.cut.slice(8))+' 마감)')
+                     :('⚠ 마감대상 : '+cy+'년 '+m+'월분 ('+m+'/1~'+m+'/'+ld+') · 미확정');
+    inf.style.color=inf.style.borderColor=c?'#0B6B3A':'#C2410C'; inf.style.background=c?'#ECFDF5':'#FFF7ED'; }
+  if(c){ b.textContent='🔒 '+m+'월 마감완료'; b.style.background=b.style.borderColor='#475569';
+         b.title=m+'월 마감 확정됨 — '+c.cut.slice(5).replace('-','/')+' 마감 · '+c.at.slice(0,16).replace('T',' ')+' · '+(c.by||'-')+'\n누르면 마감 취소'; }
+  else { b.textContent='🔓 '+m+'월 마감확정'; b.style.background=b.style.borderColor='#C2410C';
+         b.title=m+'월 아직 미확정(가마감) — 누르면 '+m+'월 마감을 확정합니다'; }
+}
+async function monthClose(){
+  const y=closeYm(), [cy,cm]=y.split('-').map(Number), m=cm;
+  const c=mcGet(y);
+  if(c){
+    if(!confirm(cy+'년 '+m+'월은 이미 마감 확정되었습니다.\n\n· 마감일 : '+c.cut+'\n· 확정 : '+c.at.slice(0,16).replace('T',' ')+' ('+(c.by||'-')+')'
+      +'\n· 품목 '+Object.keys(c.rows).length+' · 재고 '+nf(c.q)+' EA · ₩'+nf(c.amt)
+      +'\n\n[확인] 마감 취소 (다시 확정할 수 있습니다)\n[취소] 그대로 두기')) return;
+    delete mcAll()[y]; save(); mcPaint(); await mcPush();
+    toast(m+'월 마감을 취소했습니다'); return;
+  }
+  const nx=new Date(cy,cm,1), mEndY=y+'-'+p2(new Date(cy,cm,0).getDate());
+  if(today()<mEndY){ toast(m+'월분은 '+m+'월 말일('+mEndY.slice(5).replace('-','/')+') 이후에 마감 확정할 수 있습니다'); return; }
+  let def=nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(+(S.closeDay||2));
+  if(def>today()) def=today(); if(def<mEndY) def=mEndY;
+  const v=prompt(cy+'년 '+m+'월분 마감을 확정합니다. ('+m+'월 1일~말일 실적)\n\n마감일까지 등록된 입출고로 재고를 고정합니다. (YYYY-MM-DD)\n월말('+mEndY+') ~ 오늘('+today()+') 사이',def);
+  if(v===null) return;
+  const cut=String(v).trim().replace(/[./]/g,'-');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(cut)||cut<mEndY||cut>today()){ toast('마감일은 '+mEndY+' ~ '+today()+' 사이로 입력하세요'); return; }
+  const bk=ym; ym=y; CUT=cut; const rows={}; let q=0,amt=0;
+  try{
+    S.items.filter(i=>!i.hide).forEach(it=>{ const cur=Math.round(calc(it).cur||0), pr=+it.price||0;
+      rows[it.pn]=[cur,pr,isDead(it)?1:0]; q+=cur; amt+=pr?cur*pr:0; });
+  } finally { ym=bk; CUT=''; }
+  if(!confirm(cy+'년 '+m+'월분 마감 확정\n\n· 마감일 : '+cut+' 까지 입출고 반영\n· 품목 '+Object.keys(rows).length+' · 재고 '+nf(q)+' EA · ₩'+nf(amt)
+    +'\n\n확정하면 '+m+'월 재고조사서는 이 수량으로 고정됩니다.')) return;
+  const d0=new Date(); mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',q,amt,rows}; save(); mcPaint();
+  const ok=await mcPush();
+  toast(m+'월 마감 확정 완료'+(ok?'':' (서버 저장 실패 — 이 PC에만 저장됨)'));
+}
+const RPT_BAR='<style>.rbar{position:fixed;top:8px;right:10px;z-index:99;display:flex;gap:6px}'
+ +'.rbar button{font:700 14px "맑은 고딕",sans-serif;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;color:#fff;background:#0B6B3A;box-shadow:0 2px 6px rgba(0,0,0,.25)}'
+ +'.rbar button.x{background:#555}@media print{.rbar{display:none}}</style>'
+ +'<div class="rbar"><button onclick="window.print()">🖨 인쇄</button><button class="x" onclick="window.close()">✕ 닫기</button></div>';
 function printMonthReport(){
   /* 확인창 없이 바로 마감월로 출력 — 월초(1~10일)는 전월, 다른 달을 보려면 화면 기준월을 그 달로 바꾸고 누른다 */
   const y2=closeYm();
-  const bk=ym; ym=y2;                      /* calc()·isDead() 가 마감월 말일 기준으로 계산되게 잠시 전환 */
-  try{ _printMonthReport(); } finally { ym=bk; }
+  /* 재고는 다음달 마감일(기본 2일)까지 반영 — 오늘이 그 전이면 오늘까지 */
+  const [cy,cm]=y2.split('-').map(Number), nx=new Date(cy,cm,1);
+  let cut=nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(+(S.closeDay||2));
+  if(cut>today()) cut=today();
+  if(mcGet(y2)) cut=mcGet(y2).cut;            /* 마감 확정월은 확정한 마감일 그대로 */
+  if(cut<y2+'-01') cut='';
+  const bk=ym; ym=y2; CUT=cut;              /* calc()·isDead() 가 마감일 기준으로 계산되게 잠시 전환 */
+  try{ _printMonthReport(); } finally { ym=bk; CUT=''; }
   if(y2!==bk) toast(+y2.slice(5)+'월 마감 재고조사서를 출력합니다 ('+y2.slice(0,4)+'년 '+(+y2.slice(5))+'월 말일 기준)');
 }
 function _printMonthReport(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
   const lastD=new Date(Y,M,0).getDate();
+  const MC=mcGet(y);                        /* 마감 확정 스냅샷 (없으면 실시간 계산 = 가마감) */
+  const cutTxt=(CUT&&CUT>y+'-'+p2(lastD))?(+CUT.slice(5,7))+'월 '+(+CUT.slice(8))+'일 마감 · ':'';
+  const mcTxt=MC?'<b style="color:#0B6B3A">마감확정</b> · ':'<b style="color:#C00000">가마감(미확정)</b> · ';
   const items=S.items.filter(i=>!i.hide);
   const byCu={};
   items.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
   /* 대표 보고 순서: 4대 업체 먼저, 그 뒤에 재고(또는 당월 생산·납품)가 있는 나머지 고객사
      (우창산업·진양오일씰 등이 통째로 빠지던 문제 — 재고가 있으면 반드시 들어간다. 고객사 미지정은 제외) */
   const REPORT_CUS=['SKF씰','일진글로벌','SBC','부강스프링'];
-  const hasStock=c=>(byCu[c]||[]).some(it=>Math.round(calc(it).cur||0)!==0)
+  const hasStock=c=>(byCu[c]||[]).some(it=>Math.round(MC?((MC.rows[it.pn]||[0])[0]):(calc(it).cur||0))!==0)
     ||(()=>{ try{ const m=monthStat(c,y); return (m.prod||0)>0||(m.ship||0)>0; }catch(e){ return false; } })();
   const others=Object.keys(byCu).filter(c=>c!=='(미지정)'&&!REPORT_CUS.includes(c)&&hasStock(c))
     .sort((p2,q2)=>byCu[q2].length-byCu[p2].length||p2.localeCompare(q2,'ko'));
   const cus=REPORT_CUS.filter(c=>byCu[c]&&byCu[c].length).concat(others);
 
   const meta=cu=>`<div class="meta"><div>■조사업체 : ${esc(CU_FULL[cu]||cu)}</div>
-    <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (오후14:00 기준) -<b>"외주가공재고 별도"</b>
+    <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (${mcTxt}${cutTxt}오후14:00 기준) -<b>"외주가공재고 별도"</b>
 <span class="rt">■담당부서 : 생산팀</span></div></div>`;
   const thead=`<thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품 번</th><th rowspan="2">공정</th>
     <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th>
@@ -12866,7 +12945,9 @@ function _printMonthReport(){
     const rows=byCu[cu].sort((a,b)=>String(a.sp||'').localeCompare(String(b.sp||''),'en',{numeric:true})||a.pn.localeCompare(b.pn,'en',{numeric:true}));
     let q=0,amt=0,lq=0; const lines=[];
     rows.forEach((it,i)=>{
-      const v=calc(it), cur=v.cur||0, pr=+it.price||0, sub=pr?cur*pr:0, dead=isDead(it)&&cur>0;
+      const sn=MC&&MC.rows[it.pn];
+      const v=MC?null:calc(it), cur=MC?(sn?sn[0]:0):(v.cur||0), pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
+            dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
       q+=cur; amt+=sub; if(dead)lq+=cur;
       lines.push(`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
         <td class="pn">${esc(it.pn)}${it.base?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
@@ -12877,7 +12958,7 @@ function _printMonthReport(){
     });
     stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
     /* 업체당 표 하나 — 페이지는 브라우저가 꽉 채워 나누고, 넘어간 페이지에는 머리글이 자동 반복된다 */
-    chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月)</span></div>${meta(cu)}</div>
+    chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       <table class="inv">${colg}${thead}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
         <td class="r">-</td><td></td><td class="r">-</td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot></table></section>`);
@@ -12932,10 +13013,10 @@ function _printMonthReport(){
    +'</style></head><body>'+pages+'</body></html>';
   const wn=window.open('','_blank');
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
-  wn.document.write(html); wn.document.close();
-  { let printed=false;                                 /* 인쇄창을 두 번 띄우지 않는다 */
-    const go=()=>{ if(printed) return; printed=true; try{ wn.focus(); wn.print(); }catch(e){} };
-    wn.onload=go; setTimeout(go,600); }
+  /* 자동 인쇄창을 띄우지 않는다 — 인쇄 미리보기가 뒤 탭에 열린 채 남으면 본 화면 버튼이 모두 멈추던 문제.
+     보고서 탭 위쪽 [🖨 인쇄] 버튼(또는 Ctrl+P)으로 인쇄, [✕ 닫기]로 탭을 닫는다. */
+  wn.document.write(html.replace('</body>',RPT_BAR+'</body>')); wn.document.close();
+  try{ wn.opener=null; wn.focus(); }catch(e){}
 }
 
 /* ═══════ 재고조사표 출력 ═══════
@@ -13076,10 +13157,10 @@ function countSheetOpen(pages,label){
 
   const wn=window.open('','_blank');
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
-  wn.document.write(html); wn.document.close();
-  { let printed=false;                                 /* 인쇄창을 두 번 띄우지 않는다 */
-    const go=()=>{ if(printed) return; printed=true; try{ wn.focus(); wn.print(); }catch(e){} };
-    wn.onload=go; setTimeout(go,600); }
+  /* 자동 인쇄창을 띄우지 않는다 — 인쇄 미리보기가 뒤 탭에 열린 채 남으면 본 화면 버튼이 모두 멈추던 문제.
+     보고서 탭 위쪽 [🖨 인쇄] 버튼(또는 Ctrl+P)으로 인쇄, [✕ 닫기]로 탭을 닫는다. */
+  wn.document.write(html.replace('</body>',RPT_BAR+'</body>')); wn.document.close();
+  try{ wn.opener=null; wn.focus(); }catch(e){}
 }
 
 /* 휴대폰 재고현황 카드에서 바로 재고를 맞춘다 (실사 탭을 거치지 않는다) */
@@ -13330,7 +13411,7 @@ function init(){
   fillRawLists(); autoBom(false);
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.map(p=>`<option value="${esc(p)}">`).join('');
-  rDTabs(); render();
+  rDTabs(); render(); mcPaint(); mcPull();
 }
 load();
 unblockSBC();
