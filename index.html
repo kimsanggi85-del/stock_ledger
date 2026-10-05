@@ -12227,6 +12227,7 @@ async function syncMes(silent){
       +(unk.size?' / 신규품번 '+unk.size+'종(박스단위 입력 필요)':''));
     else if(add||upd||del)toast('자동전표 '+(add+upd)+'건 반영'+(del?' · '+del+'건 정리':''));
     if(btn)btn.disabled=false; mesBusy=false;
+    setTimeout(()=>mcAuto().catch(()=>{}),0);     /* 지정 마감월(9월 → 10/2) 자동 마감확정 */
     return {ok:true,add,upd,del,rows:rows.length};
   }catch(e){
     mesStat('MES 연결 안됨','#FF9E9E');
@@ -12832,13 +12833,36 @@ function sumOut(kind){
 /* ═══ 월마감 확정 — 확정 시점 재고를 품번별로 고정 저장(서버 kv_store 공유).
    확정 후 재고조사서는 이 값으로만 출력 → 나중에 전표가 늘어도 마감 재고가 바뀌지 않는다 ═══ */
 const MC_KEY='tj_month_close_v1';
+/* 지정 마감 — 이 달은 정해진 마감일로 자동 마감확정 (서버 동기화가 끝난 뒤 1회) */
+const MC_PRESET={'2026-09':'2026-10-02'};
+let MC_OK=false;                           /* 서버 마감기록을 읽어왔는지 — 못 읽었으면 자동확정 안 함(다른 PC 기록 덮어쓰기 방지) */
+function mcSnap(y,cut){
+  const bk=ym; ym=y; CUT=cut; const rows={}; let q=0,amt=0;
+  try{
+    S.items.filter(i=>!i.hide).forEach(it=>{ const cur=Math.round(calc(it).cur||0), pr=+it.price||0;
+      rows[it.pn]=[cur,pr,isDead(it)?1:0]; q+=cur; amt+=pr?cur*pr:0; });
+  } finally { ym=bk; CUT=''; }
+  return {rows,q,amt};
+}
+async function mcAuto(){
+  if(!MC_OK) await mcPull();
+  if(!MC_OK) return;
+  let ch=false;
+  for(const [y,cut] of Object.entries(MC_PRESET)){
+    if(mcGet(y)||today()<cut) continue;
+    const {rows,q,amt}=mcSnap(y,cut), d0=new Date();
+    mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:(S.user||'')+'(지정마감)',q,amt,rows}; ch=true;
+    toast((+y.slice(5))+'월분 마감확정 ('+(+cut.slice(5,7))+'/'+(+cut.slice(8))+' 마감) — 재고 '+nf(q)+' EA');
+  }
+  if(ch){ save(); mcPaint(); await mcPush(); }
+}
 function mcAll(){ if(!S.mclose||typeof S.mclose!=='object') S.mclose={}; return S.mclose; }
 function mcGet(y){ return mcAll()[y]||null; }
 async function mcPull(){
   try{
     const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+MC_KEY+'&select=value',{headers:itHeaders()});
     if(!r.ok) return;
-    const j=await r.json(); const v=j&&j[0]&&j[0].value;
+    const j=await r.json(); const v=j&&j[0]&&j[0].value; MC_OK=true;
     if(v&&v.months&&typeof v.months==='object'){ S.mclose=v.months; save(); }
   }catch(e){}
   mcPaint();
@@ -12876,17 +12900,13 @@ async function monthClose(){
   }
   const nx=new Date(cy,cm,1), mEndY=y+'-'+p2(new Date(cy,cm,0).getDate());
   if(today()<mEndY){ toast(m+'월분은 '+m+'월 말일('+mEndY.slice(5).replace('-','/')+') 이후에 마감 확정할 수 있습니다'); return; }
-  let def=nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(+(S.closeDay||2));
+  let def=MC_PRESET[y]||(nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(+(S.closeDay||2)));
   if(def>today()) def=today(); if(def<mEndY) def=mEndY;
   const v=prompt(cy+'년 '+m+'월분 마감을 확정합니다. ('+m+'월 1일~말일 실적)\n\n마감일까지 등록된 입출고로 재고를 고정합니다. (YYYY-MM-DD)\n월말('+mEndY+') ~ 오늘('+today()+') 사이',def);
   if(v===null) return;
   const cut=String(v).trim().replace(/[./]/g,'-');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(cut)||cut<mEndY||cut>today()){ toast('마감일은 '+mEndY+' ~ '+today()+' 사이로 입력하세요'); return; }
-  const bk=ym; ym=y; CUT=cut; const rows={}; let q=0,amt=0;
-  try{
-    S.items.filter(i=>!i.hide).forEach(it=>{ const cur=Math.round(calc(it).cur||0), pr=+it.price||0;
-      rows[it.pn]=[cur,pr,isDead(it)?1:0]; q+=cur; amt+=pr?cur*pr:0; });
-  } finally { ym=bk; CUT=''; }
+  const {rows,q,amt}=mcSnap(y,cut);
   if(!confirm(cy+'년 '+m+'월분 마감 확정\n\n· 마감일 : '+cut+' 까지 입출고 반영\n· 품목 '+Object.keys(rows).length+' · 재고 '+nf(q)+' EA · ₩'+nf(amt)
     +'\n\n확정하면 '+m+'월 재고조사서는 이 수량으로 고정됩니다.')) return;
   const d0=new Date(); mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',q,amt,rows}; save(); mcPaint();
@@ -12935,9 +12955,8 @@ function _printMonthReport(){
     <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th>
     <th rowspan="2">③합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
     <tr><th class="bl">제품재고(EA)</th><th>단가(₩)</th><th>소계</th><th>원자재재고(kg)</th><th>단가(₩)</th><th>소계</th></tr></thead>`;
-  const colg=`<colgroup><col style="width:26px"><col style="width:64px"><col style="width:78px"><col>
-    <col style="width:30px"><col style="width:52px"><col style="width:74px"><col style="width:48px"><col style="width:82px">
-    <col style="width:80px"><col style="width:48px"><col style="width:68px"><col style="width:84px"><col style="width:84px"></colgroup>`;
+  /* 열 너비는 % 로 — 품번 칸만 남는 폭을 다 먹어 가운데가 텅 비던 문제 */
+  const colg=`<colgroup><col style="width:3%"><col style="width:6.5%"><col style="width:7%"><col style="width:17%"><col style="width:3%"><col style="width:5.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:8.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:7%"><col style="width:8.5%"><col style="width:9%"></colgroup>`;
 
   /* 1) 업체별 품목표 → 페이지 조각 */
   const chunks=[]; const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
@@ -12950,7 +12969,7 @@ function _printMonthReport(){
             dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
       q+=cur; amt+=sub; if(dead)lq+=cur;
       lines.push(`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
-        <td class="pn">${esc(it.pn)}${it.base?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
+        <td class="pn">${esc(it.pn)}${it.base&&!/\[2F\]/i.test(it.pn)?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
         <td class="r">${it.bx?nf(it.bx):''}</td>
         <td class="r bl${dead?' lg':(cur<0?' ng':'')}">${cur?nf(cur):'-'}</td><td class="r">${pr?nf(pr):''}</td><td class="r">${sub?nf(sub):'-'}</td>
         <td class="r"></td><td class="r"></td><td class="r">-</td>
@@ -12990,23 +13009,23 @@ function _printMonthReport(){
    +'.pg{margin-top:14px}.pg:first-child{margin-top:0}'          /* 업체가 바뀌어도 페이지를 억지로 넘기지 않는다 — 남는 자리에 이어 붙는다 */
    +'.pg .hd{break-inside:avoid;page-break-inside:avoid;break-after:avoid;page-break-after:avoid}'
    +'.ab{break-inside:avoid;page-break-inside:avoid;margin-top:12px}.ab:first-child{margin-top:0}'
-   +'@media screen{body{padding:10mm}.pg{margin-bottom:22px;padding-bottom:18px;border-bottom:2px dashed #bbb}}'
-   +'.ttl{display:inline-block;background:#8ED99A;color:#0B3A1F;padding:5px 20px;font-size:18px;font-weight:900;letter-spacing:6px;margin-bottom:8px;border:1px solid #6CBF7C}'
-   +'.ttl span{letter-spacing:0;font-size:16px}'
-   +'.meta{font-size:10.5px;margin-bottom:3px;line-height:1.55}.meta .sub{margin-left:26px;font-size:10px}.meta .rt{float:right}'
-   +'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}'
-   +'th,td{border:1px solid #444;padding:1px 4px;height:16px;line-height:1.25;white-space:nowrap}'
+   +'@media screen{body{padding:10mm;max-width:1120px;margin:0 auto}.pg{margin-bottom:22px;padding-bottom:18px;border-bottom:2px dashed #bbb}}'
+   +'.ttl{display:inline-block;background:#8ED99A;color:#0B3A1F;padding:5px 20px;font-size:22px;font-weight:900;letter-spacing:6px;margin-bottom:8px;border:1px solid #6CBF7C}'
+   +'.ttl span{letter-spacing:0;font-size:19px}'
+   +'.meta{font-size:13px;margin-bottom:3px;line-height:1.55}.meta .sub{margin-left:26px;font-size:12px}.meta .rt{float:right}'
+   +'table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}'
+   +'th,td{border:1px solid #444;padding:2px 4px;height:22px;line-height:1.25;white-space:nowrap}'
    +'td.pn,td.s,td.c{overflow:visible;text-overflow:clip}td.r{overflow:hidden}'
-   +'th{background:#D8F0DE;font-weight:700;line-height:1.2;font-size:9.5px}th.bl{background:#CDE6F5}'
+   +'th{background:#D8F0DE;font-weight:700;line-height:1.2;font-size:12.5px;white-space:normal;word-break:keep-all;overflow:hidden}th.bl{background:#CDE6F5}'
    +'td.c{text-align:center}td.r{text-align:right;font-variant-numeric:tabular-nums}td.b{font-weight:700}'
-   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:10.5px;letter-spacing:0}td.s{font-size:9px}'
-   +'td.cu{font-size:9px;letter-spacing:-.3px}'
+   +'td.pn{font-family:Consolas,monospace;font-weight:700;font-size:14px;letter-spacing:-.3px}td.s{font-size:12px}'
+   +'td.cu{font-size:12px;letter-spacing:-.5px}'
    +'td.bl{background:#DDEFFA}td.ng{color:#C0392B}td.lg{color:#E0442E;font-weight:700}'
-   +'.f2{font-size:8px;background:#1E2A36;color:#fff;padding:0 3px;border-radius:2px;margin-left:3px}'
+   +'.f2{font-size:10px;background:#1E2A36;color:#fff;padding:0 3px;border-radius:2px;margin-left:3px}'
    +'tfoot td{background:#EEF3F0;font-weight:700}'
-   +'.an{margin-top:2px}.an th{background:#D8F0DE;height:26px}.an th.v{width:118px}.an td{height:26px;font-size:11px}'
-   +'.an td.hand{background:#fff}.an td.big{font-size:13px;height:40px}'
-   +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;font-size:12px;background:#F6FAF7;break-inside:avoid;page-break-inside:avoid}'
+   +'.an{margin-top:2px}.an th{background:#D8F0DE;height:32px}.an th.v{width:130px}.an td{height:32px;font-size:15px}'
+   +'.an td.hand{background:#fff}.an td.big{font-size:17px;height:46px}'
+   +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;background:#F6FAF7;font-size:15px;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
