@@ -1096,7 +1096,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.15 · 원소재 v11.19</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.16 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1171,6 +1171,7 @@ body.qp-on{overflow:hidden}
     <select id="sCu" class="fsel" style="font-family:var(--sans);min-width:130px" title="고객사별 보기 — 고르면 전 재고구분에서 그 고객사 품목만 표시"><option value="">전체 (166)</option><option value="SKF씰">SKF씰 (131)</option><option value="SBC">SBC (12)</option><option value="부강스프링">부강스프링 (7)</option><option value="우창산업">우창산업 (6)</option><option value="세동산업">세동산업 (5)</option><option value="일진글로벌">일진글로벌 (3)</option><option value="진양오일씰">진양오일씰 (2)</option></select>
     <button class="btn pc-only" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다" style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
     <button class="btn pc-only" onclick="printMonthReport()" title="마감월 말일 재고 · 금액 · 생산/납품 분석 — 월초에는 전월 기준 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
+    <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -9112,6 +9113,21 @@ function setRV(v){RV=v;
   const cb=$('cntBar'); if(cb)cb.style.display=(v==='cnt')?'flex':'none';
   if(v==='cnt'&&$('cntD2')&&!$('cntD2').value)$('cntD2').value=today();
   rRaw();}
+/* 머리글이 2줄 이상인 표의 행고정 — 모든 머리글 칸이 top:0 이라 스크롤하면 2번째 줄(코일·재고kg…)이
+   1번째 줄(현재 재고)을 덮어 머리글이 깨지던 문제. 줄마다 윗줄 높이만큼 내려서 고정한다.
+   (표가 숨겨져 있다 보일 때·창 크기가 바뀔 때도 ResizeObserver 로 다시 맞춘다) */
+function fixHeadTop(t){
+  const h=t&&t.tHead; if(!h||h.rows.length<2) return;
+  let top=0;
+  for(const r of h.rows){ for(const th of r.cells) th.style.top=top+'px';
+    const rh=r.getBoundingClientRect().height; if(!rh) return; top+=rh; }
+}
+const HEAD_RO=typeof ResizeObserver==='function'?new ResizeObserver(es=>es.forEach(e=>fixHeadTop(e.target.closest('table')))):null;
+function watchHead(t){
+  const hook=()=>{ if(t.tHead){ if(HEAD_RO) HEAD_RO.observe(t.tHead); fixHeadTop(t); } };
+  new MutationObserver(hook).observe(t,{childList:true}); hook();
+}
+document.querySelectorAll('table.t').forEach(watchHead);
 function rRaw(){
   const q=nz($('rawQ').value.trim()), fst=$('rawSt').value;
   const a=mStart(),b=mEnd();
@@ -13013,7 +13029,9 @@ const RPT_BAR='<style>.rbar{position:fixed;top:8px;right:10px;z-index:99;display
  +'.rbar button{font:700 14px "맑은 고딕",sans-serif;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;color:#fff;background:#0B6B3A;box-shadow:0 2px 6px rgba(0,0,0,.25)}'
  +'.rbar button.x{background:#555}@media print{.rbar{display:none}}</style>'
  +'<div class="rbar"><button onclick="window.print()">🖨 인쇄</button><button class="x" onclick="window.close()">✕ 닫기</button></div>';
-function printMonthReport(){
+function printMonthReport(){ monthReport('print'); }
+function xlsxMonthReport(){ monthReport('xlsx'); }
+function monthReport(kind){
   /* 확인창 없이 바로 마감월로 출력 — 월초(1~10일)는 전월, 다른 달을 보려면 화면 기준월을 그 달로 바꾸고 누른다 */
   const y2=closeYm();
   /* 재고는 다음달 마감일(기본 2일)까지 반영 — 오늘이 그 전이면 오늘까지 */
@@ -13023,15 +13041,20 @@ function printMonthReport(){
   if(mcGet(y2)) cut=mcGet(y2).cut;            /* 마감 확정월은 확정한 마감일 그대로 */
   if(cut<y2+'-01') cut='';
   const bk=ym; ym=y2; CUT=cut;              /* calc()·isDead() 가 마감일 기준으로 계산되게 잠시 전환 */
-  try{ _printMonthReport(); } finally { ym=bk; CUT=''; }
+  try{
+    const D=mrData();
+    if(kind==='xlsx'){ dl(mrXlsx(D),mrFileName(D)); toast(+y2.slice(5)+'월 재고조사서 엑셀을 내려받았습니다'); return; }
+    _printMonthReport(D);
+  } finally { ym=bk; CUT=''; }
   if(y2!==bk) toast(+y2.slice(5)+'월 마감 재고조사서를 출력합니다 ('+y2.slice(0,4)+'년 '+(+y2.slice(5))+'월 말일 기준)');
 }
-function _printMonthReport(){
+function mrFileName(D){ return '재고조사서_'+D.Y+p2(D.M)+'_'+(D.MC?'마감확정':'가마감')+'.xlsx'; }
+/* 재고조사서 데이터 — 인쇄(HTML)와 엑셀(.xlsx)이 같은 숫자를 쓰도록 한 곳에서 계산 */
+function mrData(){
   const y=ym; const [Y,M]=y.split('-').map(Number);
   const lastD=new Date(Y,M,0).getDate();
   const MC=mcGet(y);                        /* 마감 확정 스냅샷 (없으면 실시간 계산 = 가마감) */
   const cutTxt=(CUT&&CUT>y+'-'+p2(lastD))?(+CUT.slice(5,7))+'월 '+(+CUT.slice(8))+'일 마감 · ':'';
-  const mcTxt=MC?'<b style="color:#0B6B3A">마감확정</b> · ':'<b style="color:#C00000">가마감(미확정)</b> · ';
   const items=S.items.filter(i=>!i.hide);
   const byCu={};
   items.forEach(it=>{ const c=(it.cu||'').trim()||'(미지정)'; (byCu[c]=byCu[c]||[]).push(it); });
@@ -13043,6 +13066,26 @@ function _printMonthReport(){
   const others=Object.keys(byCu).filter(c=>c!=='(미지정)'&&!REPORT_CUS.includes(c)&&hasStock(c))
     .sort((p2,q2)=>byCu[q2].length-byCu[p2].length||p2.localeCompare(q2,'ko'));
   const cus=REPORT_CUS.filter(c=>byCu[c]&&byCu[c].length).concat(others);
+  const pm=prevYm(y);
+  const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
+  const groups=cus.map(cu=>{
+    const its=byCu[cu].sort((a,b)=>String(a.sp||'').localeCompare(String(b.sp||''),'en',{numeric:true})||a.pn.localeCompare(b.pn,'en',{numeric:true}));
+    let q=0,amt=0,lq=0;
+    const rows=its.map(it=>{
+      const sn=MC&&MC.rows[it.pn];
+      const v=MC?null:calc(it), cur=MC?(sn?sn[0]:0):(v.cur||0), pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
+            dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
+      q+=cur; amt+=sub; if(dead)lq+=cur;
+      return {it,cur,pr,sub,dead,proc:procOf(it),f2:!!(it.base&&!/\[2F\]/i.test(it.pn))};
+    });
+    stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
+    return {cu,rows,c:monthStat(cu,y),pv:monthStat(cu,pm)};
+  });
+  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong};
+}
+function _printMonthReport(D){
+  const {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong}=D;
+  const mcTxt=MC?'<b style="color:#0B6B3A">마감확정</b> · ':'<b style="color:#C00000">가마감(미확정)</b> · ';
 
   const meta=cu=>`<div class="meta"><div>■조사업체 : ${esc(CU_FULL[cu]||cu)}</div>
     <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (${mcTxt}${cutTxt}오후14:00 기준) -<b>"외주가공재고 별도"</b>
@@ -13055,23 +13098,15 @@ function _printMonthReport(){
   const colg=`<colgroup><col style="width:3%"><col style="width:6.5%"><col style="width:7%"><col style="width:17%"><col style="width:3%"><col style="width:5.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:8.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:7%"><col style="width:8.5%"><col style="width:9%"></colgroup>`;
 
   /* 1) 업체별 품목표 → 페이지 조각 */
-  const chunks=[]; const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
-  cus.forEach(cu=>{
-    const rows=byCu[cu].sort((a,b)=>String(a.sp||'').localeCompare(String(b.sp||''),'en',{numeric:true})||a.pn.localeCompare(b.pn,'en',{numeric:true}));
-    let q=0,amt=0,lq=0; const lines=[];
-    rows.forEach((it,i)=>{
-      const sn=MC&&MC.rows[it.pn];
-      const v=MC?null:calc(it), cur=MC?(sn?sn[0]:0):(v.cur||0), pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
-            dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
-      q+=cur; amt+=sub; if(dead)lq+=cur;
-      lines.push(`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
-        <td class="pn">${esc(it.pn)}${it.base&&!/\[2F\]/i.test(it.pn)?'<span class="f2">2F</span>':''}</td><td class="c">${procOf(it)}</td>
+  const chunks=[];
+  groups.forEach(({cu,rows})=>{
+    const lines=rows.map(({it,cur,pr,sub,dead,proc,f2},i)=>`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
+        <td class="pn">${esc(it.pn)}${f2?'<span class="f2">2F</span>':''}</td><td class="c">${proc}</td>
         <td class="r">${it.bx?nf(it.bx):''}</td>
         <td class="r bl${dead?' lg':(cur<0?' ng':'')}">${cur?nf(cur):'-'}</td><td class="r">${pr?nf(pr):''}</td><td class="r">${sub?nf(sub):'-'}</td>
         <td class="r"></td><td class="r"></td><td class="r">-</td>
         <td class="r">${sub?nf(sub):'-'}</td><td class="s">${dead?'장기보관품':''}</td></tr>`);
-    });
-    stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
+    const {q,amt}=stat[cu];
     /* 업체당 표 하나 — 페이지는 브라우저가 꽉 채워 나누고, 넘어간 페이지에는 머리글이 자동 반복된다 */
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       <table class="inv">${colg}${thead}<tbody>${lines.join('')}</tbody>
@@ -13082,9 +13117,7 @@ function _printMonthReport(){
   /* 2) 마지막 페이지: 업체별 분석표 */
   const rate=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';
   const trend=(a,b)=>a>b?'증가':(a<b?'감소':'동일');
-  const pm=prevYm(y);
-  const anal=cus.map(cu=>{
-    const c=monthStat(cu,y), pv=monthStat(cu,pm);
+  const anal=groups.map(({cu,c,pv})=>{
     return `<div class="ab">${meta(cu)}
       <table class="an"><tbody>
        <tr><th rowspan="2" class="v">분 석</th><th>수주량</th><th>생산량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>수주대비<br>생산달성율</th><th>납품량<br>(${p2(M)}/01~${p2(M)}/${lastD})</th><th>납품대비<br>생산달성율</th></tr>
@@ -13130,10 +13163,178 @@ function _printMonthReport(){
   if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
   /* 자동 인쇄창을 띄우지 않는다 — 인쇄 미리보기가 뒤 탭에 열린 채 남으면 본 화면 버튼이 모두 멈추던 문제.
      보고서 탭 위쪽 [🖨 인쇄] 버튼(또는 Ctrl+P)으로 인쇄, [✕ 닫기]로 탭을 닫는다. */
-  wn.document.write(html.replace('</body>',RPT_BAR+'</body>')); wn.document.close();
+  /* 보고서 탭 위쪽에 [📗 엑셀] — 같은 데이터로 만든 .xlsx 를 바로 내려받는다 */
+  let bar=RPT_BAR;
+  try{ const u=URL.createObjectURL(mrXlsx(D));
+    bar=bar.replace('<button onclick="window.print()">','<a href="'+u+'" download="'+esc(mrFileName(D))+'"><button>📗 엑셀</button></a><button onclick="window.print()">'); }catch(e){}
+  wn.document.write(html.replace('</body>',bar+'</body>')); wn.document.close();
   try{ wn.opener=null; wn.focus(); }catch(e){}
 }
 
+/* ═══════ 재고조사서 엑셀(.xlsx) — 인쇄 양식 그대로 (업체별 시트 + 업체별 분석 시트) ═══════
+   외부 라이브러리 없이 OOXML 을 직접 만들어 무압축 ZIP 으로 묶는다. */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){                 /* files: [[이름, 문자열]] → Blob(zip, 무압축) */
+  const te=new TextEncoder(), parts=[], cen=[]; let off=0;
+  const d=new Date(), dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(), tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  files.forEach(([nm,s])=>{
+    const n=te.encode(nm), b=te.encode(s), c=crc32(b);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);
+    h.setUint16(10,tm,true);h.setUint16(12,dt,true);h.setUint32(14,c,true);h.setUint32(18,b.length,true);h.setUint32(22,b.length,true);
+    h.setUint16(26,n.length,true);h.setUint16(28,0,true);
+    const e=new DataView(new ArrayBuffer(46));
+    e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint16(10,0,true);
+    e.setUint16(12,tm,true);e.setUint16(14,dt,true);e.setUint32(16,c,true);e.setUint32(20,b.length,true);e.setUint32(24,b.length,true);
+    e.setUint16(28,n.length,true);e.setUint32(42,off,true);
+    parts.push(h,n,b); cen.push(e,n); off+=30+n.length+b.length;
+  });
+  const csz=cen.reduce((a,x)=>a+(x.byteLength),0), z=new DataView(new ArrayBuffer(22));
+  z.setUint32(0,0x06054b50,true);z.setUint16(8,files.length,true);z.setUint16(10,files.length,true);z.setUint32(12,csz,true);z.setUint32(16,off,true);
+  return new Blob([...parts,...cen,z],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+const xe=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+const xCol=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26;}return s;};
+/* 시트 작성기 — set(행,열,값,스타일[,수식]) · 행/열은 0부터 */
+function xSheet(name){
+  const R=[], mg=[], ht={};
+  return {name,R,mg,ht,cols:[],freeze:0,titles:'',
+    set(r,c,v,s,f){ (R[r]=R[r]||[])[c]={v,s:s||0,f}; },
+    merge(r1,c1,r2,c2,s){ mg.push(xCol(c1)+(r1+1)+':'+xCol(c2)+(r2+1));
+      if(s!=null) for(let r=r1;r<=r2;r++) for(let c=c1;c<=c2;c++) if(!(R[r]&&R[r][c])) this.set(r,c,'',s); }};
+}
+function xSheetXml(sh){
+  const rows=sh.R.map((row,r)=>{ if(!row) return '';
+    const cs=row.map((x,c)=>{ if(!x) return ''; const ref=xCol(c)+(r+1);
+      if(x.f) return `<c r="${ref}" s="${x.s}"><f>${xe(x.f)}</f><v>${+x.v||0}</v></c>`;
+      if(typeof x.v==='number') return `<c r="${ref}" s="${x.s}"><v>${x.v}</v></c>`;
+      if(x.v==='') return `<c r="${ref}" s="${x.s}"/>`;
+      return `<c r="${ref}" s="${x.s}" t="inlineStr"><is><t xml:space="preserve">${xe(x.v)}</t></is></c>`; }).join('');
+    return `<row r="${r+1}"${sh.ht[r]?` ht="${sh.ht[r]}" customHeight="1"`:''}>${cs}</row>`; }).join('');
+  const pane=sh.freeze?`<pane ySplit="${sh.freeze}" topLeftCell="A${sh.freeze+1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${sh.freeze+1}" sqref="A${sh.freeze+1}"/>`:'';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+    +'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
+    +`<sheetViews><sheetView workbookViewId="0" zoomScale="90" showGridLines="0">${pane}</sheetView></sheetViews>`
+    +'<sheetFormatPr defaultRowHeight="18"/>'
+    +'<cols>'+sh.cols.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')+'</cols>'
+    +'<sheetData>'+rows+'</sheetData>'
+    +(sh.mg.length?`<mergeCells count="${sh.mg.length}">${sh.mg.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:'')
+    +'<printOptions horizontalCentered="1"/>'
+    +'<pageMargins left="0.28" right="0.28" top="0.3" bottom="0.35" header="0.15" footer="0.15"/>'
+    +'<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
+    +'<headerFooter><oddFooter>&amp;C&amp;P / &amp;N</oddFooter></headerFooter>'
+    +'</worksheet>';
+}
+function xBook(sheets){
+  const used=new Set();
+  sheets.forEach(sh=>{ let n=String(sh.name).replace(/[\[\]:*?\/\\]/g,' ').trim().slice(0,31)||'Sheet', b=n, k=2;
+    while(used.has(n.toLowerCase())) n=b.slice(0,28)+'('+(k++)+')'; used.add(n.toLowerCase()); sh.name=n; });
+  /* 글꼴 0 기본 · 1 제목 · 2 굵게 · 3 품번 · 4 장기보관(빨강 굵게) · 5 음수(빨강) · 6 굵게 큰글씨 · 7 작은글씨 · 8 머리글 */
+  const F='맑은 고딕';
+  const fonts=[`<font><sz val="10"/><name val="${F}"/></font>`,`<font><b/><sz val="18"/><color rgb="FF0B3A1F"/><name val="${F}"/></font>`,
+    `<font><b/><sz val="10"/><name val="${F}"/></font>`,`<font><b/><sz val="11"/><name val="Consolas"/></font>`,
+    `<font><b/><sz val="10"/><color rgb="FFE0442E"/><name val="${F}"/></font>`,`<font><sz val="10"/><color rgb="FFC0392B"/><name val="${F}"/></font>`,
+    `<font><b/><sz val="12"/><name val="${F}"/></font>`,`<font><sz val="9"/><name val="${F}"/></font>`,`<font><b/><sz val="9.5"/><name val="${F}"/></font>`];
+  const fill=c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
+  /* 채우기 2 제목 · 3 머리글 · 4 머리글(파랑) · 5 제품재고(파랑) · 6 합계 · 7 총괄 */
+  const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>',
+    fill('8ED99A'),fill('D8F0DE'),fill('CDE6F5'),fill('DDEFFA'),fill('EEF3F0'),fill('F6FAF7')];
+  const bd='<border><left style="thin"><color rgb="FF444444"/></left><right style="thin"><color rgb="FF444444"/></right><top style="thin"><color rgb="FF444444"/></top><bottom style="thin"><color rgb="FF444444"/></bottom><diagonal/></border>';
+  const X=(f,fi,b,n,h,v,w)=>`<xf numFmtId="${n||0}" fontId="${f}" fillId="${fi}" borderId="${b}" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment${h?` horizontal="${h}"`:''} vertical="${v||'center'}"${w?' wrapText="1"':''}/></xf>`;
+  /* 셀 스타일 번호 — XS 참조 */
+  const xfs=[X(0,0,0),X(1,2,1,0,'center'),X(0,0,0,0,'left'),X(8,3,1,0,'center','center',1),X(8,4,1,0,'center','center',1),
+    X(0,0,1,0,'center'),X(3,0,1,0,'left'),X(0,0,1,164,'right'),X(0,5,1,164,'right'),X(4,5,1,164,'right'),X(5,5,1,164,'right'),
+    X(7,0,1,0,'left'),X(2,6,1,0,'center'),X(2,6,1,164,'right'),X(2,6,1,0,'center'),X(2,3,1,0,'center','center',1),
+    X(6,0,1,164,'right'),X(6,0,1,0,'center'),X(6,7,1,0,'left'),X(2,0,0,0,'right'),X(6,0,1,0,'right'),X(7,0,1,0,'center'),X(2,5,1,164,'right')];
+  const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    +'<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0;-#,##0;&quot;-&quot;"/></numFmts>'
+    +`<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>`
+    +`<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>${bd}</borders>`
+    +'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+    +`<cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs>`
+    +'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  const files=[
+    ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'
+      +'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      +'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      +sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      +'<bookViews><workbookView/></bookViews><sheets>'+sheets.map((s,i)=>`<sheet name="${xe(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')+'</sheets>'
+      +(sheets.some(s=>s.titles)?'<definedNames>'+sheets.map((s,i)=>s.titles?`<definedName name="_xlnm.Print_Titles" localSheetId="${i}">'${xe(s.name).replace(/'/g,"''")}'!${s.titles}</definedName>`:'').join('')+'</definedNames>':'')
+      +'<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>'],
+    ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      +sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')
+      +`<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/styles.xml',styles]].concat(sheets.map((s,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',xSheetXml(s)]));
+  return zipStore(files);
+}
+/* 셀 스타일 번호 (xBook 의 xfs 순서) */
+const XS={tt:1,meta:2,th:3,thB:4,c:5,pn:6,n:7,nB:8,nLg:9,nNg:10,s:11,tL:12,tN:13,tE:14,ah:15,aN:16,aC:17,tot:18,rt:19,aT:20,cS:21,tNB:22};
+function mrXlsx(D){
+  const {Y,M,lastD,MC,cutTxt,groups,stat,pm,totalQ,totalAmt,totalLong}=D;
+  const metaTxt=`■조사일자 : ${Y}년 ${M}월 ${lastD}일 (${MC?'마감확정':'가마감(미확정)'} · ${cutTxt}오후14:00 기준) -"외주가공재고 별도"`;
+  const sheets=[];
+  /* 1) 업체별 재고조사서 — 업체당 시트 1장 */
+  groups.forEach(({cu,rows})=>{
+    const sh=xSheet(cu); sh.cols=[5,11,11,26,5,9,12,9,13,12,9,11,13,12];
+    sh.set(0,0,`재 고 조 사 서  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); sh.merge(0,0,0,5,XS.tt); sh.ht[0]=32;
+    sh.set(1,0,'■조사업체 : '+(CU_FULL[cu]||cu),XS.meta);
+    sh.set(2,0,metaTxt,XS.meta); sh.set(2,13,'■담당부서 : 생산팀',XS.rt);
+    const H=3;
+    [['NO',0],['고객사',1],['금형 재번',2],['품 번',3],['공정',4],['포장단위\nEA/BOX',5],['③합계\n(①+②)',12],['비 고',13]]
+      .forEach(([t,c])=>{ sh.set(H,c,t,XS.th); sh.merge(H,c,H+1,c,XS.th); });
+    sh.set(H,6,'①제품재고 금액산출(EA)',XS.th); sh.merge(H,6,H,8,XS.th);
+    sh.set(H,9,'②원자재재고 금액산출',XS.th); sh.merge(H,9,H,11,XS.th);
+    ['제품재고(EA)','단가(₩)','소계','원자재재고(kg)','단가(₩)','소계'].forEach((t,i)=>sh.set(H+1,6+i,t,i?XS.th:XS.thB));
+    sh.ht[H]=22; sh.ht[H+1]=22;
+    const r0=H+2;
+    rows.forEach(({it,cur,pr,sub,dead,proc,f2},i)=>{
+      const r=r0+i, x=r+1;
+      sh.set(r,0,i+1,XS.c); sh.set(r,1,cu,XS.cS); sh.set(r,2,it.sp||'',XS.cS);
+      sh.set(r,3,it.pn+(f2?' [2F]':''),XS.pn); sh.set(r,4,proc===''?'':proc,XS.c);
+      sh.set(r,5,it.bx?+it.bx:'',XS.n);
+      sh.set(r,6,Math.round(cur),dead?XS.nLg:(cur<0?XS.nNg:XS.nB));
+      sh.set(r,7,pr?pr:'',XS.n);
+      sh.set(r,8,sub,XS.n,`G${x}*H${x}`);
+      sh.set(r,9,'',XS.n); sh.set(r,10,'',XS.n); sh.set(r,11,0,XS.n,`J${x}*K${x}`);
+      sh.set(r,12,sub,XS.n,`I${x}+L${x}`);
+      sh.set(r,13,dead?'장기보관품':'',XS.s);
+    });
+    const rt=r0+rows.length, a=r0+1, b=rt, {q,amt}=stat[cu], S2=c=>rows.length?`SUM(${c}${a}:${c}${b})`:'0';
+    sh.set(rt,0,'재고합계',XS.tL); sh.merge(rt,0,rt,5,XS.tL);
+    sh.set(rt,6,Math.round(q),XS.tNB,S2('G')); sh.set(rt,7,'',XS.tE); sh.set(rt,8,amt,XS.tN,S2('I'));
+    sh.set(rt,9,0,XS.tN,S2('J')); sh.set(rt,10,'',XS.tE); sh.set(rt,11,0,XS.tN,S2('L'));
+    sh.set(rt,12,amt,XS.tN,S2('M')); sh.set(rt,13,'',XS.tE);
+    sh.freeze=r0; sh.titles='$'+(H+1)+':$'+(H+2);
+    sheets.push(sh);
+  });
+  /* 2) 업체별 분석 + 재고 총괄 */
+  const rate=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';
+  const trend=(a,b)=>a>b?'증가':(a<b?'감소':'동일');
+  const an=xSheet('업체별 분석'); an.cols=[20,16,18,16,18,16];
+  const pd=`(${p2(M)}/01~${p2(M)}/${lastD})`;
+  let r=0;
+  an.set(r,0,`업 체 별 분 석  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); an.merge(r,0,r,3,XS.tt); an.ht[r]=32; r+=2;
+  groups.forEach(({cu,c,pv})=>{
+    an.set(r++,0,'■조사업체 : '+(CU_FULL[cu]||cu),XS.meta);
+    an.set(r++,0,metaTxt,XS.meta);
+    an.set(r,0,'분 석',XS.ah); an.merge(r,0,r+1,0,XS.ah);
+    ['수주량','생산량\n'+pd,'수주대비\n생산달성율','납품량\n'+pd,'납품대비\n생산달성율'].forEach((t,i)=>an.set(r,1+i,t,XS.ah)); an.ht[r]=34; r++;
+    an.set(r,1,'',XS.aN); an.set(r,2,c.prod,XS.aN); an.set(r,3,'',XS.aN); an.set(r,4,c.ship,XS.aN); an.set(r,5,rate(c.prod,c.ship),XS.aT); an.ht[r]=26; r++;
+    an.set(r,0,`전 월 비 교 (${+pm.slice(5)}월)`,XS.ah);
+    an.set(r,1,'',XS.aN); an.set(r,2,trend(c.prod,pv.prod)+'　'+nf(pv.prod),XS.aT); an.set(r,3,'',XS.aN);
+    an.set(r,4,trend(c.ship,pv.ship)+'　'+nf(pv.ship),XS.aT); an.set(r,5,rate(pv.prod,pv.ship),XS.aT); an.ht[r]=26; r++;
+    an.set(r,0,'비　고',XS.ah); an.set(r,1,`(3개월이상) 장기보관 제품 총합계 수량 : ${nf(stat[cu].lq)}EA`,XS.aC); an.merge(r,1,r,5,XS.aC); an.ht[r]=32; r+=2;
+  });
+  an.set(r,0,`재고 총괄　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${groups.map(g=>CU_FULL[g.cu]||g.cu).join(' · ')})`,XS.tot);
+  an.merge(r,0,r,5,XS.tot); an.ht[r]=28;
+  sheets.push(an);
+  return xBook(sheets);
+}
 /* ═══════ 재고조사표 출력 ═══════
    현장에 들고 가서 손으로 적는 양식. 지금 화면의 고객사·재고구분·검색 조건을 그대로 따른다. */
 function printCountSheet(){
