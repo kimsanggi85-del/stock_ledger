@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.33 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.34 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6038,12 +6038,13 @@ body.qp-on{overflow:hidden}
       · 공유 폴더(예: <b>W: 12_공통자료 → 32번 폴더</b>)를 한 번 지정하면, 그 안의 <b>「재고상황(전공정이동표)_YYYY. M월」</b> 중 가장 최근 월 파일을 자동으로 읽습니다.<br>
       · 파일의 <b>「재고조사」</b> 시트(가장 최근 날짜)에서 기종별 Inner/Outer 공정 재고를 가져와 서버에 저장 → 다른 PC에서도 같은 값이 보입니다.<br>
       · 월말 재고조사서에는 <b>열처리(한성)·표면처리(동진·대영)</b> 수량이 「외주가공재고」로 따로 표시됩니다 (금액에는 넣지 않음).<br>
+      · 다른 폴더의 파일(지난달 마감 등)은 <b>[📂 엑셀 파일 직접 선택]</b>으로 고르고 기준일을 정하면 됩니다.<br>
       · 크롬·엣지에서 폴더 읽기 허용을 <b>「방문할 때마다 허용」</b>으로 두면 앱을 열 때 자동으로 새로 읽습니다.
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn k" onclick="extLoad(false)">🔄 다시 읽기</button>
       <button class="btn" onclick="extLoad(true)">📂 폴더·파일 다시 지정</button>
-      <button class="btn" onclick="extLoad(false,false,true)" title="예: 이전\2026\2.재고상황(전공정이동표)_2026. 9월.xlsx — 파일 이름의 월 말일 마감 자료로 저장">📂 지난달(마감) 파일 불러오기</button>
+      <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
     </div>
     <div class="gw"><div class="scroll" style="max-height:52vh"><table class="t" id="extTbl"></table></div></div>
@@ -13323,7 +13324,8 @@ async function extPickFile(dh){
   return fs[0].f;
 }
 const extPickInput=()=>new Promise(ok=>{ const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xlsm';
-  i.onchange=()=>ok(i.files[0]||null); i.click(); });
+  i.style.display='none'; document.body.appendChild(i);
+  i.onchange=()=>{ ok(i.files[0]||null); i.remove(); }; i.click(); });
 async function extPull(){
   try{
     const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+EXT_KEY+'&select=value',{headers:itHeaders()});
@@ -13342,10 +13344,7 @@ async function extPush(){
 async function extLoad(pick,silent,one){
   let f=null;
   try{
-    if(one){
-      if(window.showOpenFilePicker){ const [h]=await window.showOpenFilePicker({id:'sbcextf',types:[{description:'엑셀',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm']}}]}); f=await h.getFile(); }
-      else f=await extPickInput();
-    }
+    if(one) f=await extPickInput();             /* 일반 파일 선택 창 — 공유 드라이브 어느 폴더든 직접 고른다 */
     else if(window.showDirectoryPicker){
       let dh=pick?null:await extIdb('dir').catch(()=>null);
       if(dh){ let ps=await dh.queryPermission({mode:'read'});
@@ -13362,12 +13361,19 @@ async function extLoad(pick,silent,one){
     /* 파일 이름의 「YYYY. M월」이 지난달이면 그 달 말일 마감 자료 — 9월 파일을 10/1에 저장했어도 9/30 로 들어간다 */
     const fm=f.name.match(/(20\d{2})\s*[.\-년]\s*(\d{1,2})\s*월/);
     if(fm){ const fy=fm[1]+'-'+p2(+fm[2]); if(fy<today().slice(0,7)){ d=fy+'-'+p2(new Date(+fm[1],+fm[2],0).getDate()); at=d+' 마감 (파일 '+at+' 저장)'; maxK=d.slice(5).replace('-',''); } }
+    if(one){                                   /* 직접 고른 파일 — 어느 날짜 자료로 넣을지 확인 */
+      const v=prompt(f.name+'\n\n이 파일을 어느 날짜 기준 외주재고로 저장할까요? (YYYY-MM-DD)\n· 지난달 마감 파일이면 그 달 말일 (예: 2026-09-30)\n· 이번 달 파일이면 오늘',d);
+      if(v===null) return;
+      const v2=String(v).trim().replace(/[./]/g,'-');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(v2)){ toast('날짜 형식이 올바르지 않습니다 (예: 2026-09-30)'); return; }
+      if(v2!==d){ d=v2; at=d+(v2<today()?' 마감':'')+' (파일 직접 선택)'; maxK=v2<today().slice(0,7)+'-01'?v2.slice(5).replace('-',''):''; }
+    }
     const {sheet,rows}=extParse(await readXlsx(f),maxK);
     const snap={d,at,file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
     await extPull();                       /* 다른 PC가 넣은 기록(9월 마감분 등)을 덮어쓰지 않게 서버 최신본에 합친다 */
     EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{};
     if(!EXT.last||d>=String(EXT.last.d||'')) EXT.last=snap;   /* 지난달 파일은 현재 표시값을 바꾸지 않는다 */
-    EXT.hist[d]=snap;
+    EXT.hist[d]=snap; EXT_VIEW=d;            /* 방금 불러온 날짜를 창에 보여준다 */
     Object.keys(EXT.hist).sort().slice(0,-62).forEach(k=>delete EXT.hist[k]);   /* 약 두 달치만 보관 */
     const ok=await extPush();
     const neg=rows.filter(o=>o.heat<0||o.surf<0).length;
@@ -13379,13 +13385,16 @@ async function extLoad(pick,silent,one){
   }
   extPaint(); render();
 }
-function extOpen(){ $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
+let EXT_VIEW='';                           /* 창에서 보고 있는 날짜 (비면 최신) */
+function extOpen(){ EXT_VIEW=''; $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
+function extView(d){ EXT_VIEW=d; extPaint(); }
 function extPaint(){
   const T=$('extTbl'), I=$('extInfo'); if(!T) return;
-  const s=EXT&&EXT.last;
+  const s=EXT&&((EXT_VIEW&&EXT.hist&&EXT.hist[EXT_VIEW])||EXT.last);
   if(!s){ I.textContent='아직 불러온 자료가 없습니다 — [📂 폴더·파일 다시 지정]으로 32번 폴더를 고르세요';
     T.innerHTML='<tbody><tr><td class="c" style="padding:20px;color:#93A0AB">불러온 자료 없음</td></tr></tbody>'; return; }
-  I.textContent='기준 '+s.at+' · '+s.file+' · '+s.sheet+' · 저장된 날짜: '+Object.keys(EXT.hist||{}).sort().join(', ');
+  I.innerHTML='기준 <b>'+esc(s.at)+'</b> · '+esc(s.file)+' · '+esc(s.sheet)+'<br>저장된 날짜: '
+    +Object.keys(EXT.hist||{}).sort().map(d=>`<a href="javascript:void 0" onclick="extView('${d}')" style="margin-right:8px;font-weight:${d===s.d?800:400};${d===s.d?'color:#C2410C':''}">${d}${d===(EXT.last||{}).d?'(최신)':''}</a>`).join('');
   T.innerHTML='<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+n+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
     +s.rows.map(o=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
       return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td><td class="l'+(pn?'':' wn')+'">'+(pn?esc(pn):'품목 없음')+'</td>'
