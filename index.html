@@ -1096,7 +1096,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.16 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.17 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13281,7 +13281,7 @@ function mrXlsx(D){
   /* 1) 업체별 재고조사서 — 업체당 시트 1장 */
   groups.forEach(({cu,rows})=>{
     const sh=xSheet(cu); sh.cols=[5,11,11,26,5,9,12,9,13,12,9,11,13,12];
-    sh.set(0,0,`재 고 조 사 서  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); sh.merge(0,0,0,5,XS.tt); sh.ht[0]=32;
+    sh.set(0,0,`재 고 조 사 서  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); sh.merge(0,0,0,8,XS.tt); sh.ht[0]=32;
     sh.set(1,0,'■조사업체 : '+(CU_FULL[cu]||cu),XS.meta);
     sh.set(2,0,metaTxt,XS.meta); sh.set(2,13,'■담당부서 : 생산팀',XS.rt);
     const H=3;
@@ -13318,7 +13318,7 @@ function mrXlsx(D){
   const an=xSheet('업체별 분석'); an.cols=[20,16,18,16,18,16];
   const pd=`(${p2(M)}/01~${p2(M)}/${lastD})`;
   let r=0;
-  an.set(r,0,`업 체 별 분 석  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); an.merge(r,0,r,3,XS.tt); an.ht[r]=32; r+=2;
+  an.set(r,0,`업 체 별 분 석  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); an.merge(r,0,r,5,XS.tt); an.ht[r]=32; r+=2;
   groups.forEach(({cu,c,pv})=>{
     an.set(r++,0,'■조사업체 : '+(CU_FULL[cu]||cu),XS.meta);
     an.set(r++,0,metaTxt,XS.meta);
