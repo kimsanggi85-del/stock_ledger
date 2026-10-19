@@ -69,6 +69,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
 .t tfoot td{background:linear-gradient(#eef2f6,#dce3e9)!important;font-weight:800;border-top:1px solid #91a0af;color:#2e4560;
   position:sticky;bottom:0;z-index:2}
 .t .neg{color:var(--dg);font-weight:700}
+.t .sx{font-size:10px;font-weight:600;color:#6D28D9;font-family:var(--sans);line-height:1.1;white-space:nowrap}
 .t .pos{color:#2f6e49;font-weight:700}
 .t .wn{color:var(--wn);font-weight:700}
 .t .grp td{background:#eef2f6!important;font-weight:700}
@@ -1096,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.20 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.21 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6826,7 +6827,7 @@ function rSum(){
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym
     +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'');
-  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0;
+  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0;
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
@@ -6843,7 +6844,8 @@ function rSum(){
        <td class="c">${i+1}</td>
        <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
-       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}</td>
+       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const x=extOut(it.pn); if(x==null) return '';
+         xo+=x; xn++; return `<div class="sx" title="외주 = 전공정이동표 ${esc(EXT.last.at)} 기준 열처리+표면처리">사내 ${nf(v.cur-x)} · 외주 ${nf(x)}</div>`; })()}</td>
        <td class="bxc">${bx>0?`<input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="b" value="${cb||''}" title="박스 (${nf(bx)} ea/박스) · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off">`:'<span class="dim">-</span>'}</td>
        <td class="bxc"><input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="e" value="${ce||''}" title="${bx>0?'낱개':'수량(EA)'} · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off"></td>
        <td class="epb">${bx>0?nf(bx):'<span class="dim">-</span>'}</td>
@@ -6855,7 +6857,7 @@ function rSum(){
        <td class="amt ${(it.price&&v.cur<0)?'neg':''}">${it.price?nf(a):'<span class="dim">-</span>'}</td></tr>`;
     }).join(''):`<tr><td colspan="13" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="3" class="c">합　계 (${R.length}품목)</td>
-     <td style="font-weight:800">${nf(g)}</td><td colspan="3"></td><td>${nf(f)}</td>
+     <td style="font-weight:800">${nf(g)}${xn?`<div class="sx">외주 ${nf(xo)} 포함</div>`:''}</td><td colspan="3"></td><td>${nf(f)}</td>
      <td colspan="4"></td>
      <td class="amt" style="font-weight:800" title="${amtN}품목 단가 기준">${nf(amt)}</td></tr></tfoot>`;
 }
@@ -13165,7 +13167,7 @@ async function extLoad(pick,silent){
     if(!silent) toast('외주재고 불러오기 실패: '+(e.message||e));
     console.warn('외주재고:',e);
   }
-  extPaint();
+  extPaint(); render();
 }
 function extOpen(){ $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
 function extPaint(){
@@ -13192,7 +13194,15 @@ function extFor(y,cut){
     const a=by[pn]=by[pn]||{pn,src:[],tot:0}; EXT_COLS.forEach(([c])=>a[c]=(a[c]||0)+o[c]); a.tot+=o.tot; a.src.push(o.m); });
   return {s,by,un};
 }
-async function extInit(){ await extPull(); if(window.showDirectoryPicker) extLoad(false,true); }
+/* 재고현황 화면용 — 가장 최근에 불러온 전공정이동표의 품번별 외주(열처리+표면처리) 수량 */
+let EXT_MAP=null, EXT_MAP_K='';
+function extOut(pn){
+  const s=EXT&&EXT.last; if(!s) return null;
+  if(EXT_MAP_K!==s.at+'|'+s.file+'|'+S.items.length){ EXT_MAP={}; EXT_MAP_K=s.at+'|'+s.file+'|'+S.items.length;
+    s.rows.forEach(o=>{ const q=extPn(o.m,o.side); if(q) EXT_MAP[q]=(EXT_MAP[q]||0)+o.heat+o.surf; }); }
+  return pn in EXT_MAP?EXT_MAP[pn]:null;
+}
+async function extInit(){ await extPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
@@ -13231,26 +13241,28 @@ function mrData(){
     .sort((p2,q2)=>byCu[q2].length-byCu[p2].length||p2.localeCompare(q2,'ko'));
   const cus=REPORT_CUS.filter(c=>byCu[c]&&byCu[c].length).concat(others);
   const pm=prevYm(y);
+  /* 외주가공재고(전공정이동표) — 제품재고는 사내재고(총재고 − 열처리·표면처리)로, 외주는 업체 표 아래에 따로 */
+  const ext=extFor(y,CUT);
   const stat={}; let totalQ=0,totalAmt=0,totalLong=0;
   const groups=cus.map(cu=>{
     const its=byCu[cu].sort((a,b)=>String(a.sp||'').localeCompare(String(b.sp||''),'en',{numeric:true})||a.pn.localeCompare(b.pn,'en',{numeric:true}));
     let q=0,amt=0,lq=0;
     const rows=its.map(it=>{
       const sn=MC&&MC.rows[it.pn];
-      const v=MC?null:calc(it), cur=MC?(sn?sn[0]:0):(v.cur||0), pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
+      const ex=ext&&ext.by[it.pn], out=ex?ex.heat+ex.surf:0, all=MC?(sn?sn[0]:0):(calc(it).cur||0);
+      const cur=all-out, pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
             dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
       q+=cur; amt+=sub; if(dead)lq+=cur;
-      return {it,cur,pr,sub,dead,proc:procOf(it),f2:!!(it.base&&!/\[2F\]/i.test(it.pn))};
+      return {it,cur,all,out,pr,sub,dead,proc:procOf(it),f2:!!(it.base&&!/\[2F\]/i.test(it.pn))};
     });
     stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
     return {cu,rows,c:monthStat(cu,y),pv:monthStat(cu,pm)};
   });
-  /* 외주가공재고(전공정이동표) — 품번별로 그 업체 표 아래에 따로 붙인다 (금액 미포함) */
-  const ext=extFor(y,CUT);
   groups.forEach(g=>{ if(!ext) return;
     g.ext=g.rows.map(r=>ext.by[r.it.pn]).filter(Boolean);
     if(g.cu==='SBC') g.extUn=ext.un; });
-  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext};
+  const totalOut=groups.reduce((s,g)=>s+g.rows.reduce((a,r)=>a+r.out,0),0);
+  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext,totalOut};
 }
 function _printMonthReport(D){
   const {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong}=D;
@@ -13259,10 +13271,10 @@ function _printMonthReport(D){
   const meta=cu=>`<div class="meta"><div>■조사업체 : ${esc(CU_FULL[cu]||cu)}</div>
     <div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (${mcTxt}${cutTxt}오후14:00 기준) -<b>"외주가공재고 별도"</b>
 <span class="rt">■담당부서 : 생산팀</span></div></div>`;
-  const thead=`<thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품 번</th><th rowspan="2">공정</th>
+  const thead=hasX=>`<thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품 번</th><th rowspan="2">공정</th>
     <th rowspan="2">포장단위<br>EA/BOX</th><th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th>
     <th rowspan="2">③합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
-    <tr><th class="bl">제품재고(EA)</th><th>단가(₩)</th><th>소계</th><th>원자재재고(kg)</th><th>단가(₩)</th><th>소계</th></tr></thead>`;
+    <tr><th class="bl">제품재고(EA)${hasX?'<br><span style="font-size:10px">사내</span>':''}</th><th>단가(₩)</th><th>소계</th><th>원자재재고(kg)</th><th>단가(₩)</th><th>소계</th></tr></thead>`;
   /* 열 너비는 % 로 — 품번 칸만 남는 폭을 다 먹어 가운데가 텅 비던 문제 */
   const colg=`<colgroup><col style="width:3%"><col style="width:6.5%"><col style="width:7%"><col style="width:17%"><col style="width:3%"><col style="width:5.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:8.5%"><col style="width:7.5%"><col style="width:5%"><col style="width:7%"><col style="width:8.5%"><col style="width:9%"></colgroup>`;
 
@@ -13273,7 +13285,9 @@ function _printMonthReport(D){
     const L=(g.ext||[]), U=(g.extUn||[]), sum=c=>L.concat(U).reduce((s,a)=>s+(a[c]||0),0);
     const tr=(nm,a)=>`<tr><td class="pn">${esc(nm)}</td><td class="r">${nf(a.press)}</td><td class="r">${nf(a.wait+a.done)}</td>
       <td class="r b">${nf(a.heat)}</td><td class="r b">${nf(a.surf)}</td><td class="r b">${nf(a.heat+a.surf)}</td><td class="r">${nf(a.tot)}</td></tr>`;
+    const inQ=g.rows.reduce((s,r)=>s+(r.out?r.cur:0),0), outQ=g.rows.reduce((s,r)=>s+r.out,0);
     return `<div class="ext"><div class="et">■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 ${esc(D.ext.s.at)} 기준 · 수량만 표시(금액 미포함)</div>
+      ${L.length?`<div class="es">위 제품재고는 <b>사내재고</b>(총재고 − 외주) · 해당 품목 총재고 ${nf(inQ+outQ)} = 사내 ${nf(inQ)} + 외주 ${nf(outQ)}</div>`:''}
       <table class="xt"><colgroup><col style="width:28%"><col span="6"></colgroup><thead><tr><th>품 번</th><th>PRESS</th><th>검사대기+완료</th><th>열처리</th><th>표면처리</th><th>외주 계</th><th>전공정 총재고</th></tr></thead><tbody>
       ${L.map(a=>tr(a.pn,a)).join('')}${U.map(o=>tr(o.m+' '+o.side+' (품목 없음)',o)).join('')}</tbody>
       ${L.length+U.length>1?`<tfoot><tr><td class="c b">합 계</td><td class="r">${nf(sum('press'))}</td><td class="r">${nf(sum('wait')+sum('done'))}</td><td class="r b">${nf(sum('heat'))}</td><td class="r b">${nf(sum('surf'))}</td><td class="r b">${nf(sum('heat')+sum('surf'))}</td><td class="r">${nf(sum('tot'))}</td></tr></tfoot>`:''}</table></div>`;
@@ -13288,7 +13302,7 @@ function _printMonthReport(D){
     const {q,amt}=stat[cu];
     /* 업체당 표 하나 — 페이지는 브라우저가 꽉 채워 나누고, 넘어간 페이지에는 머리글이 자동 반복된다 */
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
-      <table class="inv">${colg}${thead}<tbody>${lines.join('')}</tbody>
+      <table class="inv">${colg}${thead(!!(g.ext&&g.ext.length))}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
         <td class="r">-</td><td></td><td class="r">-</td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot></table>${extHtml(g)}</section>`);
   });
@@ -13306,7 +13320,7 @@ function _printMonthReport(D){
       </tbody></table></div>`;
   }).join('');
   chunks.push(`<section class="pg">${anal}
-    <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.map(c=>CU_FULL[c]||c).join(' · ')})</div>
+    <div class="tot"><b>재고 총괄</b>　제품재고 ${nf(totalQ)} EA${D.totalOut?`(사내)　·　외주가공 ${nf(D.totalOut)} EA 별도`:''}　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${cus.map(c=>CU_FULL[c]||c).join(' · ')})</div>
     </section>`);
 
   const pages=chunks.join('');
@@ -13336,7 +13350,7 @@ function _printMonthReport(D){
    +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;background:#F6FAF7;font-size:15px;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
    +'.ext{margin-top:8px;break-inside:avoid;page-break-inside:avoid}.ext .et{font-size:13px;font-weight:700;margin-bottom:3px}'
-   +'.xt{width:70%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
+   +'.ext .es{font-size:12px;margin-bottom:3px;color:#5B21B6}.xt{width:70%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
    +'</style></head><body>'+pages+'</body></html>';
@@ -13470,7 +13484,8 @@ function mrXlsx(D){
       .forEach(([t,c])=>{ sh.set(H,c,t,XS.th); sh.merge(H,c,H+1,c,XS.th); });
     sh.set(H,6,'①제품재고 금액산출(EA)',XS.th); sh.merge(H,6,H,8,XS.th);
     sh.set(H,9,'②원자재재고 금액산출',XS.th); sh.merge(H,9,H,11,XS.th);
-    ['제품재고(EA)','단가(₩)','소계','원자재재고(kg)','단가(₩)','소계'].forEach((t,i)=>sh.set(H+1,6+i,t,i?XS.th:XS.thB));
+    const gX=groups.find(x=>x.cu===cu), hasX=!!(gX&&gX.ext&&gX.ext.length);
+    [hasX?'제품재고(EA)\n사내':'제품재고(EA)','단가(₩)','소계','원자재재고(kg)','단가(₩)','소계'].forEach((t,i)=>sh.set(H+1,6+i,t,i?XS.th:XS.thB));
     sh.ht[H]=22; sh.ht[H+1]=22;
     const r0=H+2;
     rows.forEach(({it,cur,pr,sub,dead,proc,f2},i)=>{
@@ -13495,6 +13510,8 @@ function mrXlsx(D){
     if(D.ext&&(XL.length||XU.length)){
       let r=rt+2;
       sh.set(r++,0,'■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 '+D.ext.s.at+' 기준 · 수량만 표시(금액 미포함)',XS.meta);
+      if(XL.length){ const inQ=g.rows.reduce((s,x)=>s+(x.out?x.cur:0),0), outQ=g.rows.reduce((s,x)=>s+x.out,0);
+        sh.set(r++,0,'위 제품재고는 사내재고(총재고 − 외주) · 해당 품목 총재고 '+nf(inQ+outQ)+' = 사내 '+nf(inQ)+' + 외주 '+nf(outQ),XS.meta); }
       const hd=['PRESS','검사대기+완료','열처리','표면처리','외주 계','전공정 총재고'];
       sh.set(r,0,'품 번',XS.th); sh.merge(r,0,r,3,XS.th); hd.forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
       const a0=r;
@@ -13529,7 +13546,7 @@ function mrXlsx(D){
     an.set(r,4,trend(c.ship,pv.ship)+'　'+nf(pv.ship),XS.aT); an.set(r,5,rate(pv.prod,pv.ship),XS.aT); an.ht[r]=26; r++;
     an.set(r,0,'비　고',XS.ah); an.set(r,1,`(3개월이상) 장기보관 제품 총합계 수량 : ${nf(stat[cu].lq)}EA`,XS.aC); an.merge(r,1,r,5,XS.aC); an.ht[r]=32; r+=2;
   });
-  an.set(r,0,`재고 총괄　제품재고 ${nf(totalQ)} EA　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${groups.map(g=>CU_FULL[g.cu]||g.cu).join(' · ')})`,XS.tot);
+  an.set(r,0,`재고 총괄　제품재고 ${nf(totalQ)} EA${D.totalOut?`(사내)　·　외주가공 ${nf(D.totalOut)} EA 별도`:''}　·　금액 ₩${nf(totalAmt)}　·　장기보관품 ${nf(totalLong)} EA　(${groups.map(g=>CU_FULL[g.cu]||g.cu).join(' · ')})`,XS.tot);
   an.merge(r,0,r,5,XS.tot); an.ht[r]=28;
   sheets.push(an);
   return xBook(sheets);
