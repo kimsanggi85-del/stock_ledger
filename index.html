@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.37 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.38 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6045,7 +6045,14 @@ body.qp-on{overflow:hidden}
       <button class="btn k" onclick="extLoad(false)">🔄 다시 읽기</button>
       <button class="btn" onclick="extLoad(true)">📂 폴더·파일 다시 지정</button>
       <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
+      <button class="btn" onclick="extPasteBox()" title="보안(DRM)·암호 때문에 파일이 안 읽힐 때 — 엑셀에서 표를 복사해 붙여넣습니다">📋 엑셀 표 붙여넣기</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
+    </div>
+    <div id="extPasteWrap" style="display:none;margin-bottom:8px;padding:8px;border:1px dashed #7C3AED;border-radius:6px;background:#FAF7FE">
+      <div style="font-size:12px;margin-bottom:5px">① 엑셀에서 「재고조사 - 0930」 시트를 열고 <b>품번 머리글부터 마지막 기종(1156 A OUTER)까지</b> 표를 드래그해 <b>Ctrl+C</b><br>
+        ② 아래 칸을 누르고 <b>Ctrl+V</b> → ③ [붙여넣은 표 저장] (기준일을 묻습니다)</div>
+      <textarea id="extPaste" rows="5" style="width:100%;font-size:11px;font-family:var(--mono)" placeholder="여기에 Ctrl+V"></textarea>
+      <div style="margin-top:5px"><button class="btn k" onclick="extPaste()">💾 붙여넣은 표 저장</button></div>
     </div>
     <div class="gw"><div class="scroll" style="max-height:52vh"><table class="t" id="extTbl"></table></div></div>
   </div>
@@ -13376,8 +13383,10 @@ async function extLoad(pick,silent,one){
     catch(e1){ throw new Error('파일을 읽지 못했습니다.\n· 다른 PC에서 그 파일을 편집 중이거나 네트워크 드라이브 연결이 끊겼을 수 있습니다.\n· 파일을 바탕화면에 복사한 뒤 복사본을 선택해 보세요.\n('+(e1.name||'')+' '+(e1.message||'')+')'); }
     let book;
     try{ book=await readXlsx(new Blob([buf])); }
-    catch(e2){ throw new Error(String(e2.message)==='ZIP'
-      ?'엑셀(.xlsx) 형식으로 읽을 수 없습니다.\n· 구형 .xls 이거나 암호가 걸린 파일일 수 있습니다 — 엑셀에서 「다른 이름으로 저장 → .xlsx」 후 다시 선택하세요.'
+    catch(e2){ const h=new Uint8Array(buf.slice(0,4)), ole=h[0]===0xD0&&h[1]===0xCF&&h[2]===0x11&&h[3]===0xE0;
+      throw new Error(String(e2.message)==='ZIP'
+      ?(ole?'보안(DRM)·암호가 걸린 파일이거나 구형 .xls 입니다 — 브라우저가 내용을 읽을 수 없습니다.\n':'엑셀(.xlsx) 형식으로 읽을 수 없습니다 (보안 프로그램으로 암호화된 파일일 수 있습니다).\n')
+        +'· 해결: 엑셀에서 「재고조사」 시트 표를 복사해 [📋 엑셀 표 붙여넣기]로 넣어 주세요.'
       :'엑셀 내용을 해석하지 못했습니다 ('+(e2.message||e2)+')'); }
     const {sheet,rows}=extParse(book,maxK);
     const snap={d,at,file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
@@ -13394,6 +13403,41 @@ async function extLoad(pick,silent,one){
     if(!silent){ toast('외주재고 불러오기 실패'); alert('외주재고 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
     console.warn('외주재고:',e);
   }
+  extPaint(); render();
+}
+/* 엑셀에서 복사한 표(탭 구분, 줄바꿈 든 칸은 따옴표) → 행 배열 */
+function tsvGrid(txt){
+  const out=[]; let row=[],cell='',q=false;
+  for(let i=0;i<txt.length;i++){ const c=txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"'&&cell==='') q=true;
+    else if(c==='\t'){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); out.push(row); row=[]; cell=''; }
+    else if(c!=='\r') cell+=c; }
+  row.push(cell); if(row.some(x=>x!=='')) out.push(row);
+  return out;
+}
+function extPasteBox(){ const w=$('extPasteWrap'); w.style.display=w.style.display==='none'?'block':'none'; if(w.style.display==='block') $('extPaste').focus(); }
+/* 붙여넣은 표 저장 — 보안(DRM)·암호 파일처럼 브라우저가 못 읽는 경우 */
+async function extPaste(){
+  const txt=$('extPaste').value;
+  if(!txt.trim()){ toast('붙여넣은 내용이 없습니다'); return; }
+  let rows;
+  try{ rows=extParse({'재고조사 (붙여넣기)':tsvGrid(txt)}).rows; }
+  catch(e){ alert('붙여넣은 표를 읽지 못했습니다\n\n'+(e.message||e)+'\n\n· 「품번 · 구분 · 공정별(생산중~검사완료)」 머리글이 들어가도록 표 위쪽부터 복사하세요.'); return; }
+  const td=today(), pm=prevYm(td.slice(0,7)), [Y,M]=pm.split('-').map(Number);
+  const v=prompt('붙여넣은 표('+rows.length+'줄)를 어느 날짜 기준 외주재고로 저장할까요? (YYYY-MM-DD)\n· 9월 마감 자료면 2026-09-30',+td.slice(8)<=10?pm+'-'+p2(new Date(Y,M,0).getDate()):td);
+  if(v===null) return;
+  const d=String(v).trim().replace(/[./]/g,'-');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast('날짜 형식이 올바르지 않습니다 (예: 2026-09-30)'); return; }
+  const snap={d,at:d+(d<td?' 마감':'')+' (엑셀 붙여넣기)',file:'엑셀 붙여넣기',mod:Date.now(),sheet:'붙여넣기',by:S.user||'',rows};
+  await extPull();
+  EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{};
+  if(!EXT.last||d>=String(EXT.last.d||'')) EXT.last=snap;
+  EXT.hist[d]=snap; EXT_VIEW=d;
+  const ok=await extPush(), neg=rows.filter(o=>o.heat<0||o.surf<0).length;
+  toast('외주재고 저장 — 붙여넣기 '+rows.length+'줄 → '+d+' 자료'+(neg?' · ⚠ 음수 '+neg+'건':'')+(ok?'':' (서버 저장 실패 — 이 PC만)'));
+  $('extPaste').value=''; $('extPasteWrap').style.display='none';
   extPaint(); render();
 }
 let EXT_VIEW='';                           /* 창에서 보고 있는 날짜 (비면 최신) */
