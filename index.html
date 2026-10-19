@@ -1096,7 +1096,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.17 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.18 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11890,6 +11890,14 @@ function sbcPn(m){
   /* 별칭에 없으면 Inner/Outer 를 떼고 세트 부모를 찾아 해당 구성품으로 */
   const side=/inner/i.test(raw)?'IW':(/outer/i.test(raw)?'OW':'');
   const base=raw.replace(/\s*(Inner|Outer)\s*$/i,'').trim();
+  /* Inner/Outer 표기가 있으면 같은 쪽 품번(IW-…-1159C / OW-…-1159C)을 먼저 찾는다
+     (세트 부모·별칭이 없는 품목은 '1159C Outer' 가 IW-BDA-1159C 로 잘못 붙던 문제) */
+  if(side&&base){
+    const B=base.toUpperCase().replace(/\s+/g,'');
+    const own=(S.items||[]).find(it=>{ const u=String(it.pn).toUpperCase();
+      return u.startsWith(side+'-')&&u.endsWith('-'+B); });
+    if(own) return own.pn;
+  }
   const par=(S.items||[]).find(it=>{
     if(!isSbcPn(it.pn)) return false;
     if(String(it.pn).toUpperCase().endsWith('-'+base.toUpperCase())) return true;
