@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.28 · 원소재 v11.23</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.29 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13114,13 +13114,49 @@ function rawSnap(y){
   Object.keys(RAW_MAP).forEach(pn=>{ const r=rawAt(pn,D); if(r&&r.kg) o[pn]=[r.kg,r.p,r.note]; });
   return o;
 }
+/* ═══ 고객사별 원자재재고(규격별 표) — 한 규격을 여러 품번이 같이 쓰는 고객사(SKF씰)
+   소재 키 = 등급(SPCC·430·304·304J1…) + 두께×폭. MES 투입 기록으로 그 고객사가 쓴 소재를 찾고,
+   공용 규격은 이 고객사로 넣는다. SBC 소재(RAW_MAP 품번별 계산)는 제외 ═══ */
+const RAW_CU_TABLE=['SKF씰'];
+const RAW_KG_PRICE={};                 /* 등급별 kg 단가 — 예: {SPCC:1200,'430':2900,'304':4500,'304J1':4300} */
+function gradeOfS(s){ s=String(s||'').toUpperCase().trim();
+  if(/^304J1/.test(s))return '304J1'; if(/^304/.test(s))return '304'; if(/^430/.test(s))return '430'; if(/^SPCC/.test(s))return 'SPCC';
+  return (s.match(/^[A-Z0-9]+/)||[''])[0]; }
+const matKeyC=c=>gradeOfS(c.rc||c.mt)+' '+(+c.t||0)+'×'+Math.round(+c.w||0);
+function matOwners(){
+  const cuOf=pn=>{ const it=S.items.find(i=>i.pn===pn)||S.items.find(i=>i.pn===canonPn(pn)); return it?String(it.cu||'').trim():''; };
+  const M={}, add=(k,pn)=>{ const cu=cuOf(pn); if(cu)(M[k]=M[k]||new Set()).add(cu); };
+  (S.coils||[]).forEach(c=>{ if(c.mes&&c.mes.pn) add(matKeyC(c),c.mes.pn); });
+  (S.ru||[]).forEach(r=>{ const sp=parseMatCode(r.rc); if(sp.t&&sp.w) add(gradeOfS(r.rc)+' '+sp.t+'×'+sp.w,r.pn); });
+  return M;
+}
+/* 고객사 원자재 규격별 표 — [소재키, 업체, 전월말, 당월입고, 당월투입, 당월말] (진행 중인 달은 오늘까지) */
+function matTable(cu,y){
+  const own=matOwners(), td=today(), [Y,M]=y.split('-').map(Number);
+  const e0=y+'-'+p2(new Date(Y,M,0).getDate()), e=e0>td?td:e0, a=y+'-01', pe=dayBefore(a);
+  const G=new Map();
+  (S.coils||[]).forEach(c=>{
+    if(!c.mes||c.st==='반품'||!c.d||isOff(c)||RAW_SKIP.test(c.sup||'')) return;
+    const k=matKeyC(c), o=own[k]; if(!o||!o.has(cu)||o.has('SBC')) return;
+    const sn=supNm(c.sup), gk=k+'|'+sn;
+    if(!G.has(gk)) G.set(gk,[k,sn,0,0,0,0]);
+    const g=G.get(gk), w=+c.wt||0;
+    g[2]+=remAt(c,pe); if(c.d>=a&&c.d<=e) g[3]+=w; g[5]+=remAt(c,e);
+  });
+  const sk=k=>{ const m=k.match(/^(\S+) ([\d.]+)×(\d+)/)||[]; return [m[1]||'',+m[2]||0,+m[3]||0]; };
+  return [...G.values()].map(g=>{ g[4]=g[2]+g[3]-g[5]; return g.map((v,i)=>i>1?Math.round(v):v); })
+    .filter(g=>g[2]||g[3]||g[5])
+    .sort((x,y2)=>{ const a1=sk(x[0]),b1=sk(y2[0]); return a1[0].localeCompare(b1[0])||a1[1]-b1[1]||a1[2]-b1[2]||x[1].localeCompare(y2[1]); });
+}
+const matPrice=k=>+RAW_KG_PRICE[String(k).split(' ')[0]]||0;
 function mcSnap(y,cut){
   const bk=ym; ym=y; CUT=cut; const rows={}; let q=0,amt=0;
   try{
     S.items.filter(i=>!i.hide).forEach(it=>{ const cur=Math.round(calc(it).cur||0), pr=+it.price||0;
       rows[it.pn]=[cur,pr,isDead(it)?1:0]; q+=cur; amt+=pr?cur*pr:0; });
   } finally { ym=bk; CUT=''; }
-  return {rows,q,amt,raw:rawSnap(y)};
+  const rawCu={}; RAW_CU_TABLE.forEach(cu=>{ try{ rawCu[cu]=matTable(cu,y); }catch(e){} });
+  return {rows,q,amt,raw:rawSnap(y),rawCu};
 }
 async function mcAuto(){
   if(!MC_OK) await mcPull();
@@ -13128,8 +13164,8 @@ async function mcAuto(){
   let ch=false;
   for(const [y,cut] of Object.entries(MC_PRESET)){
     if(mcGet(y)||today()<cut) continue;
-    const {rows,q,amt,raw}=mcSnap(y,cut), d0=new Date();
-    mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:(S.user||'')+'(지정마감)',q,amt,rows,raw}; ch=true;
+    const {rows,q,amt,raw,rawCu}=mcSnap(y,cut), d0=new Date();
+    mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:(S.user||'')+'(지정마감)',q,amt,rows,raw,rawCu}; ch=true;
     toast((+y.slice(5))+'월분 마감확정 ('+(+cut.slice(5,7))+'/'+(+cut.slice(8))+' 마감) — 재고 '+nf(q)+' EA');
   }
   if(ch){ save(); mcPaint(); await mcPush(); }
@@ -13184,10 +13220,10 @@ async function monthClose(){
   if(v===null) return;
   const cut=String(v).trim().replace(/[./]/g,'-');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(cut)||cut<mEndY||cut>today()){ toast('마감일은 '+mEndY+' ~ '+today()+' 사이로 입력하세요'); return; }
-  const {rows,q,amt,raw}=mcSnap(y,cut);
+  const {rows,q,amt,raw,rawCu}=mcSnap(y,cut);
   if(!confirm(cy+'년 '+m+'월분 마감 확정\n\n· 마감일 : '+cut+' 까지 입출고 반영\n· 품목 '+Object.keys(rows).length+' · 재고 '+nf(q)+' EA · ₩'+nf(amt)
     +'\n\n확정하면 '+m+'월 재고조사서는 이 수량으로 고정됩니다.')) return;
-  const d0=new Date(); mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',q,amt,rows,raw}; save(); mcPaint();
+  const d0=new Date(); mcAll()[y]={cut,at:today()+'T'+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',q,amt,rows,raw,rawCu}; save(); mcPaint();
   const ok=await mcPush();
   toast(m+'월 마감 확정 완료'+(ok?'':' (서버 저장 실패 — 이 PC에만 저장됨)'));
 }
@@ -13404,8 +13440,10 @@ function mrData(){
       q+=cur; amt+=sub; if(dead)lq+=cur; if(raw){ rkg+=raw.kg; ramt+=raw.amt; }
       return {it,cur,all,out,pr,sub,dead,raw,proc:procOf(it),f2:!!(it.base&&!/\[2F\]/i.test(it.pn))};
     });
+    const mat=RAW_CU_TABLE.includes(cu)?((MC&&MC.rawCu&&MC.rawCu[cu])||matTable(cu,y)):null;
+    if(mat){ mat.forEach(g=>{ rkg+=g[5]; ramt+=g[5]*matPrice(g[0]); }); }
     stat[cu]={q,amt,lq,rkg,ramt,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq; totalRkg+=rkg; totalRamt+=ramt;
-    return {cu,rows,c:monthStat(cu,y),pv:monthStat(cu,pm)};
+    return {cu,rows,mat,c:monthStat(cu,y),pv:monthStat(cu,pm)};
   });
   groups.forEach(g=>{ if(!ext) return;
     g.ext=g.rows.map(r=>ext.by[r.it.pn]).filter(Boolean);
@@ -13452,6 +13490,16 @@ function _printMonthReport(D){
       ${sec('O','표면처리 O')}${sec('X','표면처리 삭제 (X)')}${sec('','표면처리 구분 없음')}</tbody>
       <tfoot><tr><td colspan="3" class="c b">합 계</td>${cells(S2(M))}</tr></tfoot></table></div>`;
   };
+  const matHtml=g=>{
+    const T=g.mat; if(!T||!T.length) return '';
+    const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월', c=v=>`<td class="r">${v?nf(v):'-'}</td>`;
+    const sm=i=>T.reduce((s,g2)=>s+g2[i],0), am=T.reduce((s,g2)=>s+g2[5]*matPrice(g2[0]),0);
+    return `<div class="ext"><div class="et">■원자재재고 (규격별, kg) — 등급·두께×폭 · MES 코일 기준(투입완료 전은 입고중량, 사급 제외) · 공용 규격 포함</div>
+      <table class="xt rf"><thead><tr><th>소재 · 규격</th><th>업체</th><th>${pm2} 말</th><th>${mm} 입고</th><th>${mm} 투입</th><th>${mm} 말</th><th>단가<br>(원/kg)</th><th>금액</th></tr></thead><tbody>
+      ${T.map(g2=>`<tr><td class="pn">${esc(g2[0])}</td><td class="c">${esc(g2[1])}</td>${c(g2[2])}${c(g2[3])}${c(g2[4])}<td class="r b">${nf(g2[5])}</td>${c(matPrice(g2[0]))}${c(g2[5]*matPrice(g2[0]))}</tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="2" class="c b">합 계</td>${c(sm(2))}${c(sm(3))}${c(sm(4))}<td class="r b">${nf(sm(5))}</td><td></td>${c(am)}</tr></tfoot></table>
+      ${am?'':'<div class="es">kg 단가가 아직 등록되지 않아 금액은 비어 있습니다 (수량만 ②원자재재고에 반영)</div>'}</div>`;
+  };
   const flowHtml=g=>{
     const F=g.flow||[]; if(!F.length) return '';
     const fx=F.some(f=>f.fix!=null), sm=k=>F.reduce((s,f)=>s+(f[k]||0),0);
@@ -13475,7 +13523,7 @@ function _printMonthReport(D){
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       <table class="inv">${colg}${thead(!!(g.ext&&g.ext.length))}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
-        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>${flowHtml(g)}${extHtml(g)}</section>`);
+        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
   });
 
   /* 2) 마지막 페이지: 업체별 분석표 */
@@ -13674,10 +13722,25 @@ function mrXlsx(D){
     const rt=r0+rows.length, a=r0+1, b=rt, {q,amt,rkg,ramt}=stat[cu], S2=c=>rows.length?`SUM(${c}${a}:${c}${b})`:'0';
     sh.set(rt,0,'재고합계',XS.tL); sh.merge(rt,0,rt,5,XS.tL);
     sh.set(rt,6,Math.round(q),XS.tNB,S2('G')); sh.set(rt,7,'',XS.tE); sh.set(rt,8,amt,XS.tN,S2('I'));
-    sh.set(rt,9,rkg,XS.tN,S2('J')); sh.set(rt,10,'',XS.tE); sh.set(rt,11,ramt,XS.tN,S2('L'));
-    sh.set(rt,12,amt+ramt,XS.tN,S2('M')); sh.set(rt,13,'',XS.tE);
+    const gM=groups.find(x=>x.cu===cu), hasMat=!!(gM&&gM.mat&&gM.mat.length);   /* 규격별 표 고객사는 ② 합계가 아래 표 합계 */
+    sh.set(rt,9,rkg,XS.tN,hasMat?undefined:S2('J')); sh.set(rt,10,'',XS.tE); sh.set(rt,11,ramt,XS.tN,hasMat?undefined:S2('L'));
+    sh.set(rt,12,amt+ramt,XS.tN,hasMat?`I${rt+1}+L${rt+1}`:S2('M')); sh.set(rt,13,'',XS.tE);
     const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XM=(g&&g.extM)||[], XF=(g&&g.flow)||[];
     let r2=rt+2;
+    /* 원자재재고 (규격별) — SKF씰 등 */
+    const XT=(g&&g.mat)||[];
+    if(XT.length){ let r=r2; const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월';
+      sh.set(r++,0,'■원자재재고 (규격별, kg) — 등급·두께×폭 · MES 코일 기준(투입완료 전은 입고중량, 사급 제외) · 공용 규격 포함',XS.meta);
+      sh.set(r,0,'소재 · 규격',XS.th); sh.merge(r,0,r,3,XS.th);
+      ['업체',pm2+' 말',mm+' 입고',mm+' 투입',mm+' 말','단가(원/kg)','금액'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      const a0=r;
+      XT.forEach(g2=>{ sh.set(r,0,g2[0],XS.pn); sh.merge(r,0,r,3,XS.pn); sh.set(r,4,g2[1],XS.c);
+        sh.set(r,5,g2[2],XS.n); sh.set(r,6,g2[3],XS.n); sh.set(r,7,g2[4],XS.n,`F${r+1}+G${r+1}-I${r+1}`); sh.set(r,8,g2[5],XS.tN);
+        const pr=matPrice(g2[0]); sh.set(r,9,pr||'',XS.n); sh.set(r,10,g2[5]*pr,XS.n,`I${r+1}*J${r+1}`); r++; });
+      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,4,XS.tL);
+      [[5,2],[6,3],[7,4],[8,5]].forEach(([ci,ix])=>sh.set(r,ci,XT.reduce((s,g2)=>s+g2[ix],0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
+      sh.set(r,10,XT.reduce((s,g2)=>s+g2[5]*matPrice(g2[0]),0),XS.tN,`SUM(K${a0+1}:K${r})`);
+      r2=r+2; }
     /* 원자재 수불 (kg) */
     if(XF.length){ let r=r2; const fx=XF.some(f=>f.fix!=null);
       sh.set(r++,0,'■원자재 수불 (kg) — 전월이월 + 이월조정 + 당월입고 − 당월투입 = 당월말 · MES 코일 기준(장착중은 입고중량, 사급 제외)',XS.meta);
