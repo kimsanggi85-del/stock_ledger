@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.22 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.23 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13087,11 +13087,13 @@ function extParse(book){
       C={wip:f(/^생산중/),press:f(/^PRESS/i),heat:f(/^열처리(③|$)/),surf:f(/^표면처리(④|$)/),wait:f(/^검사대기/),done:f(/^검사완료/)}; }
   }
   if(hr<0) throw new Error(sheet+' 시트에서 열처리·표면처리 칸을 찾지 못했습니다');
+  for(let i=0;i<=hr&&C.sf==null;i++){ const j=(g[i]||[]).findIndex(x=>/유\/?무/.test(ns(x))); if(j>=0) C.sf=j; }
   const rows=[]; let m='', miss=0;
   for(let i=hr+1;i<g.length&&miss<4;i++){
     const r=g[i]||[], a=String(r[0]||'').trim(), side=(r.find((x,j)=>j<4&&/^(INNER|OUTER)$/i.test(ns(x)))||'').toUpperCase();
     if(side){ if(a) m=a; miss=0;
       const o={m,side}; EXT_COLS.forEach(([c])=>o[c]=C[c]>=0?Math.round(xnum(r[C[c]])):0);
+      const sv=C.sf!=null?ns(r[C.sf]):''; o.sf=sv||(rows.length&&rows[rows.length-1].m===m?rows[rows.length-1].sf:'');
       o.tot=EXT_COLS.reduce((s,[c])=>s+o[c],0); rows.push(o); continue; }
     /* 표면처리 업체별 보조행(동진 -400 등)은 바로 위 품목에 더한다 — 엑셀 재고 합계도 같은 방식 */
     if(rows.length&&!a&&String(r[C.surf]||'').trim()!==''){ const v=Math.round(xnum(r[C.surf]));
@@ -13183,6 +13185,12 @@ function extPaint(){
         +EXT_COLS.map(([c])=>'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
         +'<td><b>'+nf(o.tot)+'</b></td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('')+'</tbody>';
 }
+/* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
+const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1124BA':'X','1124':'X','1165':'X',
+  '1179':'O','1179C':'X','1159C':'O','1159B':'X','1156':'O','1156A':'X'};
+function extSf(o){ const v=String(o.sf||'').trim();
+  if(/^(유|O)$/i.test(v)) return 'O'; if(/^(무|X)$/i.test(v)) return 'X';
+  return EXT_SF[String(o.m).replace(/\s+/g,'').toUpperCase()]||''; }
 /* 재고조사서용 — 그 달(마감일까지) 안에서 가장 늦게 불러온 스냅샷을 품번별로 묶는다 */
 function extFor(y,cut){
   if(!EXT||!EXT.hist) return null;
@@ -13193,7 +13201,8 @@ function extFor(y,cut){
   s.rows.forEach(o=>{ const pn=extPn(o.m,o.side);
     if(!pn){ if(o.tot) un.push(o); return; }
     const a=by[pn]=by[pn]||{pn,src:[],tot:0}; EXT_COLS.forEach(([c])=>a[c]=(a[c]||0)+o[c]); a.tot+=o.tot; a.src.push(o.m); });
-  return {s,by,un};
+  const mods=s.rows.map(o=>Object.assign({},o,{pn:extPn(o.m,o.side),sfx:extSf(o)}));
+  return {s,by,un,mods};
 }
 /* 재고현황 화면용 — 가장 최근에 불러온 전공정이동표의 품번별 외주(열처리+표면처리) 수량 */
 let EXT_MAP=null, EXT_MAP_K='';
@@ -13261,7 +13270,10 @@ function mrData(){
   });
   groups.forEach(g=>{ if(!ext) return;
     g.ext=g.rows.map(r=>ext.by[r.it.pn]).filter(Boolean);
-    if(g.cu==='SBC') g.extUn=ext.un; });
+    if(g.cu==='SBC') g.extUn=ext.un;
+    /* 엑셀 기종 단위(표면처리 O / 삭제 X 구분)로 보여줄 행 */
+    const own=new Set(g.rows.map(r=>r.it.pn));
+    g.extM=(ext.mods||[]).filter(o=>(o.pn?own.has(o.pn):g.cu==='SBC')&&(o.tot||o.heat||o.surf)); });
   const totalOut=groups.reduce((s,g)=>s+g.rows.reduce((a,r)=>a+r.out,0),0);
   return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext,totalOut};
 }
@@ -13282,16 +13294,22 @@ function _printMonthReport(D){
   /* 1) 업체별 품목표 → 페이지 조각 */
   const chunks=[];
   const extHtml=g=>{
-    if(!D.ext||!((g.ext&&g.ext.length)||(g.extUn&&g.extUn.length))) return '';
-    const L=(g.ext||[]), U=(g.extUn||[]), sum=c=>L.concat(U).reduce((s,a)=>s+(a[c]||0),0);
-    const tr=(nm,a)=>`<tr><td class="pn">${esc(nm)}</td><td class="r">${nf(a.press)}</td><td class="r">${nf(a.wait+a.done)}</td>
-      <td class="r b">${nf(a.heat)}</td><td class="r b">${nf(a.surf)}</td><td class="r b">${nf(a.heat+a.surf)}</td><td class="r">${nf(a.tot)}</td></tr>`;
+    const M=g.extM||[];
+    if(!D.ext||!M.length) return '';
+    const S2=a=>({press:a.reduce((s,o)=>s+o.press,0),wd:a.reduce((s,o)=>s+o.wait+o.done,0),heat:a.reduce((s,o)=>s+o.heat,0),
+      surf:a.reduce((s,o)=>s+o.surf,0),tot:a.reduce((s,o)=>s+o.tot,0)});
+    const cells=x=>`<td class="r">${nf(x.press)}</td><td class="r">${nf(x.wd)}</td><td class="r b">${nf(x.heat)}</td><td class="r b">${nf(x.surf)}</td><td class="r b">${nf(x.heat+x.surf)}</td><td class="r">${nf(x.tot)}</td>`;
+    const sec=(k,nm)=>{ const a=M.filter(o=>(o.sfx||'')===k); if(!a.length) return '';
+      return `<tr class="sh"><td colspan="9">${nm}</td></tr>`
+        +a.map(o=>`<tr><td class="pn">${esc(o.m)}</td><td class="c">${o.side}</td><td class="s">${o.pn?esc(o.pn):'(품목 없음)'}</td>${cells({press:o.press,wd:o.wait+o.done,heat:o.heat,surf:o.surf,tot:o.tot})}</tr>`).join('')
+        +`<tr class="st"><td colspan="3" class="c b">${nm} 소계</td>${cells(S2(a))}</tr>`; };
     const inQ=g.rows.reduce((s,r)=>s+r.cur,0), outQ=g.rows.reduce((s,r)=>s+r.out,0);
     return `<div class="ext"><div class="et">■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 ${esc(D.ext.s.at)} 기준 · 수량만 표시(금액 미포함)</div>
-      ${L.length?`<div class="es">위 제품재고는 <b>사내재고</b>(총재고 − 외주) · 총재고 ${nf(inQ+outQ)} = 사내 ${nf(inQ)} + 외주 ${nf(outQ)}</div>`:''}
-      <table class="xt"><colgroup><col style="width:28%"><col span="6"></colgroup><thead><tr><th>품 번</th><th>PRESS</th><th>검사대기+완료</th><th>열처리</th><th>표면처리</th><th>외주 계</th><th>전공정 총재고</th></tr></thead><tbody>
-      ${L.map(a=>tr(a.pn,a)).join('')}${U.map(o=>tr(o.m+' '+o.side+' (품목 없음)',o)).join('')}</tbody>
-      ${L.length+U.length>1?`<tfoot><tr><td class="c b">합 계</td><td class="r">${nf(sum('press'))}</td><td class="r">${nf(sum('wait')+sum('done'))}</td><td class="r b">${nf(sum('heat'))}</td><td class="r b">${nf(sum('surf'))}</td><td class="r b">${nf(sum('heat')+sum('surf'))}</td><td class="r">${nf(sum('tot'))}</td></tr></tfoot>`:''}</table></div>`;
+      ${g.ext&&g.ext.length?`<div class="es">위 제품재고는 <b>사내재고</b>(총재고 − 외주) · 총재고 ${nf(inQ+outQ)} = 사내 ${nf(inQ)} + 외주 ${nf(outQ)}</div>`:''}
+      <table class="xt"><colgroup><col style="width:12%"><col style="width:8%"><col style="width:15%"><col span="6"></colgroup>
+      <thead><tr><th>기 종</th><th>구분</th><th>앱 품번</th><th>PRESS</th><th>검사대기+완료</th><th>열처리</th><th>표면처리</th><th>외주 계</th><th>전공정 총재고</th></tr></thead><tbody>
+      ${sec('O','표면처리 O')}${sec('X','표면처리 삭제 (X)')}${sec('','표면처리 구분 없음')}</tbody>
+      <tfoot><tr><td colspan="3" class="c b">합 계</td>${cells(S2(M))}</tr></tfoot></table></div>`;
   };
   groups.forEach(g=>{ const {cu,rows}=g;
     const lines=rows.map(({it,cur,pr,sub,dead,proc,f2},i)=>`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
@@ -13351,7 +13369,7 @@ function _printMonthReport(D){
    +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;background:#F6FAF7;font-size:15px;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
    +'.ext{margin-top:8px;break-inside:avoid;page-break-inside:avoid}.ext .et{font-size:13px;font-weight:700;margin-bottom:3px}'
-   +'.ext .es{font-size:12px;margin-bottom:3px;color:#5B21B6}.xt{width:70%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
+   +'.ext .es{font-size:12px;margin-bottom:3px;color:#5B21B6}.xt tr.sh td{background:#F3EEFD;font-weight:700;text-align:left;padding-left:6px}.xt tr.st td{background:#FAF7FE;font-weight:700}.xt{width:85%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
    +'</style></head><body>'+pages+'</body></html>';
@@ -13507,24 +13525,32 @@ function mrXlsx(D){
     sh.set(rt,9,0,XS.tN,S2('J')); sh.set(rt,10,'',XS.tE); sh.set(rt,11,0,XS.tN,S2('L'));
     sh.set(rt,12,amt,XS.tN,S2('M')); sh.set(rt,13,'',XS.tE);
     /* 외주가공재고 — 재고합계 아래에 수량만 (금액 미포함) */
-    const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XU=(g&&g.extUn)||[];
-    if(D.ext&&(XL.length||XU.length)){
+    const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XM=(g&&g.extM)||[];
+    if(D.ext&&XM.length){
       let r=rt+2;
       sh.set(r++,0,'■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 '+D.ext.s.at+' 기준 · 수량만 표시(금액 미포함)',XS.meta);
       if(XL.length){ const inQ=g.rows.reduce((s,x)=>s+x.cur,0), outQ=g.rows.reduce((s,x)=>s+x.out,0);
         sh.set(r++,0,'위 제품재고는 사내재고(총재고 − 외주) · 총재고 '+nf(inQ+outQ)+' = 사내 '+nf(inQ)+' + 외주 '+nf(outQ),XS.meta); }
-      const hd=['PRESS','검사대기+완료','열처리','표면처리','외주 계','전공정 총재고'];
-      sh.set(r,0,'품 번',XS.th); sh.merge(r,0,r,3,XS.th); hd.forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
-      const a0=r;
-      const put=(nm,a)=>{ sh.set(r,0,nm,XS.pn); sh.merge(r,0,r,3,XS.pn);
-        [a.press,a.wait+a.done,a.heat,a.surf].forEach((v,i)=>sh.set(r,4+i,v,XS.n));
-        sh.set(r,8,a.heat+a.surf,XS.n,`G${r+1}+H${r+1}`); sh.set(r,9,a.tot,XS.n); r++; };
-      XL.forEach(a=>put(a.pn,a)); XU.forEach(o=>put(o.m+' '+o.side+' (품목 없음)',o));
-      const XA=XL.concat(XU);
-      if(XA.length>1){ const tv=c=>XA.reduce((s,a)=>s+c(a),0);
-        sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
-        [a=>a.press,a=>a.wait+a.done,a=>a.heat,a=>a.surf,a=>a.heat+a.surf,a=>a.tot]
-          .forEach((c,i)=>sh.set(r,4+i,tv(c),XS.tN,`SUM(${xCol(4+i)}${a0+1}:${xCol(4+i)}${a0+XA.length})`)); }
+      sh.set(r,0,'기 종',XS.th); sh.set(r,1,'구분',XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
+      ['PRESS','검사대기+완료','열처리','표면처리','외주 계','전공정 총재고'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      const subs=[];
+      [['O','표면처리 O'],['X','표면처리 삭제 (X)'],['','표면처리 구분 없음']].forEach(([k,nm])=>{
+        const a=XM.filter(o=>(o.sfx||'')===k); if(!a.length) return;
+        sh.set(r,0,nm,XS.tE); sh.merge(r,0,r,9,XS.tE); r++;
+        const a0=r;
+        a.forEach(o=>{ sh.set(r,0,o.m,XS.pn); sh.set(r,1,o.side,XS.c); sh.set(r,2,o.pn||'(품목 없음)',XS.s); sh.merge(r,2,r,3,XS.s);
+          [o.press,o.wait+o.done,o.heat,o.surf].forEach((v,i)=>sh.set(r,4+i,v,XS.n));
+          sh.set(r,8,o.heat+o.surf,XS.n,`G${r+1}+H${r+1}`); sh.set(r,9,o.tot,XS.n); r++; });
+        const tv=f=>a.reduce((s,o)=>s+f(o),0);
+        sh.set(r,0,nm+' 소계',XS.tL); sh.merge(r,0,r,3,XS.tL);
+        [o=>o.press,o=>o.wait+o.done,o=>o.heat,o=>o.surf,o=>o.heat+o.surf,o=>o.tot]
+          .forEach((f,i)=>sh.set(r,4+i,tv(f),XS.tN,`SUM(${xCol(4+i)}${a0+1}:${xCol(4+i)}${r})`));
+        subs.push(r+1); r++;
+      });
+      const tv=f=>XM.reduce((s,o)=>s+f(o),0);
+      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
+      [o=>o.press,o=>o.wait+o.done,o=>o.heat,o=>o.surf,o=>o.heat+o.surf,o=>o.tot]
+        .forEach((f,i)=>sh.set(r,4+i,tv(f),XS.tN,subs.map(n=>xCol(4+i)+n).join('+')));
     }
     sh.freeze=r0; sh.titles='$'+(H+1)+':$'+(H+2);
     sheets.push(sh);
