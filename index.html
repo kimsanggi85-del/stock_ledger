@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.36 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.37 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13272,7 +13272,7 @@ async function extIdb(k,v){
 /* 「재고조사」 시트 → [{m,side,wip,press,heat,surf,wait,done,tot}] */
 function extParse(book,maxK){
   let names=Object.keys(book).filter(n=>/^\s*재고조사/.test(n));
-  if(!names.length) throw new Error('「재고조사」 시트를 찾지 못했습니다');
+  if(!names.length) throw new Error('「재고조사」로 시작하는 시트를 찾지 못했습니다.\n· 이 파일의 시트: '+Object.keys(book).slice(0,40).join(', '));
   const k=n=>(String(n).match(/(\d{3,4})\s*$/)||[,''])[1].padStart(4,'0');
   if(maxK&&names.some(n=>k(n)<=maxK)) names=names.filter(n=>k(n)<=maxK);   /* 지난달 파일 — 그 달 말일 이후 시트는 쓰지 않는다 */
   names.sort((a,b)=>k(b).localeCompare(k(a)));                 /* 시트 이름 끝 MMDD 가 가장 늦은 것 */
@@ -13370,7 +13370,16 @@ async function extLoad(pick,silent,one){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(v2)){ toast('날짜 형식이 올바르지 않습니다 (예: 2026-09-30)'); return; }
       if(v2!==d){ d=v2; at=d+(v2<today()?' 마감':'')+' (파일 직접 선택)'; maxK=v2<today().slice(0,7)+'-01'?v2.slice(5).replace('-',''):''; }
     }
-    const {sheet,rows}=extParse(await readXlsx(f),maxK);
+    /* 단계별로 원인을 알려준다 — 파일 읽기 / 엑셀 해석 / 시트 찾기 */
+    let buf;
+    try{ buf=await f.arrayBuffer(); }
+    catch(e1){ throw new Error('파일을 읽지 못했습니다.\n· 다른 PC에서 그 파일을 편집 중이거나 네트워크 드라이브 연결이 끊겼을 수 있습니다.\n· 파일을 바탕화면에 복사한 뒤 복사본을 선택해 보세요.\n('+(e1.name||'')+' '+(e1.message||'')+')'); }
+    let book;
+    try{ book=await readXlsx(new Blob([buf])); }
+    catch(e2){ throw new Error(String(e2.message)==='ZIP'
+      ?'엑셀(.xlsx) 형식으로 읽을 수 없습니다.\n· 구형 .xls 이거나 암호가 걸린 파일일 수 있습니다 — 엑셀에서 「다른 이름으로 저장 → .xlsx」 후 다시 선택하세요.'
+      :'엑셀 내용을 해석하지 못했습니다 ('+(e2.message||e2)+')'); }
+    const {sheet,rows}=extParse(book,maxK);
     const snap={d,at,file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
     await extPull();                       /* 다른 PC가 넣은 기록(9월 마감분 등)을 덮어쓰지 않게 서버 최신본에 합친다 */
     EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{};
@@ -13382,7 +13391,7 @@ async function extLoad(pick,silent,one){
     toast('외주재고 불러옴 — '+f.name+' · '+sheet+' → '+d+' 자료'+(neg?' · ⚠ 음수 '+neg+'건':'')+(ok?'':' (서버 저장 실패 — 이 PC만)'));
   }catch(e){
     if(e&&e.name==='AbortError') return;
-    if(!silent) toast('외주재고 불러오기 실패: '+(e.message||e));
+    if(!silent){ toast('외주재고 불러오기 실패'); alert('외주재고 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
     console.warn('외주재고:',e);
   }
   extPaint(); render();
