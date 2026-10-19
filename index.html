@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.34 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.35 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13293,7 +13293,9 @@ function extParse(book,maxK){
       const sv=C.sf!=null?ns(r[C.sf]):''; o.sf=sv||(rows.length&&rows[rows.length-1].m===m?rows[rows.length-1].sf:'');
       o.tot=EXT_COLS.reduce((s,[c])=>s+o[c],0); rows.push(o); continue; }
     /* 표면처리 업체별 보조행(동진 -400 등)은 바로 위 품목에 더한다 — 엑셀 재고 합계도 같은 방식 */
-    if(rows.length&&!a&&String(r[C.surf]||'').trim()!==''){ const v=Math.round(xnum(r[C.surf]));
+    if(rows.length&&!a&&String(r[C.surf]||'').trim()!==''){
+      /* 「동진: 92,400」처럼 업체명과 숫자가 같이 적힌 칸도 숫자만 읽는다 */
+      const m=String(r[C.surf]).replace(/,/g,'').match(/-?\d+(\.\d+)?/), v=m?Math.round(+m[0]):0;
       const o=rows[rows.length-1]; o.surf+=v; o.tot+=v; continue; }
     if(rows.length) miss++;
   }
