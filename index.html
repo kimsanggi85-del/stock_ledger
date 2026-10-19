@@ -1096,7 +1096,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.18 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.19 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8451,7 +8451,7 @@ async function loadShipHist(force){
         if(!(/출하대기/.test(dep) && /SBC/i.test(dst))) return null;
         return {id:'GN'+x.id,d:String(x.move_date||'').slice(0,10),
           pn:sbc, k:'출하', q:+x.qty||0, p:(cuOf(sbc)||dst), lot:String(x.lot||''),
-          n:'출하(레이스웨이)'+(x.lot?'':' · LOT 미기록'),
+          n:'출하(레이스웨이)'+(raw.toUpperCase().startsWith(sbc.replace(/^(IW|OW)-BDA-/i,'').toUpperCase())?'':' · '+raw)+(x.lot?'':' · LOT 미기록'),
           by:'레이스웨이', src:'GN|'+x.id};
       }
       /* 그 밖에는 일반출하 — 일진·부강 등 */
