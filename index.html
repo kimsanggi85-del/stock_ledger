@@ -1096,7 +1096,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.19 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.20 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1172,6 +1172,7 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="printCountSheet()" title="현장에 들고 나갈 재고조사표를 인쇄합니다" style="background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800">📋 재고조사표</button>
     <button class="btn pc-only" onclick="printMonthReport()" title="마감월 말일 재고 · 금액 · 생산/납품 분석 — 월초에는 전월 기준 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
     <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
+    <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -6024,6 +6025,25 @@ body.qp-on{overflow:hidden}
       <span style="color:#7d8b99">1947-353, 1973-370</span></div><div style="margin-bottom:4px"><b>진양오일씰</b> 2품목
       <span style="color:#7d8b99">116080-ST0, 116090-ST2</span></div></div>
     <div class="act"><button class="btn k" onclick="saveCust()">저장</button></div>
+  </div>
+</div></div>
+
+<!-- SBC 외주가공재고 (전공정이동표) -->
+<div class="mask" id="mExt"><div class="modal" style="max-width:860px">
+  <h3>SBC 외주가공재고 — 전공정이동표<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:9px">
+      · 공유 폴더(예: <b>W: 12_공통자료 → 32번 폴더</b>)를 한 번 지정하면, 그 안의 <b>「재고상황(전공정이동표)_YYYY. M월」</b> 중 가장 최근 월 파일을 자동으로 읽습니다.<br>
+      · 파일의 <b>「재고조사」</b> 시트(가장 최근 날짜)에서 기종별 Inner/Outer 공정 재고를 가져와 서버에 저장 → 다른 PC에서도 같은 값이 보입니다.<br>
+      · 월말 재고조사서에는 <b>열처리(한성)·표면처리(동진·대영)</b> 수량이 「외주가공재고」로 따로 표시됩니다 (금액에는 넣지 않음).<br>
+      · 크롬·엣지에서 폴더 읽기 허용을 <b>「방문할 때마다 허용」</b>으로 두면 앱을 열 때 자동으로 새로 읽습니다.
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn k" onclick="extLoad(false)">🔄 다시 읽기</button>
+      <button class="btn" onclick="extLoad(true)">📂 폴더·파일 다시 지정</button>
+      <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
+    </div>
+    <div class="gw"><div class="scroll" style="max-height:52vh"><table class="t" id="extTbl"></table></div></div>
   </div>
 </div></div>
 
@@ -13037,6 +13057,142 @@ const RPT_BAR='<style>.rbar{position:fixed;top:8px;right:10px;z-index:99;display
  +'.rbar button{font:700 14px "맑은 고딕",sans-serif;padding:8px 16px;border:0;border-radius:6px;cursor:pointer;color:#fff;background:#0B6B3A;box-shadow:0 2px 6px rgba(0,0,0,.25)}'
  +'.rbar button.x{background:#555}@media print{.rbar{display:none}}</style>'
  +'<div class="rbar"><button onclick="window.print()">🖨 인쇄</button><button class="x" onclick="window.close()">✕ 닫기</button></div>';
+/* ═══════ SBC 외주가공재고 — 전공정이동표(공유 폴더 엑셀) 불러오기 ═══════
+   W: 12_공통자료 / 32번 폴더의 「2.재고상황(전공정이동표)_2026. 10월.xlsx」 같은 파일.
+   폴더 핸들을 IndexedDB 에 기억해 두고, 그 안에서 가장 최근 월 파일을 골라 「재고조사」 시트를 읽는다.
+   결과는 kv_store(공유)에 날짜별로 남겨 월말 재고조사서의 「외주가공재고」로 쓴다. */
+const EXT_KEY='tj_sbc_ext_v1';
+const EXT_COLS=[['wip','생산중'],['press','PRESS'],['heat','열처리'],['surf','표면처리'],['wait','검사대기'],['done','검사완료']];
+let EXT=null;                              /* {last:스냅샷, hist:{YYYY-MM-DD:스냅샷}} */
+const extDb=()=>new Promise((ok,ng)=>{ const r=indexedDB.open('tj_ext',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ng(r.error); });
+async function extIdb(k,v){
+  const db=await extDb();
+  return new Promise((ok,ng)=>{ const tx=db.transaction('h',v===undefined?'readonly':'readwrite'), st=tx.objectStore('h');
+    const q=v===undefined?st.get(k):st.put(v,k); q.onsuccess=()=>ok(q.result); q.onerror=()=>ng(q.error); });
+}
+/* 「재고조사」 시트 → [{m,side,wip,press,heat,surf,wait,done,tot}] */
+function extParse(book){
+  const names=Object.keys(book).filter(n=>/^\s*재고조사/.test(n));
+  if(!names.length) throw new Error('「재고조사」 시트를 찾지 못했습니다');
+  const k=n=>(String(n).match(/(\d{3,4})\s*$/)||[,''])[1].padStart(4,'0');
+  names.sort((a,b)=>k(b).localeCompare(k(a)));                 /* 시트 이름 끝 MMDD 가 가장 늦은 것 */
+  const sheet=names[0], g=book[sheet], ns=s=>String(s||'').replace(/\s+/g,'');
+  let hr=-1, C={};
+  for(let i=0;i<Math.min(g.length,15)&&hr<0;i++){
+    const f=re=>(g[i]||[]).findIndex(x=>re.test(ns(x)));
+    if(f(/^열처리(③|$)/)>=0&&f(/^표면처리(④|$)/)>=0){ hr=i;
+      C={wip:f(/^생산중/),press:f(/^PRESS/i),heat:f(/^열처리(③|$)/),surf:f(/^표면처리(④|$)/),wait:f(/^검사대기/),done:f(/^검사완료/)}; }
+  }
+  if(hr<0) throw new Error(sheet+' 시트에서 열처리·표면처리 칸을 찾지 못했습니다');
+  const rows=[]; let m='', miss=0;
+  for(let i=hr+1;i<g.length&&miss<4;i++){
+    const r=g[i]||[], a=String(r[0]||'').trim(), side=(r.find((x,j)=>j<4&&/^(INNER|OUTER)$/i.test(ns(x)))||'').toUpperCase();
+    if(side){ if(a) m=a; miss=0;
+      const o={m,side}; EXT_COLS.forEach(([c])=>o[c]=C[c]>=0?Math.round(xnum(r[C[c]])):0);
+      o.tot=EXT_COLS.reduce((s,[c])=>s+o[c],0); rows.push(o); continue; }
+    /* 표면처리 업체별 보조행(동진 -400 등)은 바로 위 품목에 더한다 — 엑셀 재고 합계도 같은 방식 */
+    if(rows.length&&!a&&String(r[C.surf]||'').trim()!==''){ const v=Math.round(xnum(r[C.surf]));
+      const o=rows[rows.length-1]; o.surf+=v; o.tot+=v; continue; }
+    if(rows.length) miss++;
+  }
+  if(!rows.length) throw new Error(sheet+' 시트에 INNER/OUTER 행이 없습니다');
+  return {sheet,rows};
+}
+/* 엑셀 기종명(1106 CB, 1113 AA/D, 1165 …) + INNER/OUTER → 품목대장 품번 */
+function extPn(m,side){
+  const S2=side==='INNER'?'IW':'OW', w=side==='INNER'?'Inner':'Outer';
+  const base=String(m).split('/')[0].replace(/\s+/g,'');
+  const p=sbcPn(base+' '+w);
+  if(p&&p.toUpperCase().startsWith(S2+'-')) return p;
+  const num=(base.match(/^\d{3,4}/)||[''])[0];               /* 1165 → IW-BDA-1165A 처럼 기종번호로 */
+  if(!num) return '';
+  const c=(S.items||[]).filter(it=>{ const u=String(it.pn).toUpperCase(); return u.startsWith(S2+'-')&&new RegExp('-'+num+'[A-Z]*$').test(u); });
+  return c.length===1?c[0].pn:'';
+}
+async function extPickFile(dh){
+  const fs=[];
+  for await (const e of dh.values()){
+    if(e.kind!=='file'||/^~\$/.test(e.name)||!/\.xls[xm]$/i.test(e.name)) continue;
+    if(!/재고상황|전공정/.test(e.name)) continue;
+    const mt=e.name.match(/(20\d{2})\s*[.\-년]\s*(\d{1,2})\s*월/);
+    const f=await e.getFile(); fs.push({f,k:(mt?mt[1]+p2(+mt[2]):'000000'),t:f.lastModified});
+  }
+  if(!fs.length) throw new Error('폴더에 「재고상황(전공정이동표)」 엑셀이 없습니다');
+  fs.sort((a,b)=>b.k.localeCompare(a.k)||b.t-a.t);
+  return fs[0].f;
+}
+const extPickInput=()=>new Promise(ok=>{ const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xlsm';
+  i.onchange=()=>ok(i.files[0]||null); i.click(); });
+async function extPull(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+EXT_KEY+'&select=value',{headers:itHeaders()});
+    if(!r.ok) return; const j=await r.json(), v=j&&j[0]&&j[0].value;
+    if(v&&v.last) EXT=v;
+  }catch(e){}
+}
+async function extPush(){
+  try{ const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
+      {method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+       body:JSON.stringify([{key:EXT_KEY,value:EXT,updated_at:nowIso()}])});
+    return r.ok; }catch(e){ return false; }
+}
+/* pick=true : 폴더(또는 파일)를 새로 고른다 · silent : 앱 시작 시 자동 갱신(권한이 이미 있을 때만) */
+async function extLoad(pick,silent){
+  let f=null;
+  try{
+    if(window.showDirectoryPicker){
+      let dh=pick?null:await extIdb('dir').catch(()=>null);
+      if(dh){ let ps=await dh.queryPermission({mode:'read'});
+        if(ps!=='granted'){ if(silent) return; ps=await dh.requestPermission({mode:'read'}); }
+        if(ps!=='granted') dh=null; }
+      if(!dh){ if(silent) return;
+        dh=await window.showDirectoryPicker({id:'sbcext',mode:'read'}); await extIdb('dir',dh).catch(()=>{}); }
+      f=await extPickFile(dh);
+    } else { if(silent) return; f=await extPickInput(); }
+    if(!f) return;
+    if(silent&&EXT&&EXT.last&&EXT.last.file===f.name&&EXT.last.mod>=f.lastModified) return;   /* 바뀐 게 없으면 그대로 */
+    const {sheet,rows}=extParse(await readXlsx(f));
+    const d0=new Date(f.lastModified), d=d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate());
+    const snap={d,at:d+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
+    EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{}; EXT.last=snap; EXT.hist[d]=snap;
+    Object.keys(EXT.hist).sort().slice(0,-62).forEach(k=>delete EXT.hist[k]);   /* 약 두 달치만 보관 */
+    const ok=await extPush();
+    const neg=rows.filter(o=>o.heat<0||o.surf<0).length;
+    toast('외주재고 불러옴 — '+f.name+' · '+sheet+(neg?' · ⚠ 음수 '+neg+'건':'')+(ok?'':' (서버 저장 실패 — 이 PC만)'));
+  }catch(e){
+    if(e&&e.name==='AbortError') return;
+    if(!silent) toast('외주재고 불러오기 실패: '+(e.message||e));
+    console.warn('외주재고:',e);
+  }
+  extPaint();
+}
+function extOpen(){ $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
+function extPaint(){
+  const T=$('extTbl'), I=$('extInfo'); if(!T) return;
+  const s=EXT&&EXT.last;
+  if(!s){ I.textContent='아직 불러온 자료가 없습니다 — [📂 폴더·파일 다시 지정]으로 32번 폴더를 고르세요';
+    T.innerHTML='<tbody><tr><td class="c" style="padding:20px;color:#93A0AB">불러온 자료 없음</td></tr></tbody>'; return; }
+  I.textContent='기준 '+s.at+' · '+s.file+' · '+s.sheet;
+  T.innerHTML='<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+n+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
+    +s.rows.map(o=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
+      return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td><td class="l'+(pn?'':' wn')+'">'+(pn?esc(pn):'품목 없음')+'</td>'
+        +EXT_COLS.map(([c])=>'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
+        +'<td><b>'+nf(o.tot)+'</b></td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('')+'</tbody>';
+}
+/* 재고조사서용 — 그 달(마감일까지) 안에서 가장 늦게 불러온 스냅샷을 품번별로 묶는다 */
+function extFor(y,cut){
+  if(!EXT||!EXT.hist) return null;
+  const [Y,M]=y.split('-').map(Number), hi=cut||(y+'-'+p2(new Date(Y,M,0).getDate()));
+  const k=Object.keys(EXT.hist).filter(d=>d>=y+'-01'&&d<=hi).sort().pop();
+  if(!k) return null;
+  const s=EXT.hist[k], by={}, un=[];
+  s.rows.forEach(o=>{ const pn=extPn(o.m,o.side);
+    if(!pn){ if(o.tot) un.push(o); return; }
+    const a=by[pn]=by[pn]||{pn,src:[],tot:0}; EXT_COLS.forEach(([c])=>a[c]=(a[c]||0)+o[c]); a.tot+=o.tot; a.src.push(o.m); });
+  return {s,by,un};
+}
+async function extInit(){ await extPull(); if(window.showDirectoryPicker) extLoad(false,true); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
@@ -13089,7 +13245,12 @@ function mrData(){
     stat[cu]={q,amt,lq,n:rows.length}; totalQ+=q; totalAmt+=amt; totalLong+=lq;
     return {cu,rows,c:monthStat(cu,y),pv:monthStat(cu,pm)};
   });
-  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong};
+  /* 외주가공재고(전공정이동표) — 품번별로 그 업체 표 아래에 따로 붙인다 (금액 미포함) */
+  const ext=extFor(y,CUT);
+  groups.forEach(g=>{ if(!ext) return;
+    g.ext=g.rows.map(r=>ext.by[r.it.pn]).filter(Boolean);
+    if(g.cu==='SBC') g.extUn=ext.un; });
+  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext};
 }
 function _printMonthReport(D){
   const {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong}=D;
@@ -13107,7 +13268,17 @@ function _printMonthReport(D){
 
   /* 1) 업체별 품목표 → 페이지 조각 */
   const chunks=[];
-  groups.forEach(({cu,rows})=>{
+  const extHtml=g=>{
+    if(!D.ext||!((g.ext&&g.ext.length)||(g.extUn&&g.extUn.length))) return '';
+    const L=(g.ext||[]), U=(g.extUn||[]), sum=c=>L.concat(U).reduce((s,a)=>s+(a[c]||0),0);
+    const tr=(nm,a)=>`<tr><td class="pn">${esc(nm)}</td><td class="r">${nf(a.press)}</td><td class="r">${nf(a.wait+a.done)}</td>
+      <td class="r b">${nf(a.heat)}</td><td class="r b">${nf(a.surf)}</td><td class="r b">${nf(a.heat+a.surf)}</td><td class="r">${nf(a.tot)}</td></tr>`;
+    return `<div class="ext"><div class="et">■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 ${esc(D.ext.s.at)} 기준 · 수량만 표시(금액 미포함)</div>
+      <table class="xt"><colgroup><col style="width:28%"><col span="6"></colgroup><thead><tr><th>품 번</th><th>PRESS</th><th>검사대기+완료</th><th>열처리</th><th>표면처리</th><th>외주 계</th><th>전공정 총재고</th></tr></thead><tbody>
+      ${L.map(a=>tr(a.pn,a)).join('')}${U.map(o=>tr(o.m+' '+o.side+' (품목 없음)',o)).join('')}</tbody>
+      ${L.length+U.length>1?`<tfoot><tr><td class="c b">합 계</td><td class="r">${nf(sum('press'))}</td><td class="r">${nf(sum('wait')+sum('done'))}</td><td class="r b">${nf(sum('heat'))}</td><td class="r b">${nf(sum('surf'))}</td><td class="r b">${nf(sum('heat')+sum('surf'))}</td><td class="r">${nf(sum('tot'))}</td></tr></tfoot>`:''}</table></div>`;
+  };
+  groups.forEach(g=>{ const {cu,rows}=g;
     const lines=rows.map(({it,cur,pr,sub,dead,proc,f2},i)=>`<tr><td class="c">${i+1}</td><td class="c cu">${esc(cu)}</td><td class="c s">${esc(it.sp||'')}</td>
         <td class="pn">${esc(it.pn)}${f2?'<span class="f2">2F</span>':''}</td><td class="c">${proc}</td>
         <td class="r">${it.bx?nf(it.bx):''}</td>
@@ -13119,7 +13290,7 @@ function _printMonthReport(D){
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       <table class="inv">${colg}${thead}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
-        <td class="r">-</td><td></td><td class="r">-</td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot></table></section>`);
+        <td class="r">-</td><td></td><td class="r">-</td><td class="r b">${nf(amt)}</td><td></td></tr></tfoot></table>${extHtml(g)}</section>`);
   });
 
   /* 2) 마지막 페이지: 업체별 분석표 */
@@ -13164,6 +13335,8 @@ function _printMonthReport(D){
    +'.an td.hand{background:#fff}.an td.big{font-size:17px;height:46px}'
    +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;background:#F6FAF7;font-size:15px;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
+   +'.ext{margin-top:8px;break-inside:avoid;page-break-inside:avoid}.ext .et{font-size:13px;font-weight:700;margin-bottom:3px}'
+   +'.xt{width:70%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
    +'</style></head><body>'+pages+'</body></html>';
@@ -13317,6 +13490,24 @@ function mrXlsx(D){
     sh.set(rt,6,Math.round(q),XS.tNB,S2('G')); sh.set(rt,7,'',XS.tE); sh.set(rt,8,amt,XS.tN,S2('I'));
     sh.set(rt,9,0,XS.tN,S2('J')); sh.set(rt,10,'',XS.tE); sh.set(rt,11,0,XS.tN,S2('L'));
     sh.set(rt,12,amt,XS.tN,S2('M')); sh.set(rt,13,'',XS.tE);
+    /* 외주가공재고 — 재고합계 아래에 수량만 (금액 미포함) */
+    const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XU=(g&&g.extUn)||[];
+    if(D.ext&&(XL.length||XU.length)){
+      let r=rt+2;
+      sh.set(r++,0,'■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 '+D.ext.s.at+' 기준 · 수량만 표시(금액 미포함)',XS.meta);
+      const hd=['PRESS','검사대기+완료','열처리','표면처리','외주 계','전공정 총재고'];
+      sh.set(r,0,'품 번',XS.th); sh.merge(r,0,r,3,XS.th); hd.forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      const a0=r;
+      const put=(nm,a)=>{ sh.set(r,0,nm,XS.pn); sh.merge(r,0,r,3,XS.pn);
+        [a.press,a.wait+a.done,a.heat,a.surf].forEach((v,i)=>sh.set(r,4+i,v,XS.n));
+        sh.set(r,8,a.heat+a.surf,XS.n,`G${r+1}+H${r+1}`); sh.set(r,9,a.tot,XS.n); r++; };
+      XL.forEach(a=>put(a.pn,a)); XU.forEach(o=>put(o.m+' '+o.side+' (품목 없음)',o));
+      const XA=XL.concat(XU);
+      if(XA.length>1){ const tv=c=>XA.reduce((s,a)=>s+c(a),0);
+        sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
+        [a=>a.press,a=>a.wait+a.done,a=>a.heat,a=>a.surf,a=>a.heat+a.surf,a=>a.tot]
+          .forEach((c,i)=>sh.set(r,4+i,tv(c),XS.tN,`SUM(${xCol(4+i)}${a0+1}:${xCol(4+i)}${a0+XA.length})`)); }
+    }
     sh.freeze=r0; sh.titles='$'+(H+1)+':$'+(H+2);
     sheets.push(sh);
   });
@@ -13790,7 +13981,7 @@ function init(){
   fillRawLists(); autoBom(false);
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.map(p=>`<option value="${esc(p)}">`).join('');
-  rDTabs(); render(); mcPaint(); mcPull();
+  rDTabs(); render(); mcPaint(); mcPull(); extInit();
 }
 load();
 unblockSBC();
