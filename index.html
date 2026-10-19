@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.38 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.40 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6046,12 +6046,14 @@ body.qp-on{overflow:hidden}
       <button class="btn" onclick="extLoad(true)">📂 폴더·파일 다시 지정</button>
       <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
       <button class="btn" onclick="extPasteBox()" title="보안(DRM)·암호 때문에 파일이 안 읽힐 때 — 엑셀에서 표를 복사해 붙여넣습니다">📋 엑셀 표 붙여넣기</button>
+      <button class="btn" id="extEditBtn" onclick="extEditTgl()" title="보고 있는 날짜의 열처리·표면처리 수량을 직접 입력·수정합니다 (보안 파일이라 불러오기·복사가 안 될 때)">✏ 외주 수량 수정</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
     </div>
     <div id="extPasteWrap" style="display:none;margin-bottom:8px;padding:8px;border:1px dashed #7C3AED;border-radius:6px;background:#FAF7FE">
-      <div style="font-size:12px;margin-bottom:5px">① 엑셀에서 「재고조사 - 0930」 시트를 열고 <b>품번 머리글부터 마지막 기종(1156 A OUTER)까지</b> 표를 드래그해 <b>Ctrl+C</b><br>
-        ② 아래 칸을 누르고 <b>Ctrl+V</b> → ③ [붙여넣은 표 저장] (기준일을 묻습니다)</div>
-      <textarea id="extPaste" rows="5" style="width:100%;font-size:11px;font-family:var(--mono)" placeholder="여기에 Ctrl+V"></textarea>
+      <div style="font-size:12px;margin-bottom:5px">① 엑셀에서 「재고조사 - 0930」 시트의 <b>품번 머리글부터 마지막 기종(1156 A OUTER)까지</b> 범위를 선택<br>
+        ② <b>Ctrl+C → 아래 칸 Ctrl+V</b>, 또는 선택 범위 테두리를 잡고 <b>아래 칸으로 끌어다 놓기</b> (엑셀 파일을 끌어다 놓아도 됩니다)<br>
+        ③ [붙여넣은 표 저장] — 기준일을 묻습니다</div>
+      <textarea id="extPaste" rows="6" style="width:100%;font-size:11px;font-family:var(--mono);border:2px dashed #7C3AED" placeholder="여기에 Ctrl+V 또는 끌어다 놓기"></textarea>
       <div style="margin-top:5px"><button class="btn k" onclick="extPaste()">💾 붙여넣은 표 저장</button></div>
     </div>
     <div class="gw"><div class="scroll" style="max-height:52vh"><table class="t" id="extTbl"></table></div></div>
@@ -13350,10 +13352,10 @@ async function extPush(){
 }
 /* pick=true : 폴더(또는 파일)를 새로 고른다 · silent : 앱 시작 시 자동 갱신(권한이 이미 있을 때만)
    one=true : 파일 하나를 직접 고른다 (이전 폴더의 지난달 마감 파일 등 — 기억한 폴더는 그대로) */
-async function extLoad(pick,silent,one){
+async function extLoad(pick,silent,one,file){
   let f=null;
   try{
-    if(one) f=await extPickInput();             /* 일반 파일 선택 창 — 공유 드라이브 어느 폴더든 직접 고른다 */
+    if(one) f=file||await extPickInput();             /* 일반 파일 선택 창 — 공유 드라이브 어느 폴더든 직접 고른다 */
     else if(window.showDirectoryPicker){
       let dh=pick?null:await extIdb('dir').catch(()=>null);
       if(dh){ let ps=await dh.queryPermission({mode:'read'});
@@ -13417,7 +13419,31 @@ function tsvGrid(txt){
   row.push(cell); if(row.some(x=>x!=='')) out.push(row);
   return out;
 }
-function extPasteBox(){ const w=$('extPasteWrap'); w.style.display=w.style.display==='none'?'block':'none'; if(w.style.display==='block') $('extPaste').focus(); }
+/* 엑셀이 표(HTML)만 넘겨줄 때 — <tr><td> 를 탭 구분 글자로 */
+function htmlToTsv(h){
+  /* 병합 칸(rowspan·colspan)은 첫 칸에만 값, 나머지는 빈칸으로 자리를 채워 열이 밀리지 않게 */
+  const d=new DOMParser().parseFromString(h,'text/html'), G=[];
+  [...d.querySelectorAll('tr')].forEach((tr,ri)=>{ G[ri]=G[ri]||[]; let ci=0;
+    [...tr.querySelectorAll('td,th')].forEach(td=>{
+      while(G[ri][ci]!==undefined) ci++;
+      const v=td.textContent.replace(/\s*\n\s*/g,' ').replace(/\u00a0/g,' ').trim(), rs=+td.getAttribute('rowspan')||1, cs=+td.getAttribute('colspan')||1;
+      for(let r=0;r<rs;r++) for(let c=0;c<cs;c++){ (G[ri+r]=G[ri+r]||[])[ci+c]=(r||c)?'':v; }
+      ci+=cs; }); });
+  return G.map(r=>Array.from(r||[],x=>x===undefined?'':x).join('\t')).join('\n');
+}
+function extPasteHook(){
+  const ta=$('extPaste'); if(!ta||ta.dataset.hk) return; ta.dataset.hk=1;
+  ta.addEventListener('paste',e=>{ const dt=e.clipboardData; if(!dt) return;
+    const tx=dt.getData('text/plain'), hh=dt.getData('text/html');
+    if((!tx||!/\t/.test(tx))&&hh&&/<t[dh]/i.test(hh)){ e.preventDefault(); ta.value=htmlToTsv(hh); } });
+  ta.addEventListener('dragover',e=>{ e.preventDefault(); ta.style.background='#EDE4FB'; });
+  ta.addEventListener('dragleave',()=>{ ta.style.background=''; });
+  ta.addEventListener('drop',e=>{ ta.style.background=''; const dt=e.dataTransfer; if(!dt) return;
+    if(dt.files&&dt.files.length){ e.preventDefault(); extLoad(false,false,true,dt.files[0]); return; }   /* 엑셀 파일을 끌어다 놓음 */
+    const tx=dt.getData('text/plain'), hh=dt.getData('text/html');
+    if(tx||hh){ e.preventDefault(); ta.value=(tx&&/\t/.test(tx))?tx:(hh?htmlToTsv(hh):tx); toast('끌어다 놓은 표를 받았습니다 — [붙여넣은 표 저장]'); } });
+}
+function extPasteBox(){ extPasteHook(); const w=$('extPasteWrap'); w.style.display=w.style.display==='none'?'block':'none'; if(w.style.display==='block') $('extPaste').focus(); }
 /* 붙여넣은 표 저장 — 보안(DRM)·암호 파일처럼 브라우저가 못 읽는 경우 */
 async function extPaste(){
   const txt=$('extPaste').value;
@@ -13440,9 +13466,28 @@ async function extPaste(){
   $('extPaste').value=''; $('extPasteWrap').style.display='none';
   extPaint(); render();
 }
-let EXT_VIEW='';                           /* 창에서 보고 있는 날짜 (비면 최신) */
-function extOpen(){ EXT_VIEW=''; $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
-function extView(d){ EXT_VIEW=d; extPaint(); }
+let EXT_VIEW='', EXT_EDIT=false;
+/* 외주 수량 직접 수정 — 보안(DRM) 파일이라 불러오기·복사가 막힐 때 화면을 보고 입력 */
+async function extEditTgl(){
+  if(!EXT||!EXT.last){ toast('먼저 자료를 한 번 불러오세요'); return; }
+  if(!EXT_EDIT){ EXT_EDIT=true; extPaint(); return; }
+  const d=EXT_VIEW||EXT.last.d, s0=(EXT.hist&&EXT.hist[d])||EXT.last;
+  const vals=[...document.querySelectorAll('#extTbl .xin')].map(x=>({i:+x.dataset.i,c:x.dataset.c,v:Math.round(xnum(x.value))}));
+  await extPull();                                         /* 서버 최신본에 합쳐 저장 */
+  EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{};
+  const s=JSON.parse(JSON.stringify((EXT.hist[d])||s0)); let ch=0;
+  vals.forEach(({i,c,v})=>{ const o=s.rows[i]; if(o&&o[c]!==v){ o[c]=v; ch++; } });
+  s.rows.forEach(o=>o.tot=EXT_COLS.reduce((a,[c])=>a+(+o[c]||0),0));
+  EXT_EDIT=false;
+  if(!ch){ toast('바뀐 수량이 없습니다'); extPaint(); return; }
+  s.at=String(s.at||d).replace(/ · 직접 수정.*$/,'')+' · 직접 수정 '+today()+(S.user?' '+S.user:''); s.mod=Date.now();
+  EXT.hist[d]=s; if(EXT.last&&EXT.last.d===d) EXT.last=s;
+  const ok=await extPush();
+  toast(d+' 외주 수량 '+ch+'칸 수정'+(ok?'':' (서버 저장 실패 — 이 PC만)'));
+  extPaint(); render();
+}                           /* 창에서 보고 있는 날짜 (비면 최신) */
+function extOpen(){ EXT_VIEW=''; EXT_EDIT=false; $('mExt').classList.add('on'); extPaint(); if(!EXT) extPull().then(extPaint); }
+function extView(d){ EXT_VIEW=d; EXT_EDIT=false; extPaint(); }
 function extPaint(){
   const T=$('extTbl'), I=$('extInfo'); if(!T) return;
   const s=EXT&&((EXT_VIEW&&EXT.hist&&EXT.hist[EXT_VIEW])||EXT.last);
@@ -13450,11 +13495,14 @@ function extPaint(){
     T.innerHTML='<tbody><tr><td class="c" style="padding:20px;color:#93A0AB">불러온 자료 없음</td></tr></tbody>'; return; }
   I.innerHTML='기준 <b>'+esc(s.at)+'</b> · '+esc(s.file)+' · '+esc(s.sheet)+'<br>저장된 날짜: '
     +Object.keys(EXT.hist||{}).sort().map(d=>`<a href="javascript:void 0" onclick="extView('${d}')" style="margin-right:8px;font-weight:${d===s.d?800:400};${d===s.d?'color:#C2410C':''}">${d}${d===(EXT.last||{}).d?'(최신)':''}</a>`).join('');
+  const ed=EXT_EDIT, B=$('extEditBtn'); if(B) B.textContent=ed?'💾 수정 저장':'✏ 외주 수량 수정';
+  const inp=(i,c,v)=>`<input class="xin" data-i="${i}" data-c="${c}" value="${v||''}" inputmode="numeric" style="width:80px;text-align:right;font-family:var(--mono);border:1.5px solid #7C3AED;border-radius:3px;padding:2px 4px">`;
   T.innerHTML='<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+n+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
-    +s.rows.map(o=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
+    +s.rows.map((o,i)=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
       return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td><td class="l'+(pn?'':' wn')+'">'+(pn?esc(pn):'품목 없음')+'</td>'
-        +EXT_COLS.map(([c])=>'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
+        +EXT_COLS.map(([c])=>(ed&&(c==='heat'||c==='surf'))?'<td>'+inp(i,c,o[c])+'</td>':'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
         +'<td><b>'+nf(o.tot)+'</b></td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('')+'</tbody>';
+  if(ed) I.innerHTML+='<br><b style="color:#7C3AED">✏ 수정 중 — '+esc(s.d)+' 자료의 열처리·표면처리(동진 포함 합계)를 엑셀 화면대로 입력하고 [💾 수정 저장]</b>';
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
 const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1124BA':'X','1124':'X','1165':'X',
