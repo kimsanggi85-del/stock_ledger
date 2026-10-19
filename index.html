@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.32 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.33 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6668,23 +6668,28 @@ function effQ(r,it){
 }
 const dlt=(r,it)=>kindIO(r.k)==='I'?effQ(r,it):-effQ(r,it);
 
-function calc(it){
-  const a=mStart(), b=CUT||mEnd();
-  let open=it.bs, iq=0, oq=0, sq=0, last='';
+/* 현장↔2층 검사 이동의 기준일 — 품목(현장·2층)마다 마지막 재고 직접수정·실사일.
+   그 이후의 검사입고·검사폐기만 현장→2층 이동으로 본다 (실사로 이미 맞춘 수량을 다시 옮기지 않게) */
+let INSP_ANC=null, INSP_ANC_N=-1;
+function inspAnc(p1,p2){
+  if(INSP_ANC_N!==S.led.length){ INSP_ANC={}; INSP_ANC_N=S.led.length;
+    S.led.forEach(r=>{ if(r.k.indexOf('재고조정')===0&&/직접수정|실사/.test(r.n||'')&&r.d>(INSP_ANC[r.pn]||'')) INSP_ANC[r.pn]=r.d; }); }
+  const x=INSP_ANC[p1]||'', y=INSP_ANC[p2]||''; return x>y?x:y;
+}
+/* 품목이 전표를 어떻게 받는지(수량·입출) — calc·수불부 공용 */
+function takeOf(it){
   const setp=it.setp?String(it.setp):'';
-  /* ═══ 현장 / 2층 검사실 분리 ═══
-     base 가 있는 품목( '1853-515-2 [2F]' )은 2층 검사실 계정:
-       원 품번 전표 중 검사입고(+)·출하(−) 만 물려받는다.
-     pair 가 있는 품목(원 품번, 현장 계정):
-       생산입고(+) · 검사입고(−, 2층으로 이동) · 검사폐기·불량폐기(−). 출하는 2층에서 뺀다.
-     재고조정 전표는 각자 자기 품번에 붙은 것만. */
   const base=it.base?String(it.base):'';
   const isF2=!!base, hasPair=!!it.pair;
+  /* 검사수량 자동등록이 켜져 있으면: 검사입고(검사수량, 불량 포함)만큼 현장 → 2층, 검사불량은 2층에서 뺀다
+     → 현장 −검사수량, 2층 +검사수량 −불량, 합계 −불량. 마지막 실사일 이전 검사분은 옮기지 않는다 */
+  const insp=S.inspQty!==false, anc=(isF2||hasPair)?inspAnc(isF2?base:it.pn,isF2?it.pn:it.pair):'';
   const take=r=>{
     if(isF2){
       if(r.pn===it.pn) return r.k.indexOf('재고조정')===0 ? {q:r.q,io:kindIO(r.k)} : null;
       if(r.pn===base){
-        if(r.k==='검사입고') return {q:r.q,io:'I'};
+        if(r.k==='검사입고') return r.d>anc?{q:r.q,io:'I'}:null;
+        if(r.k==='검사폐기') return insp&&r.d>anc?{q:r.q,io:'O'}:null;
         if(r.k==='출하')     return {q:r.q,io:'O'};
       }
       return null;
@@ -6692,14 +6697,30 @@ function calc(it){
     if(hasPair){
       if(!(r.pn===it.pn||(setp&&r.pn===setp))) return null;
       if(r.k==='생산입고') return {q:effQ(r,it),io:'I'};
-      if(r.k==='검사입고') return {q:r.q,io:'O'};          /* 현장 → 2층 이동 */
-      if(r.k==='검사폐기'||r.k==='불량폐기'||r.k==='선별제외') return {q:r.q,io:'O'};
+      if(r.k==='검사입고') return r.d>anc?{q:r.q,io:'O'}:null;          /* 현장 → 2층 이동 */
+      if(r.k==='검사폐기') return insp&&r.d>anc?null:{q:r.q,io:'O'};    /* 자동등록 중이면 2층에서 뺀다 */
+      if(r.k==='불량폐기'||r.k==='선별제외') return {q:r.q,io:'O'};
       if(r.k.indexOf('재고조정')===0) return {q:r.q,io:kindIO(r.k)};
       return null;                                         /* 출하는 2층 계정 */
     }
     if(!(r.pn===it.pn||(setp&&r.pn===setp))) return null;
+    if(r.k==='검사입고') return null;                      /* 2층 계정이 없는 품목 — 검사수량은 재고 이동이 아니다 */
     return {q:effQ(r,it),io:kindIO(r.k)};
   };
+  return take;
+}
+function calc(it){
+  const a=mStart(), b=CUT||mEnd();
+  let open=it.bs, iq=0, oq=0, sq=0, last='';
+  const setp=it.setp?String(it.setp):'';
+  /* ═══ 현장 / 2층 검사실 분리 ═══
+     base 가 있는 품목( '1853-515-2 [2F]' )은 2층 검사실 계정:
+       원 품번 전표 중 검사입고(+)·검사폐기(−, 검사수량 자동등록 중)·출하(−) 만 물려받는다.
+     pair 가 있는 품목(원 품번, 현장 계정):
+       생산입고(+) · 검사입고(−, 2층으로 이동) · 불량폐기(−) · 검사폐기(−, 자동등록이 꺼졌을 때만). 출하는 2층에서 뺀다.
+     검사입고·검사폐기는 그 품목의 마지막 재고 직접수정·실사일 이후분만 옮긴다 (takeOf).
+     재고조정 전표는 각자 자기 품번에 붙은 것만. */
+  const take=takeOf(it);
   S.led.forEach(r=>{
     if(r.d<=it.bd) return;
     const t=take(r); if(!t) return;
@@ -6873,14 +6894,18 @@ function ledFor(it){
   return S.led.filter(r=>r.pn===it.pn);
 }
 /* 휴대폰용 수불부 — 문서 양식 대신 카드로. 잔량 흐름이 한눈에 보이게 */
+/* 수불부 행 — 재고 계산(calc)과 같은 규칙으로 이 품목에 들어오는 전표만, 입출 방향·수량도 그대로 */
+function binRows(it){
+  const a=mStart(),b=mEnd(),tk=takeOf(it);
+  return S.led.filter(r=>r.d>it.bd&&r.d>=a&&r.d<=b).map(r=>{ const x=tk(r); return x?Object.assign({},r,{q:x.q,io:x.io}):null; })
+    .filter(Boolean).sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
+}
 function binMobile(it){
-  const a=mStart(),b=mEnd();
-  let bal=it.bs;
-  S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
-  const R=ledFor(it).filter(r=>r.d>=a&&r.d<=b).sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
+  let bal=calc(it).open;
+  const R=binRows(it);
   const open=bal; let ti=0,to=0;
   const rows=R.map(r=>{
-    const io=kindIO(r.k); if(io==='I'){bal+=r.q;ti+=r.q;}else{bal-=r.q;to+=r.q;}
+    const io=r.io; if(io==='I'){bal+=r.q;ti+=r.q;}else{bal-=r.q;to+=r.q;}
     const who=partyNm(r.p,r.k,r.pn);
     return `<div class="bm-r ${io==='I'?'in':'out'}" onclick="openIO(${r.id})">
       <div class="bm-d">${r.d.slice(5).replace('-','/')}</div>
@@ -6907,14 +6932,11 @@ function binMobile(it){
 }
 function binHtml(it){
   if(isMob()&&CARD) return binMobile(it);
-  const a=mStart(),b=mEnd();
-  let bal=it.bs;
-  S.led.forEach(r=>{if(r.pn===it.pn&&r.d>it.bd&&r.d<a)bal+=dlt(r);});
-  const R=ledFor(it).filter(r=>r.d>=a&&r.d<=b)
-    .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
+  let bal=calc(it).open;
+  const R=binRows(it);
   const open=bal; let ti=0,to=0;
   const body=R.map(r=>{
-    const io=kindIO(r.k); if(io==='I'){bal+=r.q;ti+=r.q;}else{bal-=r.q;to+=r.q;}
+    const io=r.io; if(io==='I'){bal+=r.q;ti+=r.q;}else{bal-=r.q;to+=r.q;}
     return `<tr onclick="openIO(${r.id})" style="cursor:pointer">
       <td class="c">${r.d.slice(5)}</td><td class="c" style="font-family:var(--sans)">${esc(r.k)}</td>
       <td class="l" style="font-family:var(--sans)">${esc(partyNm(r.p,r.k,r.pn))}</td><td class="l">${esc(r.lot||'')}</td>
