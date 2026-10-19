@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.25 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.26 · 원소재 v11.21</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7734,6 +7734,17 @@ function remOf(c){
   S.mled.forEach(m=>{if(m.cid===c.id)v+=(mKindIO(m.k)==='I'?m.q:-m.q);});
   return Math.round(v*100)/100;
 }
+/* 원소재 기준일 — 지난달을 보면 그 달 말일 기준(마감 재고), 이번 달 이후는 지금 남은 양 */
+function rawAsOf(){ return ym<today().slice(0,7)?mEnd():''; }
+/* 날짜 D 기준 잔량 — MES 코일은 그날까지 투입완료(설비에서 내림)가 아니면 입고중량 그대로(재고조사서 원자재와 같은 규칙) */
+function remAt(c,D){
+  if(!D) return remOf(c);
+  if(!c.d||c.d>D) return 0;
+  if(c.mes){ const done=c.mes.pout||(c.mes.st==='2'?c.mes.pon:''); return (c.mes.st==='2'&&done&&done<=D)?0:(+c.wt||0); }
+  let v=+c.wt||0;
+  S.mled.forEach(m=>{ if(m.cid===c.id&&m.d<=D) v+=(mKindIO(m.k)==='I'?m.q:-m.q); });
+  return Math.round(v*100)/100;
+}
 function coilSt(c){
   if(c.st==='반품')return '반품';
   if(c.mes){ if(c.mes.st==='2')return '소진'; if(c.mes.st==='1')return '사용중'; return '대기'; }
@@ -9035,15 +9046,16 @@ function supFold(nm){ S.supFold=S.supFold||{}; if(S.supFold[nm])delete S.supFold
 function supFoldAll(){ const A=supAgg(), f=S.supFold||{}; const all=A.every(o=>f[o.nm]);
   S.supFold={}; if(!all) A.forEach(o=>S.supFold[o.nm]=1); save(); rRaw(); }
 function supAgg(){
-  const a=mStart(), b=mEnd();
+  const a=mStart(), b=mEnd(), D=rawAsOf();
   const M=new Map();
   const blank=(k,nm)=>({k,nm,n:0,inKg:0,remN:0,remKg:0,outN:0,useN:0,waitN:0,holdN:0,mountN:0,
                         mIn:0,mInN:0,mOut:0,last:'',spec:new Map()});
   S.coils.forEach(c=>{
     if(isOff(c))return;                                   /* 사급·무의미 제외 */
+    if(D&&(!c.d||c.d>D))return;                           /* 지난달 보기 — 그 달 말일 이후 입고분은 없다 */
     const nm=supNm(c.sup);
     if(!M.has(nm))M.set(nm,blank(nm,nm));
-    const o=M.get(nm), r=remOf(c), wt=+c.wt||0;
+    const o=M.get(nm), r=remAt(c,D), wt=+c.wt||0;
     o.n++; o.inKg+=wt;
     if(r>0.5){ o.remN++; o.remKg+=r; if(S.mled.some(m=>m.cid===c.id&&mKindIO(m.k)==='O'))o.useN++; else o.waitN++; }
     else o.outN++;
@@ -9085,9 +9097,10 @@ function specAgg(){
   const M=new Map();
   S.coils.forEach(c=>{
     if(c.st==='반품'||isOff(c))return;
+    const D=rawAsOf(); if(D&&(!c.d||c.d>D))return;
     const k=specKey(c);
     if(!M.has(k))M.set(k,{k,mt:c.mt,t:+c.t||0,w:+c.w||0,n:0,live:0,rem:0,hold:0,iq:0,oq:0,old:''});
-    const o=M.get(k), r=remOf(c);
+    const o=M.get(k), r=remAt(c,D);
     o.n++;
     if(r>0.5){ if(!usable(c))o.hold+=r; else {o.live++;o.rem+=r;} }
     if(c.d>=mStart()&&c.d<=mEnd())o.iq+=(+c.wt||0);
@@ -9460,7 +9473,7 @@ function rRaw(){
 
   else if(RV==='spec'){
     const R=SP.filter(o=>!q||nz(specNm(o)).includes(q));
-    $('gt-raw').innerHTML='규격별 재고 · 총 <b>'+R.length+'</b>규격 · 기준월 '+ym;
+    $('gt-raw').innerHTML='규격별 재고 · 총 <b>'+R.length+'</b>규격 · 기준월 '+ym+(rawAsOf()?' · <b style="color:#C2410C">'+(+ym.slice(5))+'월 말('+rawAsOf()+') 마감 기준</b>':' · 현재');
     $('rawHint').innerHTML='· <b>안전재고(kg)</b> 칸은 직접 입력하여 저장됩니다. 미달 시 붉게 표시됩니다.<br>· 가용재고는 수입검사 <b>불합격(격리)</b> 코일을 제외한 수량입니다.<br>· 재고일수 = 가용재고 ÷ 당월 일평균 투입량';
     if(MC){
       $('tRaw').innerHTML='<tbody>'+(R.length?R.map(o=>mcSpec(o)).join('')
@@ -9579,7 +9592,7 @@ function rRaw(){
     const T={n:0,inKg:0,remN:0,remKg:0,outN:0,mIn:0,mOut:0,holdN:0,mountN:0};
     A.forEach(o=>{T.n+=o.n;T.inKg+=o.inKg;T.remN+=o.remN;T.remKg+=o.remKg;T.outN+=o.outN;
       T.mIn+=o.mIn;T.mOut+=o.mOut;T.holdN+=o.holdN;T.mountN+=o.mountN;});
-    $('gt-raw').innerHTML='공급업체별 현재 재고 · <b>'+A.length+'</b>개사 · 보유 <b>'+T.remN+'</b>코일 / '+kg(T.remKg)+' kg · 기준월 '+ym;
+    $('gt-raw').innerHTML=(rawAsOf()?'공급업체별 <b style="color:#C2410C">'+(+ym.slice(5))+'월 말('+rawAsOf()+') 마감 재고</b>':'공급업체별 현재 재고')+' · <b>'+A.length+'</b>개사 · 보유 <b>'+T.remN+'</b>코일 / '+kg(T.remKg)+' kg · 기준월 '+ym;
     $('rawHint').innerHTML='· <b>현재 재고</b>(초록): 지금 남아 있는 코일. <b>사용중</b>=일부 투입, <b>미개봉</b>=투입 이력 없음, <b>보류</b>=검사대기·불합격으로 사용 불가.<br>'
       +'· 파란 업체 행을 누르면 규격이 접히고 펼쳐집니다. 재고가 없는 규격은 기본으로 숨깁니다.';
     if(MC){
@@ -9598,7 +9611,7 @@ function rRaw(){
       +(A.every(o=>fold[o.nm])?'모두 펼치기':'모두 접기')+'</button>';
     $('tRaw').innerHTML=`<thead>
       <tr><th rowspan="2" style="min-width:170px">공급업체 / 규격</th>
-        <th colspan="6" style="background:#DCEBDF;color:#0B4A2B">현재 재고</th>
+        <th colspan="6" style="background:#DCEBDF;color:#0B4A2B">${rawAsOf()?(+ym.slice(5))+'월 말 재고':'현재 재고'}</th>
         <th rowspan="2">최근<br>입고일</th></tr>
       <tr><th style="background:#EAF4EC">코일</th><th style="background:#EAF4EC">재고(kg)</th>
         <th style="background:#EAF4EC">사용중</th><th style="background:#EAF4EC">미개봉</th>
