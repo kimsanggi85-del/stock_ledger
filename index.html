@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.21 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.22 · 원소재 v11.20</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13157,6 +13157,7 @@ async function extLoad(pick,silent){
     const {sheet,rows}=extParse(await readXlsx(f));
     const d0=new Date(f.lastModified), d=d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate());
     const snap={d,at:d+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
+    await extPull();                       /* 다른 PC가 넣은 기록(9월 마감분 등)을 덮어쓰지 않게 서버 최신본에 합친다 */
     EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{}; EXT.last=snap; EXT.hist[d]=snap;
     Object.keys(EXT.hist).sort().slice(0,-62).forEach(k=>delete EXT.hist[k]);   /* 약 두 달치만 보관 */
     const ok=await extPush();
@@ -13285,9 +13286,9 @@ function _printMonthReport(D){
     const L=(g.ext||[]), U=(g.extUn||[]), sum=c=>L.concat(U).reduce((s,a)=>s+(a[c]||0),0);
     const tr=(nm,a)=>`<tr><td class="pn">${esc(nm)}</td><td class="r">${nf(a.press)}</td><td class="r">${nf(a.wait+a.done)}</td>
       <td class="r b">${nf(a.heat)}</td><td class="r b">${nf(a.surf)}</td><td class="r b">${nf(a.heat+a.surf)}</td><td class="r">${nf(a.tot)}</td></tr>`;
-    const inQ=g.rows.reduce((s,r)=>s+(r.out?r.cur:0),0), outQ=g.rows.reduce((s,r)=>s+r.out,0);
+    const inQ=g.rows.reduce((s,r)=>s+r.cur,0), outQ=g.rows.reduce((s,r)=>s+r.out,0);
     return `<div class="ext"><div class="et">■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 ${esc(D.ext.s.at)} 기준 · 수량만 표시(금액 미포함)</div>
-      ${L.length?`<div class="es">위 제품재고는 <b>사내재고</b>(총재고 − 외주) · 해당 품목 총재고 ${nf(inQ+outQ)} = 사내 ${nf(inQ)} + 외주 ${nf(outQ)}</div>`:''}
+      ${L.length?`<div class="es">위 제품재고는 <b>사내재고</b>(총재고 − 외주) · 총재고 ${nf(inQ+outQ)} = 사내 ${nf(inQ)} + 외주 ${nf(outQ)}</div>`:''}
       <table class="xt"><colgroup><col style="width:28%"><col span="6"></colgroup><thead><tr><th>품 번</th><th>PRESS</th><th>검사대기+완료</th><th>열처리</th><th>표면처리</th><th>외주 계</th><th>전공정 총재고</th></tr></thead><tbody>
       ${L.map(a=>tr(a.pn,a)).join('')}${U.map(o=>tr(o.m+' '+o.side+' (품목 없음)',o)).join('')}</tbody>
       ${L.length+U.length>1?`<tfoot><tr><td class="c b">합 계</td><td class="r">${nf(sum('press'))}</td><td class="r">${nf(sum('wait')+sum('done'))}</td><td class="r b">${nf(sum('heat'))}</td><td class="r b">${nf(sum('surf'))}</td><td class="r b">${nf(sum('heat')+sum('surf'))}</td><td class="r">${nf(sum('tot'))}</td></tr></tfoot>`:''}</table></div>`;
@@ -13510,8 +13511,8 @@ function mrXlsx(D){
     if(D.ext&&(XL.length||XU.length)){
       let r=rt+2;
       sh.set(r++,0,'■외주가공재고 (열처리 한성 · 표면처리 동진/대영) — 전공정이동표 '+D.ext.s.at+' 기준 · 수량만 표시(금액 미포함)',XS.meta);
-      if(XL.length){ const inQ=g.rows.reduce((s,x)=>s+(x.out?x.cur:0),0), outQ=g.rows.reduce((s,x)=>s+x.out,0);
-        sh.set(r++,0,'위 제품재고는 사내재고(총재고 − 외주) · 해당 품목 총재고 '+nf(inQ+outQ)+' = 사내 '+nf(inQ)+' + 외주 '+nf(outQ),XS.meta); }
+      if(XL.length){ const inQ=g.rows.reduce((s,x)=>s+x.cur,0), outQ=g.rows.reduce((s,x)=>s+x.out,0);
+        sh.set(r++,0,'위 제품재고는 사내재고(총재고 − 외주) · 총재고 '+nf(inQ+outQ)+' = 사내 '+nf(inQ)+' + 외주 '+nf(outQ),XS.meta); }
       const hd=['PRESS','검사대기+완료','열처리','표면처리','외주 계','전공정 총재고'];
       sh.set(r,0,'품 번',XS.th); sh.merge(r,0,r,3,XS.th); hd.forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
       const a0=r;
