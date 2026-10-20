@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.55 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.56 · 원소재 v11.26</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9560,8 +9560,9 @@ function rRaw(){
       else if(fst==='__all'){ /* 전부 표시 */ }
       else if(isOff(c))return false;                       /* 평소에는 사급·무의미 코일을 감춘다 */
       else if(fst&&coilSt(c)!==fst)return false;
-      return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
-    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'
+      return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);})
+      .sort((x,y)=>String(y.c.d||'').localeCompare(String(x.c.d||''))||y.c.id-x.c.id);   /* 최근 입고가 위로 */
+    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 (최근 입고 순) · 잔량합계 <b>'
       +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
       +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
       +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>'
@@ -9677,11 +9678,15 @@ function rRaw(){
   }
 
   else if(RV==='led'){
-    const R=S.mled.filter(m=>m.d>=a&&m.d<=b)
+    /* MES 입고는 전표가 아니라 코일 자체로만 있으므로 입고 줄을 만들어 함께 보여준다 (보기 전용) */
+    const VR=S.coils.map((c,i)=>({c,i})).filter(({c})=>c.src&&/^(MESRCV|MESLOT)\|/.test(c.src)&&c.d>=a&&c.d<=b&&!isOff(c))
+      .map(({c,i})=>({id:-c.id,virt:1,vi:i,d:c.d,cid:c.id,cno:c.cno,k:'구매입고',q:+c.wt||0,pn:'',
+        n:'MES 입고 '+(c.rno?c.rno+'-'+(c.rseq||1):'')+(c.rc?' · '+c.rc:''),by:c.sup||'MES'}));
+    const R=S.mled.filter(m=>m.d>=a&&m.d<=b).concat(VR)
       .filter(m=>{const c=S.coils.find(x=>x.id===m.cid); return !c||!isOff(c);})
       .filter(m=>!q||nz((m.cno||'')+' '+(m.pn||'')+' '+m.k).includes(q))
-      .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
-    $('gt-raw').innerHTML='원소재 입출고 · 총 <b>'+R.length+'</b>건 · '+a+' ~ '+b;
+      .sort((x,y)=>y.d.localeCompare(x.d)||(mKindIO(x.k)==='I'?0:1)-(mKindIO(y.k)==='I'?0:1)||Math.abs(y.id)-Math.abs(x.id));
+    $('gt-raw').innerHTML='원소재 입출고 · 총 <b>'+R.length+'</b>건 (MES 입고 '+VR.filter(m=>R.includes(m)).length+'건 포함) · '+a+' ~ '+b+' · 최근 순';
     $('rawHint').innerHTML='· <b>자동</b> 표시 전표는 제품 [생산입고] 전표에서 원단위로 산출된 것입니다. 제품 전표가 바뀌면 재계산됩니다.';
     if(MC){
       $('tRaw').innerHTML='<tbody>'+(R.length?R.map(m=>mcRawIo(m)).join('')
@@ -9697,12 +9702,12 @@ function rRaw(){
         return `<tr ${m.sh?'style="background:#FDECEA"':''}>
          <td class="c">${i+1}</td><td class="c">${m.d}</td>
          <td class="c" style="font-family:var(--sans);color:${io==='I'?'#0B6B3A':'#B3261E'};font-weight:700">${esc(m.k)}</td>
-         <td class="l" style="font-weight:700;cursor:pointer" onclick="openMio(${m.id})">${esc(m.cno||'-')}</td>
+         <td class="l" style="font-weight:700;cursor:pointer" onclick="${m.virt?'openCoil('+m.vi+')':'openMio('+m.id+')'}">${esc(m.cno||'-')}</td>
          <td class="l" style="font-family:var(--sans)">${c?esc(specNm(c)):'-'}</td>
          <td class="${io==='I'?'pos':''}">${io==='I'?kg(m.q):'-'}</td>
          <td class="${io==='O'?'neg':''}">${io==='O'?kg(m.q):'-'}</td>
          <td class="l">${esc(m.pn||'')}</td>
-         <td class="c" style="font-family:var(--sans);font-size:10px">${m.auto?'<span style="background:#E3EDF7;color:#1F5FA8;padding:1px 5px;border-radius:8px">자동</span>':'수기'}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10px">${m.virt?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px">MES</span>':m.auto?'<span style="background:#E3EDF7;color:#1F5FA8;padding:1px 5px;border-radius:8px">자동</span>':'수기'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(m.n||'')}</td>
          <td class="c" style="font-family:var(--sans)">${esc(m.by||'')}</td></tr>`;
        }).join(''):`<tr><td colspan="11" class="c" style="padding:30px;color:#93A0AB">해당 기간 입출고 내역이 없습니다.</td></tr>`)
@@ -10650,10 +10655,10 @@ function mcSpec(o){
 }
 function mcRawIo(m){
   const c=S.coils.find(x=>x.id===m.cid), io=mKindIO(m.k);
-  return `<tr ${m.sh?'style="border-color:#e0a9a2"':''}><td onclick="openMio(${m.id})">
+  return `<tr ${m.sh?'style="border-color:#e0a9a2"':''}><td onclick="${m.virt?'openCoil('+m.vi+')':'openMio('+m.id+')'}">
     <div class="mtitle"><span class="pn">${esc(m.cno||'-')}</span>
       <span class="tag" style="background:${io==='I'?'#E4F1EA':'#FBE9E7'};color:${io==='I'?'#0B6B3A':'#B3261E'}">${esc(m.k)}</span>
-      ${m.auto?'<span class="tag" style="background:#E3EDF7;color:#1F5FA8">자동</span>':''}</div>
+      ${m.virt?'<span class="tag" style="background:#E4F1EA;color:#0B6B3A">MES</span>':m.auto?'<span class="tag" style="background:#E3EDF7;color:#1F5FA8">자동</span>':''}</div>
     <div class="mrow"><b class="mbig" style="color:${io==='I'?'#0B6B3A':'#B3261E'}">${io==='I'?'+':'−'}${kg(m.q)}</b>
       <span>kg</span><span style="margin-left:auto">${m.d}</span></div>
     <div class="mrow"><span>${c?esc(specNm(c)):''}</span>${m.pn?'<span>'+esc(m.pn)+'</span>':''}</div>
