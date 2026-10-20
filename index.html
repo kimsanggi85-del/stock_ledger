@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.63 · 원소재 v11.33</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.64 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1136,7 +1136,7 @@ body.qp-on{overflow:hidden}
   <div class="navitem" data-g="stock"><button type="button">재고관리 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="sum"><i>📊</i>재고 현황<em>STOCK</em></a><a data-t="sum" data-fn="syncMes(false)" class="act pri"><i>🔃</i>새로고침</a><a data-t="sum" data-fn="render()" class="act"><i>🔄</i>조회</a><a data-t="sum" data-fn="diag()" class="act"><i>🩺</i>진단</a><a data-t="sum" data-fn="sumOut('print')" class="act"><i>🖨</i>인쇄</a><a data-t="sum" data-fn="sumOut('xls')" class="act"><i>📗</i>엑셀</a><a data-t="sum" data-fn="sumOut('csv')" class="act"><i>📄</i>CSV</a></div><div class="mega-col"><a class="scr" data-t="cnt"><i>✅</i>재고 실사<em>COUNT</em></a><a data-t="cnt" data-fn="applyCount()" class="act pri"><i>✅</i>조정전표발행</a><a data-t="cnt" data-fn="exportCnt()" class="act"><i>⬇</i>실사표받기</a><a data-t="cnt" data-fn="pick('fCnt')" class="act"><i>📄</i>실사CSV</a><a data-t="cnt" data-fn="clearCount()" class="act"><i>🧹</i>실사값지우기</a><a data-t="cnt" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr" data-t="bin"><i>📒</i>품목별 입출고 이력<em>HISTORY</em></a><a data-t="bin" data-fn="window.print()" class="act pri"><i>🖨</i>인쇄</a><a data-t="bin" data-fn="printAllBins()" class="act"><i>📚</i>일괄인쇄</a></div></div></div>
   <div class="navitem on" data-g="io"><button type="button">입출고 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="io"><i>↔</i>입출고 내역<em>IN / OUT</em></a><a data-t="io" data-fn="openIO()" class="act pri"><i>➕</i>입출고등록</a><a data-t="io" data-fn="openImp()" class="act"><i>📥</i>엑셀실적</a><a data-t="io" data-fn="exportCsv('io')" class="act"><i>📄</i>CSV</a><a data-t="io" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr on" data-t="trc"><i>🔗</i>LOT 추적<em>TRACE</em></a><a data-t="trc" data-fn="rTrc()" class="act pri"><i>🔍</i>추적</a><a data-t="trc" data-fn="openCust()" class="act"><i>🏢</i>고객사</a><a data-t="trc" data-fn="exportTrc()" class="act"><i>📗</i>엑셀</a><a data-t="trc" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
   <div class="navitem" data-g="raw"><button type="button">원소재 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="raw"><i>🧱</i>원소재(코일)<em>RAW COIL</em></a><a data-t="raw" data-fn="refreshAll()" class="act pri"><i>🔄</i>새로고침</a><a data-t="raw" data-fn="setRV('sup')" class="act"><i>🏢</i>업체별</a><a data-t="raw" data-fn="setRV('eq')" class="act"><i>🏭</i>설비현황</a><a data-t="raw" data-fn="setRV('coil')" class="act"><i>🧱</i>코일목록</a><a data-t="raw" data-fn="openCoil(-1)" class="act"><i>➕</i>코일등록</a><a data-t="raw" data-fn="exportRaw()" class="act"><i>📗</i>엑셀</a><a data-t="raw" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
-  <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
+  <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="cntRemind(true)" class="act"><i>📋</i>월말실사 안내</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
   <div class="nav-f" id="navF"><label style="font-size:12px">재고구분</label><select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기+2층검사실)</option>
     <option value="현장">현장재고 · 생산팀</option>
@@ -6067,6 +6067,30 @@ body.qp-on{overflow:hidden}
     </div>
   </div>
 </div>
+
+<!-- 월말 재고실사 안내 -->
+<div class="mask" id="mCntRemind"><div class="modal" style="max-width:520px">
+  <h3>📋 월마감 재고실사 안내<span onclick="cntRemindClose()">✕</span></h3>
+  <div class="mb">
+    <div style="font-size:15px;font-weight:700;color:#1F3A5F;line-height:1.6;margin-bottom:8px">
+      <span id="crYm">10월</span> 월마감입니다.<br>
+      <span style="color:#B3261E">재고실사표를 다운로드해서 실사해 주세요.</span></div>
+    <div class="hint" style="margin-bottom:10px">
+      · 실사 마감일: <b id="crCut">-</b> (재고조사서 기준일)<br>
+      · 실사표에 적어 온 값을 입력한 뒤 <b>[조정전표 발행]</b>까지 해야 재고에 반영됩니다.<br>
+      · 원소재 실사 전 <b>[🔄 새로고침]</b>으로 MES 투입 상태를 최신으로 받으세요.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn k" style="height:auto;min-height:40px;padding:9px 6px;line-height:1.3" onclick="exportCnt()">⬇ 프레스품 실사표</button>
+      <button class="btn k" style="height:auto;min-height:40px;padding:9px 6px;line-height:1.3" onclick="cntSheet()">⬇ 원소재 실사표</button>
+      <button class="btn" style="height:auto;min-height:36px;padding:8px 6px;line-height:1.3" onclick="cntRemindClose();setTab('cnt')">✅ 프레스품 실사 화면</button>
+      <button class="btn" style="height:auto;min-height:36px;padding:8px 6px;line-height:1.3" onclick="cntRemindClose();setTab('raw');setRV('cnt')">✅ 원소재 실사 화면</button>
+    </div>
+    <div style="margin-top:8px;text-align:center"><a href="#" onclick="cntRemindClose();cntHelp();return false" style="font-size:12px">📖 재고실사 사용설명서 보기</a></div>
+    <div class="act" style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+      <button class="btn" style="height:auto;padding:8px 12px" onclick="cntRemindSnooze()">오늘 하루 보지 않기</button>
+      <button class="btn g" style="height:auto;padding:8px 12px" onclick="cntRemindDone()">이번 달 실사 완료</button></div>
+  </div>
+</div></div>
 
 <!-- 고객사 규칙 -->
 <div class="mask" id="mCust"><div class="modal" style="max-width:560px">
@@ -15032,6 +15056,34 @@ function render(){
   const d=new Date();
   $('i3').textContent=today()+' '+p2(d.getHours())+':'+p2(d.getMinutes());
 }
+/* ═══ 월말 재고실사 안내 ═══
+   말일 2일 전 ~ 다음 달 2일(재고조사서 마감일)에 앱을 열면 실사표를 받아 실사하라고 띄운다.
+   [오늘 하루 보지 않기] / [이번 달 실사 완료] 는 이 기기에만 기억한다. */
+const CR_KEY='tj_cnt_remind_v1';
+function cntRemindYm(){
+  const t=today(), y=+t.slice(0,4), m=+t.slice(5,7), d=+t.slice(8,10);
+  const last=new Date(y,m,0).getDate();
+  if(d>=last-2) return t.slice(0,7);           /* 말일 2일 전부터 — 이번 달 마감 */
+  if(d<=2) return prevYm(t.slice(0,7));        /* 다음 달 1~2일 — 지난달 마감 */
+  return '';
+}
+function crGet(){ try{ return JSON.parse(localStorage.getItem(CR_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function crSet(o){ try{ localStorage.setItem(CR_KEY,JSON.stringify(Object.assign(crGet(),o))); }catch(e){} }
+function cntRemind(force){
+  const y2=cntRemindYm()||(force?today().slice(0,7):''); if(!y2) return;
+  const g=crGet();
+  if(!force&&(g.done===y2||g.day===today())) return;
+  const [yy,mm]=y2.split('-').map(Number);
+  $('crYm').textContent=yy+'년 '+mm+'월';
+  const nx=new Date(yy,mm,2);
+  $('crCut').textContent=nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(nx.getDate());
+  $('mCntRemind').dataset.ym=y2;
+  $('mCntRemind').classList.add('on');
+}
+function cntRemindClose(){ $('mCntRemind').classList.remove('on'); }
+function cntRemindSnooze(){ crSet({day:today()}); cntRemindClose(); toast('오늘은 다시 띄우지 않습니다'); }
+function cntRemindDone(){ const y2=$('mCntRemind').dataset.ym||cntRemindYm(); crSet({done:y2}); cntRemindClose(); toast(y2.replace('-','년 ')+'월 실사 완료로 기록했습니다 (이 기기)'); }
+function cntHelp(){ setTab('help'); setTimeout(()=>{ const e=$('helpCnt'); if(e)e.scrollIntoView({behavior:'smooth',block:'start'}); },150); }
 function init(){
   ym=ym||today().slice(0,7);
   try{ fxSync(); }catch(e){}
@@ -15052,6 +15104,7 @@ function init(){
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.concat(['한성','동진','대영']).map(p=>`<option value="${esc(p)}">`).join('');
   rDTabs(); render(); mcPaint(); mcPull(); extInit();
+  setTimeout(()=>{ try{ cntRemind(false); }catch(e){ console.warn('실사 안내:',e.message); } },2500);   /* 월말 재고실사 안내 */
 }
 load();
 unblockSBC();
