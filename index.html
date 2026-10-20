@@ -13558,6 +13558,10 @@ async function extToLed(){
   const d=String(s.d||today()).slice(0,10);
   const L=S.items.filter(it=>!it.hide&&!it.base).map(it=>({it,x:extOut(it.pn)})).filter(o=>o.x>0&&extLed(o.it)==null);
   if(!L.length){ toast('외주출고로 옮길 품목이 없습니다 (이미 외주 전표가 있거나 외주 수량 0)'); return; }
+  /* 외주가 현재고보다 많으면 이동표를 잘못 읽은 것 — 등록하지 않는다 (1156 A 합계줄 253,665 같은 경우) */
+  const bad=L.filter(o=>o.x>calc(o.it).cur);
+  if(bad.length){ alert('외주 수량이 현재고보다 많은 품목이 있어 등록하지 않았습니다.\n전공정이동표를 다시 불러오거나 [✏ 외주 수량 수정]으로 확인하세요.\n\n'
+    +bad.map(o=>'· '+o.it.pn+'  현재고 '+nf(calc(o.it).cur)+' < 외주 '+nf(o.x)).join('\n')); return; }
   if(!confirm('전공정이동표 '+s.at+' 기준 외주(열처리+표면처리) 수량을 외주출고 전표로 등록합니다.\n\n'
     +L.map(o=>'· '+o.it.pn+'  '+nf(o.x)).join('\n')+'\n\n합계 '+nf(L.reduce((a,o)=>a+o.x,0))+' EA · 전표일자 '+d
     +'\n등록하면 현재고(현장)에서 빠지고, 이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
