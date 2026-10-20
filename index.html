@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.47 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.48 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6243,6 +6243,7 @@ body.qp-on{overflow:hidden}
       <div class="fld"><label>거래처 / 호기</label><input id="xP" list="dlP"><datalist id="dlP"><option value="SKF"></option><option value="현대트랜시스"></option><option value="일진글로벌"></option><option value="세동산업"></option><option value="진양오일씰"></option><option value="대흥알앤티"></option><option value="부강스프링"></option></datalist></div>
       <div class="fld"><label>LOT No.</label><input id="xL"></div>
     </div>
+    <div class="fld" id="xMWrap" style="display:none"><label>기종 (외주 — 전공정이동표 기종, 예: 1106 CA)</label><input id="xM" list="dlM" autocomplete="off"><datalist id="dlM"></datalist></div>
     <div class="fld"><label>비고</label><input id="xN"></div>
     <div id="xMesWarn" style="display:none;background:#FFF3DC;border:1px solid #E0C070;border-radius:3px;
       padding:8px 10px;font-size:11.5px;color:#7A5200;margin-bottom:8px">
@@ -6496,6 +6497,12 @@ const EXT_K=['외주출고','외주입고'];
 const EXT_V=[['heat','열처리','한성'],['surf','표면처리','동진']];
 const extVen=p=>/동진|대영|표면/.test(String(p||''))?'surf':'heat';    /* 비어 있으면 열처리(한성) */
 const extVenTxt=(h,sf)=>`열처리(한성) ${nf(h)} · 표면처리(동진) ${nf(sf)}`;
+/* 외주 전표의 기종 — 서버 전표에 기종 칸이 없어 비고 앞에 「기종:1106 CA · …」로 적는다 */
+const EXT_MRE=/^기종:\s*([^·]+?)\s*(?:·\s*|$)/;
+const extModel=n=>{ const m=String(n||'').match(EXT_MRE); return m?m[1].trim():''; };
+const extNoteRest=n=>String(n||'').replace(EXT_MRE,'');
+const extMKey=m=>String(m||'').replace(/\s+/g,'').toUpperCase();
+const extNote=(m,n)=>m?('기종:'+m+(n?' · '+n:'')):(n||'');
 const PARTY='SKF,현대트랜시스,일진글로벌,세동산업,진양오일씰,대흥알앤티,부강스프링';
 /* SKF씰 출하대기현황 보드(2026-08-25 08:00 조사) 추가 형번 — 품번,박스단위,재고박스,적정박스 */
 const ADDV='skfboard-20260825';
@@ -11486,11 +11493,23 @@ function openIO(id){
   {const it=r?S.items.find(x=>x.pn===r.pn):null;
    $('xB').value=(r&&it&&it.bx)?+(r.q/it.bx).toFixed(2):'';}
   $('xP').value=r?(r.p||''):''; $('xL').value=r?(r.lot||''):''; $('xN').value=r?(r.n||''):'';
+  $('xM').value='';
+  if(r&&EXT_K.includes(r.k)){ $('xM').value=extModel(r.n); $('xN').value=extNoteRest(r.n); }
   $('xDel').style.display=r?'block':'none';
   xInfo(); $('mIO').classList.add('on');
   if(!r)setTimeout(()=>$('xPn').focus(),80);
 }
+/* 외주 구분일 때만 기종 칸 — 그 품번에 해당하는 전공정이동표 기종을 목록으로 */
+function xMShow(){
+  const on=EXT_K.includes($('xK').value), w=$('xMWrap'); if(!w) return;
+  w.style.display=on?'block':'none'; if(!on) return;
+  const pn=$('xPn').value.trim(), ms=[];
+  ((EXT&&EXT.last&&EXT.last.rows)||[]).forEach(o=>{ if((!pn||extPn(o.m,o.side)===pn)&&!ms.includes(o.m)) ms.push(o.m); });
+  $('dlM').innerHTML=ms.map(m=>`<option value="${esc(m)}">`).join('');
+  if(!$('xM').value&&ms.length===1) $('xM').value=ms[0];
+}
 function xInfo(){
+  xMShow();
   const it=S.items.find(x=>x.pn===$('xPn').value.trim());
   $('xInfo').innerHTML=it?`${esc(it.nm||'품명 미등록')} · ${nf(it.bx)} EA/박스 · 현재고 <b>${nf(calc(it).cur)}</b> EA`
     :'등록된 품번을 입력하세요.';
@@ -11502,6 +11521,7 @@ function saveIO(){
   if(q<=0){toast('수량을 입력하세요');return;}
   const o={d:$('xD').value||today(),pn,k:$('xK').value,q,p:$('xP').value.trim(),
     lot:$('xL').value.trim(),n:$('xN').value.trim(),by:S.user};
+  if(EXT_K.includes(o.k)) o.n=extNote($('xM').value.trim(),o.n);      /* 외주 — 기종을 비고 앞에 */
   if(baseDateGuard(it,o.d)){ pushItems(true); toast(pn+' 기초일자를 '+it.bd+' 로 앞당겨 이 전표가 집계되게 했습니다'); }
   const id=+$('xId').value;
   if(id){ const t=S.led.find(x=>x.id===id); Object.assign(t,o);
@@ -13605,19 +13625,24 @@ function sbcTblHtml(s){
   ord.sort((a,b)=>key(a).localeCompare(key(b)));
   const T={press:0,heat:0,surf:0,wait:0,done:0}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
   const body=ord.map(pn=>{
-    const rs=G[pn], it=S.items.find(i=>i.pn===pn), g=it?sbcStage(it):null;
+    const rs=G[pn].slice(), it=S.items.find(i=>i.pn===pn), g=it?sbcStage(it):null;
+    /* 외주 전표가 있으면 열처리·표면처리는 기종별 전표 잔량 (회색 = 이동표), 이동표에 없는 기종·미지정 전표는 줄 추가 */
+    const LM=it?extLedM(it):null;
+    if(LM){ Object.keys(LM).forEach(k=>{ if(!rs.some(o=>extMKey(o.m)===k)) rs.push({m:LM[k].m,side:rs[0]?rs[0].side:'',wip:0,press:0,heat:0,surf:0,wait:0,done:0,_led:1}); }); }
+    const hv=(o,c)=>{ if(!LM) return o[c]; const a=LM[extMKey(o.m)]; return a?a[c]:0; };
     const x={press:0,wait:0,done:0}; rs.forEach(o=>{ x.press+=o.press+o.wip; x.wait+=o.wait; x.done+=o.done; });
     const P=g?{press:g.press,wait:g.wait,done:g.done}:x;
-    const out=rs.reduce((a,o)=>a+o.heat+o.surf,0), tot=P.press+P.wait+P.done+out;
+    const out=rs.reduce((a,o)=>a+hv(o,'heat')+hv(o,'surf'),0), tot=P.press+P.wait+P.done+out;
     T.press+=P.press; T.wait+=P.wait; T.done+=P.done;
     const n=rs.length, rsp=n>1?' rowspan="'+n+'"':'', bd='border-top:2px solid #C9D3DD';
     const pc=c=>`<td${rsp} class="${P[c]<0?'neg':''}" style="vertical-align:middle;${bd}">${P[c]?nf(P[c]):'-'}${g?gray(x[c]):''}</td>`;
-    return rs.map((o,i)=>{ T.heat+=o.heat; T.surf+=o.surf; const st=i?'':bd;
+    const oc=(o,c,st)=>{ const v=hv(o,c); return `<td class="${v<0?'neg':''}" style="${st}">${v?nf(v):'-'}${LM?gray(o[c]):''}</td>`; };
+    return rs.map((o,i)=>{ T.heat+=hv(o,'heat'); T.surf+=hv(o,'surf'); const st=i?'':bd;
       return '<tr>'
         +(i?'':`<td${rsp} class="l" style="font-weight:800;vertical-align:middle;${bd}${it?';cursor:pointer':''}"${it?` onclick="goBin('${esc(pn)}')"`:''}>${esc(pn)}${it?'':' <span class="wn">품목 없음</span>'}</td>`)
         +`<td class="l" style="${st}">${esc(o.m)}</td><td class="c" style="${st}">${o.side}</td>`
         +(i?'':pc('press'))
-        +`<td class="${o.heat<0?'neg':''}" style="${st}">${o.heat?nf(o.heat):'-'}</td><td class="${o.surf<0?'neg':''}" style="${st}">${o.surf?nf(o.surf):'-'}</td>`
+        +oc(o,'heat',st)+oc(o,'surf',st)
         +(i?'':pc('wait')+pc('done')+`<td${rsp} style="font-weight:800;vertical-align:middle;${bd}">${nf(tot)}</td>`)
         +'</tr>'; }).join(''); }).join('');
   return '<thead><tr><th>앱 품번</th><th>기종</th><th>구분</th><th>PRESS<br><span style="font-size:10px">(생산중 포함)</span></th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>합계</th></tr></thead><tbody>'
@@ -13661,6 +13686,15 @@ function extLedV(it){
   let n=0; const o={heat:0,surf:0};
   S.led.forEach(r=>{ if(r.pn!==p||!EXT_K.includes(r.k)) return; n++; if(r.d>b) return; o[extVen(r.p)]+=r.k==='외주출고'?r.q:-r.q; });
   return n?o:null;
+}
+/* 기종별 · 업체별 외주 잔량 {기종키:{m,heat,surf}} — 기종이 없는 전표는 키 '' */
+function extLedM(it){
+  const b=CUT||mEnd(), p=it.base?'':it.pn; if(!p) return null;
+  let n=0; const M={};
+  S.led.forEach(r=>{ if(r.pn!==p||!EXT_K.includes(r.k)) return; n++; if(r.d>b) return;
+    const m=extModel(r.n), k=extMKey(m), a=M[k]=M[k]||{m:m||'(기종 미지정)',heat:0,surf:0};
+    a[extVen(r.p)]+=r.k==='외주출고'?r.q:-r.q; });
+  return n?M:null;
 }
 /* 전공정이동표 업체별 외주 {heat,surf} */
 function extOutV(pn){
@@ -13753,8 +13787,10 @@ async function extToLed(){
     +(P.length?'② 공정 시작값 — PRESS · 검사대기 · 검사완료 (이후 전표로 계산)\n'+P.map(o=>'· '+o.it.pn+'  PRESS '+nf(o.g.press)+' · 대기 '+nf(o.g.wait)+' · 완료 '+nf(o.g.done)).join('\n')+'\n\n':'')
     +'이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
   let gN=0;
-  L.forEach(({it,v})=>{ if(baseDateGuard(it,d)) gN++;
-    EXT_V.forEach(([c,nm,ven])=>{ if(v[c]>0) S.led.push({id:S.seq++,d,pn:it.pn,k:'외주출고',q:v[c],p:ven,lot:'',n:'외주재고 초기등록 · 전공정이동표 '+s.at+' '+nm,by:S.user||''}); }); });
+  L.forEach(({it})=>{ if(baseDateGuard(it,d)) gN++;
+    s.rows.forEach(o=>{ if(extPn(o.m,o.side)!==it.pn) return;           /* 이동표 기종 줄마다, 업체별로 */
+      EXT_V.forEach(([c,nm,ven])=>{ if(o[c]>0) S.led.push({id:S.seq++,d,pn:it.pn,k:'외주출고',q:o[c],p:ven,lot:'',
+        n:extNote(o.m,'외주재고 초기등록 · 전공정이동표 '+s.at+' '+nm),by:S.user||''}); }); }); });
   if(gN) pushItems(true);
   if(P.length){ await extPull();                    /* 다른 PC 기록 위에 더한다 */
     EXT.press=Object.assign({},EXT.press||{},Object.fromEntries(P.map(o=>[o.it.pn,{d,q:o.g.press,w:o.g.wait,dn:o.g.done,at:s.at}]))); await extPush(); }
@@ -14735,7 +14771,7 @@ function init(){
   $('cntD').value=today();$('i4').textContent=today();
   $('xK').innerHTML=KINDS.map(([k,io])=>`<option value="${k}">${io==='I'?'▲ 입고':'▼ 출고'} · ${k}</option>`).join('');
   /* 외주출고·외주입고를 고르면 거래처에 외주업체(한성 열처리 / 동진 표면처리) */
-  $('xK').onchange=()=>{ if(EXT_K.includes($('xK').value)&&!/한성|동진|대영/.test($('xP').value)) $('xP').value='한성'; };
+  $('xK').onchange=()=>{ if(EXT_K.includes($('xK').value)&&!/한성|동진|대영/.test($('xP').value)) $('xP').value='한성'; xMShow(); };
   $('ioK').innerHTML='<option value="">전체 구분</option>'+KINDS.map(([k])=>`<option>${k}</option>`).join('');
   $('dlPn').innerHTML=S.items.map(i=>`<option value="${esc(i.pn)}">`).join('');
   $('mK').innerHTML=MKINDS.map(([k,io])=>`<option value="${k}">${io==='I'?'▲ 입고':'▼ 출고'} · ${k}</option>`).join('');
