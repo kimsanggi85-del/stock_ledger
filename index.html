@@ -1106,7 +1106,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.53 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.54 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6894,6 +6894,7 @@ function rSum(){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
     $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
       +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
+      +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
     $('tSum').classList.add('sbcT'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
@@ -13659,26 +13660,39 @@ function atcRow(o){
   return ATC.rows.find(a=>{ if(a.side!==o.side) return false; const ka=extMKey(a.m);
     return ka===k||k.split('/')[0]===ka||ATC_ALIAS[ka]===k; })||null;
 }
+/* 생산중 = 이동표 기준일(from) 이후 MES 생산 — 생산입고 + 생산마감 보정 − MES 불량. 아직 이동표에 안 올라간 생산분.
+   MES 는 기종(1106 CB/CA 등)을 나누지 않고 세트 품번으로만 실적을 내므로 앱 품번 단위 */
+function mesWip(it,from){
+  if(!it||!from) return 0;
+  const take=takeOf(it), b=CUT||mEnd(); let q=0;
+  S.led.forEach(r=>{ if(r.d<from||r.d>b) return;
+    const mes=String(r.src||'').indexOf('MES|')===0;
+    if(!((r.k==='생산입고'&&mes)||isCloseRow(r)||(r.k==='불량폐기'&&mes))) return;
+    const t=take(r); if(t) q+=t.io==='I'?t.q:-t.q; });
+  return q;
+}
 function sbcTblHtml(s){
   const C=['wip','press','heat','surf','wait','done'], T={}; C.forEach(c=>T[c]=0); let tt=0, tx=0;
   const LMs={}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
+  const wFrom=String(s.d||'').slice(0,10), wDone=new Set();          /* 생산중은 그 품번의 첫 기종 줄에 한 번만 */
   const body=s.rows.map(o=>{
     const pn=extPn(o.m,o.side), it=pn&&S.items.find(i=>i.pn===pn);
     if(it&&!(pn in LMs)) LMs[pn]=extLedM(it);
+    const mw=(it&&!wDone.has(pn))?(wDone.add(pn),mesWip(it,wFrom)):0;
     const LM=it?LMs[pn]:null, la=LM?(LM[extMKey(o.m)]||{heat:0,surf:0}):null, ac=atcRow(o);
-    const v={wip:o.wip,press:o.press,heat:la?la.heat:o.heat,surf:la?la.surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
+    const v={wip:o.wip+mw,press:o.press,heat:la?la.heat:o.heat,surf:la?la.surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
     const tot=C.reduce((a,c)=>a+v[c],0), x=v.heat+v.surf;
     C.forEach(c=>T[c]+=v[c]); tt+=tot; tx+=x;
     return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td>'
       +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+'>'+(pn?esc(pn):'품목 없음')+'</td>'
-      +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'">'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')+'</td>').join('')
+      +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')+'</td>').join('')
       +'<td><b>'+nf(tot)+'</b>'+(tot!==o.tot?gray(o.tot):'')+'</td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
   /* 외주 전표 중 이동표에 없는 기종·기종 미지정분 — 빠지지 않게 줄로 */
   const extra=Object.keys(LMs).map(pn=>{ const LM=LMs[pn]; if(!LM) return '';
     return Object.keys(LM).filter(k=>!s.rows.some(o=>extPn(o.m,o.side)===pn&&extMKey(o.m)===k)).map(k=>{ const a=LM[k], x=a.heat+a.surf;
       T.heat+=a.heat; T.surf+=a.surf; tt+=x; tx+=x;
       return '<tr><td class="l wn">'+esc(a.m)+'</td><td class="c"></td><td class="l">'+esc(pn)+'</td><td>-</td><td>-</td><td>'+(a.heat?nf(a.heat):'-')+'</td><td>'+(a.surf?nf(a.surf):'-')+'</td><td>-</td><td>-</td><td><b>'+nf(x)+'</b></td><td><b>'+nf(x)+'</b></td></tr>'; }).join(''); }).join('');
-  const hd=n=>n+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
+  const hd=n=>n+(n==='생산중'?'<br><span style="font-size:10px">(MES)</span>':'')+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
   /* 칸 너비 고정 — 글자칸은 좁게, 숫자칸 6개는 같은 폭 */
   const cg='<colgroup><col style="width:9%"><col style="width:6%"><col style="width:11%">'+'<col style="width:8.5%">'.repeat(6)+'<col style="width:10%"><col style="width:13%"></colgroup>';
   return cg+'<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+hd(n)+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
