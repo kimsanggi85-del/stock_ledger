@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.58 · 원소재 v11.28</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.59 · 원소재 v11.29</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11008,11 +11008,23 @@ async function syncRawMes(silent){
     if(syncAt){ S.mesSyncAt=syncAt; out.syncAt=syncAt; }
     /* 앱에서 지운 MES 코일 — MES 에서 지웠는데 동기화가 아직 안 돈 경우. 그 뒤 동기화에도 남아 있으면 MES 에 있는 것이므로 되살린다 */
     const hidOf=src=>{ const t2=S.rawDel&&S.rawDel[src]; return t2&&String(t2)>'' ? t2 : ''; };
+    /* MES 에서 지운 입고 — 동기화가 덮어쓰기만 하고 지우지는 않으면 서버에 옛 행이 남는다.
+       동기화 때마다 입고표 전체가 같은 시각으로 다시 올라오므로, 마지막 동기화보다 30분 넘게 오래된 행은
+       이번 동기화에서 MES 가 보내지 않은 것(= MES 에서 삭제)으로 본다.
+       오래된 행이 전체의 1/5 을 넘으면 동기화 방식이 다른 것이므로 이 판단을 쓰지 않는다. */
+    const stale=new Set();
+    if(syncAt){
+      const lim=new Date(syncAt).getTime()-30*60e3;
+      const old=rcv.filter(r=>r.updated_at&&new Date(r.updated_at).getTime()<lim);
+      if(old.length&&old.length<=rcv.length/5) old.forEach(r=>stale.add(r));
+      out.stale=stale.size;
+    }
     if(rcv.length){
       S.mesMode=true;
       const keep=new Set();
       rcv.forEach(r=>{
         if(String(r.io_flag||'1')!=='1')return;
+        if(stale.has(r))return;                          /* MES 에서 삭제된 입고 */
         if(String(r.receipt_date||'')<MES_FROM)return;   /* 참고용 — 코일로 만들지 않는다 */                /* 2 = 반출·취소 */
         const rno=String(r.receipt_no||'').split('|')[0].trim(); const seq=Math.round(+r.seq||1);
         const key=rno+'|'+seq; const src='MESRCV|'+key;
@@ -11076,8 +11088,9 @@ async function syncRawMes(silent){
       const mesBase=new Set(S.coils.filter(c=>c.src&&c.src.indexOf('MESRCV|')===0&&keep.has(c.src))
         .map(c=>String(c.cno||'').split('#')[0].replace(/-\d+$/,'')));
       const slitDone=c=>!/^MESRCV\|/.test(c.src)&&mesBase.has(String(c.cno||'').split('#')[0]);
+      /* MES 입고 코일(MESRCV)은 MES 에서 지워지면 실사·조정 전표가 달려 있어도 같이 지운다 */
       const rm=S.coils.filter(c=>c.src&&/^(MESRCV|MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)
-        &&(slitDone(c)||!S.mled.some(m=>m.cid===c.id&&!m.auto)));
+        &&(/^MESRCV\|/.test(c.src)||slitDone(c)||!S.mled.some(m=>m.cid===c.id&&!m.auto)));
       if(rm.length){ const ids=new Set(rm.map(c=>c.id)); markDel(rm.map(c=>c.cno)); S.mled=S.mled.filter(m=>!ids.has(m.cid)); S.coils=S.coils.filter(c=>!ids.has(c.id)); out.cleared=rm.length; }
       S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
       rawDirty=true;
