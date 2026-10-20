@@ -1091,6 +1091,9 @@ body.qp-on{overflow:hidden}
 #tSum td.prc{color:#5A6875;font-size:11.5px}
 #tSum td.amt{font-weight:700;font-variant-numeric:tabular-nums}
 #tSum .dim{color:#B9C3CC}
+/* 재고현황 — 고객사 SBC: 제목 줄에 안내 문구가 여러 줄이라 높이를 내용만큼 (28px 고정이면 표 머리글에 가려짐) */
+.gt.gtTall{height:auto;min-height:28px;padding:5px 8px;align-items:flex-start;line-height:1.55}
+.gt.gtTall #gt-sum{flex:1;min-width:0;white-space:normal}
 /* 재고현황 — 고객사 SBC 공정표: 칸 너비 고정 */
 #tSum.sbcT{table-layout:fixed;width:100%;min-width:980px}
 #tSum.sbcT th,#tSum.sbcT td{padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1106,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.54 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.55 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6897,7 +6900,7 @@ function rSum(){
       +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
-    $('tSum').classList.add('sbcT'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
+    $('tSum').classList.add('sbcT'); $('gt-sum').parentElement.classList.add('gtTall'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
     return;
   }
   if(isMob()&&CARD){
@@ -6913,7 +6916,7 @@ function rSum(){
     +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'')
     +(scu==='SBC'&&SBC_LIST?' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=0;rSum()" style="color:#7C3AED;font-weight:800">공정별(전공정이동표) 보기 ▸</a>':'');
   let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0,xp=0,xh=0,xs=0;
-  $('tSum').classList.remove('sbcT');
+  $('tSum').classList.remove('sbcT'); $('gt-sum').parentElement.classList.remove('gtTall');
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
