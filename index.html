@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.62 · 원소재 v11.32</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.63 · 원소재 v11.33</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6007,6 +6007,58 @@ body.qp-on{overflow:hidden}
         · <b>금형제번</b>(18DHA215A)이나 <b>기종명</b>(JA PACK)으로도 추적할 수 있어, 금형 문제로 클레임이 들어와도 바로 찾습니다.<br>
         · 결재란이 있는 <b>LOT 추적서</b>로 인쇄되고 엑셀로도 저장됩니다.
       </div>
+    </div>
+
+    <div class="hs" id="helpCnt">
+      <h3>8. 재고실사 사용설명서 (프레스품 · 원소재)</h3>
+      <div class="flow">
+        <div><b>①</b><span>새로고침</span><em>실사 직전 MES·출하 자료를<br>최신으로 받기</em></div>
+        <div><b>②</b><span>실사표 받기</span><em>엑셀로 내려받아<br>현장에서 기록</em></div>
+        <div><b>③</b><span>실사값 입력</span><em>화면 직접 입력 · 사진 · 파일<br>(입력만으로는 재고 안 바뀜)</em></div>
+        <div><b>④</b><span>차이 확인</span><em>차이 난 품목·코일<br>재확인</em></div>
+        <div><b>⑤</b><span>조정전표 발행</span><em>차이만큼 재고조정 전표<br>→ 전산 = 실물</em></div>
+      </div>
+      <div class="hint">· <b>실사값은 입력만 해서는 재고에 반영되지 않습니다.</b> 반드시 [조정전표 발행]까지 눌러야 전산재고가 실물과 같아집니다.<br>
+        · 실사값은 <b>이 기기(브라우저)에만</b> 저장됩니다. 한 사람이 한 기기에서 입력하고 발행까지 마치세요.<br>
+        · 실사 시작 전에 <b>[🔃 새로고침]</b>(프레스품) / <b>[🔄 새로고침]</b>(원소재)을 눌러 그날 생산·출하·투입까지 받은 뒤 시작합니다.</div>
+
+      <h4 style="margin:14px 0 6px;font-size:13px;color:#1F3A5F">8-1. 프레스품(제품) 재고실사 — [재고관리 ▸ ✅ 재고 실사]</h4>
+      <table class="t"><thead><tr><th style="width:24px">순서</th><th style="width:170px">할 일</th><th>방법 · 주의</th></tr></thead><tbody>
+        <tr><td class="c">1</td><td class="l"><b>재고구분 선택</b></td><td class="l">상단 <b>재고구분</b>에서 실사할 장소를 고릅니다 — <b>현장재고(생산팀)</b> / <b>출하대기(검사실)</b> / <b>2층 검사실</b>.<br>
+          현장·2층으로 나뉜 품목(예: <b>1888-0005</b> 현장 / <b>1888-0005 [2F]</b> 2층)은 <b>장소별로 따로</b> 셉니다. 한쪽 수량을 다른 쪽에 합쳐 넣지 마세요.</td></tr>
+        <tr><td class="c">2</td><td class="l"><b>실사일자</b></td><td class="l">실제로 센 날짜를 넣습니다. 조정전표가 이 날짜로 발행됩니다.</td></tr>
+        <tr><td class="c">3</td><td class="l"><b>실사표 받기</b></td><td class="l"><b>[⬇ 실사표 내려받기]</b> → 품번·품명·보관위치·박스단위·전산재고가 들어간 표(CSV). 현장에 출력해 <b>실사박스</b> 칸에 적어 옵니다.</td></tr>
+        <tr><td class="c">4</td><td class="l"><b>실사값 입력</b></td><td class="l">① 화면 <b>실사(박스)</b> 칸에 <b>박스수</b>만 입력 → 실사(EA)·차이·정확도 자동 계산<br>
+          ② 내려받은 실사표의 <b>실사박스</b> 칸을 채워 그대로 <b>[📄 실사 CSV 불러오기]</b>로 올리기<br>
+          ③ 현황판(화이트보드) 사진 → <b>📷 사진인식</b> → 노란 행 확인 후 <b>[체크한 행을 실사표에 입력]</b><br>
+          · <b>빈칸 = 미실사</b>(전표 안 만듦) · 실물이 없으면 <b>0</b> 입력</td></tr>
+        <tr><td class="c">5</td><td class="l"><b>차이 확인</b></td><td class="l">필터 <b>[차이발생]</b>으로 차이 난 품목만 보고 재확인합니다. 상단에 실사입력·차이발생·차이수량·<b>재고정확도</b>가 표시됩니다.</td></tr>
+        <tr><td class="c">6</td><td class="l"><b>전표 구분 선택</b></td><td class="l"><b>+차이</b>(실물이 많음): 보통 <b>재고조정(+)</b><br>
+          <b>−차이</b>(실물이 적음): 보통 <b>재고조정(−)</b> · 검사 후 폐기분이면 <b>검사폐기</b> · 선별 제외분이면 <b>선별제외</b><br>
+          · 출하검사·검사수량 자동연동이 켜져 있으면 <b>생산입고/검사폐기</b>는 이중 계상되므로 프로그램이 재고조정으로 바꿔 발행합니다.</td></tr>
+        <tr><td class="c">7</td><td class="l"><b>[차이 조정전표 발행]</b></td><td class="l">차이가 있는 품목만 재고조정 전표가 만들어지고 실사값은 비워집니다. 결과는 <b>입출고 내역 · 품목별 입출고 이력</b>에서 「재고실사 차이조정」으로 확인합니다.</td></tr>
+        <tr><td class="c">8</td><td class="l"><b>인쇄 · 결재</b></td><td class="l">발행 <b>전에</b> [인쇄]로 <b>재고실사표(TJP-QP-0803)</b>를 출력해 실사자·입회자·승인 결재를 받습니다 (발행하면 실사값이 비워집니다).</td></tr>
+      </tbody></table>
+
+      <h4 style="margin:14px 0 6px;font-size:13px;color:#1F3A5F">8-2. 원소재(코일) 재고실사 — [원소재 ▸ ✅ 재고 실사]</h4>
+      <table class="t"><thead><tr><th style="width:24px">순서</th><th style="width:170px">할 일</th><th>방법 · 주의</th></tr></thead><tbody>
+        <tr><td class="c">1</td><td class="l"><b>새로고침</b></td><td class="l">원소재 화면 <b>[🔄 새로고침]</b> → MES 입고·장착·투입완료를 최신으로 받습니다. 상단 「MES 소재 동기화 시각」이 오늘인지 확인하세요.</td></tr>
+        <tr><td class="c">2</td><td class="l"><b>실사 대상</b></td><td class="l">지금 남아 있는 코일만 나옵니다 — <b>대기(미투입)</b> · <b>사용중(설비 장착)</b>.<br>
+          <b>소진(투입완료)·반품·사급/관리제외</b> 코일은 나오지 않습니다.</td></tr>
+        <tr><td class="c">3</td><td class="l"><b>실사일자 · 실사자</b></td><td class="l">실사일자와 실사자 성명을 넣습니다. 조정전표에 이 날짜·이름이 남습니다.</td></tr>
+        <tr><td class="c">4</td><td class="l"><b>실사표 받기</b></td><td class="l"><b>[⬇ 실사표 받기]</b> → 코일No·재질·두께·폭·공급업체·보관위치·<b>전산 잔량(kg)</b> 엑셀. <b>실사 잔량(kg)</b> 칸에 적어 옵니다.</td></tr>
+        <tr><td class="c">5</td><td class="l"><b>실사값 입력</b></td><td class="l">· <b>미개봉 코일</b>: <b>[있음]</b> → 전산 잔량 그대로 확인<br>
+          · <b>사용중 코일</b>: 저울로 잰 <b>실제 kg</b> 입력<br>
+          · <b>코일이 없음</b>: <b>[없음]</b> (= 0kg, 전량 재고조정 −)<br>
+          · 다 확인했으면 <b>[✔ 나머지 전산값 그대로]</b>로 미입력분 일괄 확인 (실제로 본 코일만)<br>
+          · 적어 온 엑셀은 <b>코일No, 실사kg</b> 두 칸으로 저장해 <b>[📥 실사값 올리기]</b></td></tr>
+        <tr><td class="c">6</td><td class="l"><b>차이 확인</b></td><td class="l">행 색 — <span class="pos">초록 = 일치</span> · <span class="neg">빨강 = 과다/부족</span> · 흰색 = 미실사. 빨간 행은 코일번호·HEAT를 다시 확인합니다.</td></tr>
+        <tr><td class="c">7</td><td class="l"><b>[✅ 조정전표 발행]</b></td><td class="l">전산과 다른 코일만 <b>재고조정(+/−) 전표</b>가 발행되고 실사값은 비워집니다. [입출고 내역]에서 「실사조정 (전산 → 실사)」으로 확인합니다.</td></tr>
+      </tbody></table>
+      <div class="hint">· <b>MES에 없는 코일</b>(잘못 등록·중복 입고)은 실사로 0 처리하지 말고 <b>MES에서 입고를 삭제</b>하세요. 다음 MES 동기화 때 웹앱에서도 같이 빠집니다(LOT 기록 정리).<br>
+        · <b>MES에 있는데 실사표에 없는 코일</b>은 [원소재 ▸ 코일 목록] 상태 필터로 찾아보고, 그래도 없으면 MES 입고 등록을 확인합니다.<br>
+        · 코일 잔량은 MES 투입 상태로 계산합니다 — <b>장착중 = 입고중량 − 사용중량</b>, <b>투입완료 = 0</b>. 실사 차이가 반복되는 코일은 MES 장착·투입완료 처리가 빠졌는지 먼저 확인하세요.<br>
+        · 월말 원자재 마감(원소재 ▸ 📅 월마감)은 실사 조정 후 확정하세요.</div>
     </div>
 
     <div class="hs">
