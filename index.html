@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.40 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.41 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9451,6 +9451,10 @@ function rRaw(){
     const lastR=S.coils.filter(c=>c.src&&c.src.indexOf('MESRCV|')===0).reduce((m2,c)=>String(c.d||'')>m2?c.d:m2,'');
     const last=lastU>lastR?lastU:lastR;
     const gapD=last?Math.floor((new Date(today())-new Date(last))/864e5):null;
+    const syncH=S.mesSyncAt?(Date.now()-new Date(S.mesSyncAt))/36e5:null;
+    if(S.mesMode&&syncH!=null&&syncH>=24&&!(gapD!=null&&gapD>2))
+      msgs.unshift('⛔ <b>MES 소재 동기화가 '+Math.floor(syncH)+'시간 전'+mesSyncTxt().replace(' · MES 소재 동기화','')+' 이 마지막입니다</b> — MES 에서 새로 입고·삭제·투입한 소재가 아직 반영되지 않았습니다. '
+        +'회사 PC 의 <b>mes_raw_sync.py</b>(MES소재동기화)를 돌린 뒤 <b>[🔄 새로고침]</b>을 누르세요.');
     if(S.mesMode&&gapD!=null&&gapD>2)
       msgs.unshift('⛔ <b>MES 소재 자료가 '+last+' 까지만 있습니다 ('+gapD+'일 전)</b> — 그 뒤 소재 입고·투입이 재고에 반영되지 않았습니다. '
         +'회사 PC 의 <b>mes_raw_sync.py</b>(MES소재동기화)가 멈췄는지 확인하고, 다시 돌린 뒤 <b>[🔄 새로고침]</b>을 누르세요.');
@@ -9879,7 +9883,7 @@ function delCoil(){
   const used=S.mled.filter(m=>m.cid===c.id).length;
   if(!confirm('코일 '+c.cno+' 을(를) 삭제할까요?'+(used?'\n연결된 입출고 전표 '+used+'건도 함께 삭제됩니다.':'')))return;
   S.mled=S.mled.filter(m=>m.cid!==c.id);
-  S.coils.splice(i,1); markDel(c.cno);
+  S.coils.splice(i,1); markDel(c.src&&c.src.indexOf('MESRCV|')===0?[c.cno,c.src]:c.cno);
   save(); autoBom(false); render(); closeAll(); toast('삭제되었습니다');
 }
 
@@ -10391,7 +10395,7 @@ async function refreshAll(){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
-        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·미존재 코일 '+rm.cleared+'본 정리':'')
+        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·삭제 코일 '+rm.cleared+'본 정리':'')+(rm.hid?' · 앱에서 지운 코일 '+rm.hid+'본 제외(MES 동기화 대기)':'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -10440,7 +10444,7 @@ async function refreshAll(){
   render();
   const now=today()+' '+p2(new Date().getHours())+':'+p2(new Date().getMinutes());
   S.refAt=now; save();
-  if(info)info.textContent='마지막 최신화 '+now;
+  if(info)info.textContent='마지막 최신화 '+now+mesSyncTxt();
   btn.disabled=false; btn.textContent=t0; refBusy=false;
 
   /* 남은 할 일 */
@@ -10837,7 +10841,14 @@ function rcvRef(k){
   const v=String(k||'').trim(); if(!v) return null;
   return RCV_REF.get(v)||RCV_REF.get(v.replace(/-\d+$/,''))||RCV_REF.get(v.split('|')[0])||null;
 }
-const MES_FROM='2026-05-01';                     /* MES 소재 자료 동기화 시작일 (mes_raw_sync.py 첫 소급일과 동일) */
+const MES_FROM='2026-05-01';
+/* MES 소재 동기화(회사 PC mes_raw_sync.py) 마지막 시각 — MES 에서 지운 입고는 이 시각 뒤 동기화가 돌아야 앱에서 빠진다 */
+function mesSyncTxt(){
+  if(!S.mesSyncAt)return '';
+  const d=new Date(S.mesSyncAt); if(isNaN(d))return '';
+  const h=Math.floor((Date.now()-d)/36e5);
+  return ' · MES 소재 동기화 '+(d.getMonth()+1)+'/'+d.getDate()+' '+p2(d.getHours())+':'+p2(d.getMinutes())+(h>=12?' ('+h+'시간 전)':'');
+}                     /* MES 소재 자료 동기화 시작일 (mes_raw_sync.py 첫 소급일과 동일) */
 const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',HG:'동일스테인레스',DK:'동국산업',HK:'해강스틸',BK:'부강스프링',SW:'송원테크',SWTEC:'송원테크',SG:'송원테크',NS:'나스테크',SU:'세동산업(사급)',SD:'세동산업(사급)',DS:'세동산업(사급)'};
 const vendorNm=v=>{ const k=String(v||'').trim().toUpperCase(); return VENDOR_MAP[k]||supNm(v||''); };
 async function syncRawMes(silent){
@@ -10854,7 +10865,7 @@ async function syncRawMes(silent){
       ug:+x.unit_per_qty||0,kg:Math.round((+x.use_weight||0)*100)/100,sq:+x.shot_qty||0,ok:+x.normal_shot||0,ng:+x.abnormal_shot||0}));
     out.use=S.ru.length; out.useKg=S.ru.reduce((a,x)=>a+x.kg,0);
     /* ② 입고 = 코일 1본 (입고번호+항번). LOT 이름은 업체가 재사용하므로 코일의 정체는 입고번호다 */
-    const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag'
+    const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag,updated_at'
       +'&receipt_date=gte.2025-01-01&order=receipt_date.asc,receipt_no.asc,seq.asc',H);   /* 2025년 입고 코일이 이듬해 생산에 투입되므로 참고 범위를 넓힌다 */
     /* 기준일 이전 입고분은 재고에 넣지 않고 추적 참고용으로만 보관 */
     RCV_REF=new Map();
@@ -10883,6 +10894,11 @@ async function syncRawMes(silent){
       IV.set(k,o);
     });
     out.rcv=rcv.length;
+    /* MES → Supabase 동기화 시각 (mes_raw_sync.py 가 돌 때마다 입고표 전체를 다시 올린다) */
+    const syncAt=rcv.reduce((m2,r)=>String(r.updated_at||'')>m2?String(r.updated_at):m2,'');
+    if(syncAt){ S.mesSyncAt=syncAt; out.syncAt=syncAt; }
+    /* 앱에서 지운 MES 코일 — MES 에서 지웠는데 동기화가 아직 안 돈 경우. 그 뒤 동기화에도 남아 있으면 MES 에 있는 것이므로 되살린다 */
+    const hidOf=src=>{ const t2=S.rawDel&&S.rawDel[src]; return t2&&String(t2)>'' ? t2 : ''; };
     if(rcv.length){
       S.mesMode=true;
       const keep=new Set();
@@ -10893,6 +10909,11 @@ async function syncRawMes(silent){
         const key=rno+'|'+seq; const src='MESRCV|'+key;
         const lot=String(r.heat_no||'').trim()||rno;
         if(!(+r.weight>0))return;
+        const hid=hidOf(src);
+        if(hid){
+          if(new Date(r.updated_at||0)<=new Date(hid)){ out.hid=(out.hid||0)+1; return; }
+          delete S.rawDel[src]; rawDirty=true;
+        }
         keep.add(src);
         const sp=parseMatCode(String(r.raw_item_code||r.item_spec||''));
         const iv=IV.get(key);
@@ -14506,7 +14527,7 @@ function init(){
   $('dlPn').innerHTML=S.items.map(i=>`<option value="${esc(i.pn)}">`).join('');
   $('mK').innerHTML=MKINDS.map(([k,io])=>`<option value="${k}">${io==='I'?'▲ 입고':'▼ 출고'} · ${k}</option>`).join('');
   $('iqcFrom').value=S.iqcFrom||IQC_FROM_DEF;
-  if($('refreshInfo')&&S.refAt)$('refreshInfo').textContent='마지막 최신화 '+S.refAt;
+  if($('refreshInfo')&&S.refAt)$('refreshInfo').textContent='마지막 최신화 '+S.refAt+mesSyncTxt();
   $('iqcFrom').onchange=()=>{const d=$('iqcFrom').value; if(!bdGuard(d))return; S.iqcFrom=d;S.baseSet=nowIso();save();rawDirty=true;schedRawPush();autoBom(false);render();};
   fillRawLists(); autoBom(false);
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
