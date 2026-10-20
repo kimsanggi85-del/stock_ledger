@@ -1106,7 +1106,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.52 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.53 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6893,7 +6893,7 @@ function rSum(){
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
     $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
-      +(ATC?' · 검사대기·완료 = 검사 시트 <b>'+esc(ATC.at)+'</b>':'')
+      +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
     $('tSum').classList.add('sbcT'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
@@ -12556,7 +12556,7 @@ async function syncMes(silent){
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{ await syncIqc(true); }catch(e){ console.warn('수입검사 연동:',e.message); }
   try{ await syncEq(true); }catch(e){ console.warn('MES 설비 연동:',e.message); }
-  try{ await atcLoad(true); }catch(e){ console.warn('검사 시트:',e.message); }
+  try{ await atcDaily(); }catch(e){ console.warn('검사 시트:',e.message); }     /* 하루 3번 — 시간대마다 1번만 */
   try{ await pushManual(); }catch(e){ console.warn('수기전표 공유:',e.message); }
   /* 출하(일반) 앱 등록분을 전표로 올린다 — 아래에서 서버 전표를 받아올 때 함께 반영된다 */
   try{
@@ -13784,7 +13784,7 @@ function sbcPaint(){
   const its=S.items.filter(it=>!it.hide&&!it.base&&(it.cu||'').trim()==='SBC').sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
   const ex=EXT&&EXT.last;
   $('sbcInfo').innerHTML='기준 '+esc(CUT||mEnd())+(ex?' · 전공정이동표 '+esc(ex.at):' · 전공정이동표 없음')
-    +' · 검사대기·완료 = '+(ATC?'검사 시트 <b>'+esc(ATC.at)+'</b>':'<b style="color:#C2410C">검사 시트 없음(전표 계산)</b>')
+    +'<br>· 검사대기·완료 = '+atcNote()
     +' <button class="btn" style="padding:2px 8px;font-size:11px" onclick="atcLoad(false)">🔄 검사 시트 다시 읽기</button>'
     +(EXT&&EXT.press?'':' · <b style="color:#C2410C">시작값 미등록</b>');
   /* 미반영 생산분 = 장부(이동표 기준일 전날까지) − 이동표 합계. 이동표는 생산을 로트 단위로 늦게 올리고 생산중을 적지 않아
@@ -13907,6 +13907,26 @@ async function atcLoad(silent){
   try{ if($('mSbc')&&$('mSbc').classList.contains('on')) sbcPaint(); }catch(e){}
   return ATC;
 }
+/* 하루 3번(아침 ~11시 · 점심 11~16시 · 저녁 16시~) 시간대마다 한 번만 자동으로 읽는다.
+   그 시간대에 이미 읽은 값(서버 kv — 다른 PC 포함)이 있으면 그대로 쓴다. [검사 시트 다시 읽기] 버튼은 언제든 바로 읽음 */
+const ATC_SLOTS=[[0,'아침'],[11,'점심'],[16,'저녁']];
+const atcSlot=at=>{ const s=String(at||''), h=+s.slice(11,13)||0; let k=0; ATC_SLOTS.forEach(([b],i)=>{ if(h>=b) k=i; }); return s.slice(0,10)+'|'+k; };
+const atcSlotNm=at=>ATC_SLOTS[+atcSlot(at).split('|')[1]][1];
+const atcNow=()=>{ const d=new Date(); return today()+' '+p2(d.getHours())+':'+p2(d.getMinutes()); };
+async function atcDaily(){
+  await atcPull();
+  if(ATC&&atcSlot(ATC.at)===atcSlot(atcNow())) return ATC;
+  return atcLoad(true);
+}
+/* 앱을 켜 둔 채로 시간대가 바뀌면 그때 읽는다 (10분마다 시간대만 확인) */
+setInterval(()=>{ if(!ATC||atcSlot(ATC.at)!==atcSlot(atcNow())){ const k=ATC&&ATC.at; atcDaily().then(a=>{ if(a&&a.at!==k) render(); }).catch(()=>{}); } },10*60*1000);
+/* 화면 안내 문구 — 하루 1번 읽는다는 것과 마지막으로 읽은 시각 */
+function atcNote(){
+  const how='<span style="color:#64748B">하루 3번(아침 · 점심 11시 · 저녁 16시) 자동으로 읽습니다 — 검사실이 시트를 저장한 뒤 바로 반영하려면 SBC 공정재고 창의 [🔄 검사 시트 다시 읽기]</span>';
+  if(!ATC) return '검사 시트 <b style="color:#C2410C">아직 못 읽음</b> · '+how;
+  const d=String(ATC.at||''), old=atcSlot(d)!==atcSlot(atcNow());
+  return '검사 시트 <b>'+esc(d)+'</b> ('+atcSlotNm(d)+') 읽음'+(old?' <b style="color:#C2410C">(이번 '+atcSlotNm(atcNow())+' 아직 안 읽음)</b>':'')+' · '+how;
+}
 /* 앱 품번별 검사대기·검사완료 (시트 기종 Inner/Outer 를 품번으로 합친다) — 시트가 없거나 지난달을 보면 null */
 function atcOf(pn){
   if(!ATC||!ATC.rows) return null;
@@ -13915,7 +13935,7 @@ function atcOf(pn){
   ATC.rows.forEach(a=>{ if(extPn(a.m,a.side)!==pn) return; o=o||{wait:0,done:0}; o.wait+=a.wait; o.done+=a.done; });
   return o;
 }
-async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); atcLoad(true).then(()=>render()); }
+async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); atcDaily().then(()=>render()); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
