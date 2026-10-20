@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.44 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.45 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1174,6 +1174,7 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="printMonthReport()" title="마감월 말일 재고 · 금액 · 생산/납품 분석 — 월초에는 전월 기준 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
     <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
     <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
+    <button class="btn pc-only" onclick="sbcOpen()" title="SBC 공정별 재고 — PRESS · 열처리(한성) · 표면처리(동진) · 검사대기 · 검사완료" style="background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800">🏭 SBC 공정재고</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -6030,6 +6031,21 @@ body.qp-on{overflow:hidden}
   </div>
 </div></div>
 
+<!-- SBC 공정재고 — 물류 흐름이 달라 따로 관리 -->
+<div class="mask" id="mSbc"><div class="modal" style="max-width:1100px">
+  <h3>SBC 공정재고<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:9px">
+      · 흐름: <b>프레스 생산 → PRESS → 열처리(한성) → 표면처리(동진) → 검사대기 → 검사완료 → 출하</b><br>
+      · <b>PRESS</b> = 생산일보 생산수량(MES + 생산마감 보정) − MES 불량 − 외주출고 · <b>열처리/표면처리</b> = 외주출고 − 외주입고 (거래처 한성 / 동진·대영)<br>
+      · <b>검사대기</b> = 외주에서 입고된 수량(외주입고) − 출하검사 검사수량 · <b>검사완료</b> = 출하검사 앱 검사완료(검사수량 − 불량) − 출하<br>
+      · 시작값은 전공정이동표 기준 — 아직 없으면 [🏭 SBC 외주재고] 창의 <b>[➖ 외주출고·공정 시작값 등록]</b>을 한 번 누르세요. 회색 숫자 = 전공정이동표
+    </div>
+    <div id="sbcInfo" style="font-size:12px;margin-bottom:6px;color:#41556a"></div>
+    <div class="gw"><div class="scroll" style="max-height:60vh"><table class="t" id="sbcTbl"></table></div></div>
+  </div>
+</div></div>
+
 <!-- SBC 외주가공재고 (전공정이동표) -->
 <div class="mask" id="mExt"><div class="modal" style="max-width:860px">
   <h3>SBC 외주가공재고 — 전공정이동표<span onclick="closeAll()">✕</span></h3>
@@ -6047,7 +6063,7 @@ body.qp-on{overflow:hidden}
       <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
       <button class="btn" onclick="extPasteBox()" title="보안(DRM)·암호 때문에 파일이 안 읽힐 때 — 엑셀에서 표를 복사해 붙여넣습니다">📋 엑셀 표 붙여넣기</button>
       <button class="btn" id="extEditBtn" onclick="extEditTgl()" title="보고 있는 날짜의 열처리·표면처리 수량을 직접 입력·수정합니다 (보안 파일이라 불러오기·복사가 안 될 때)">✏ 외주 수량 수정</button>
-      <button class="btn" onclick="extToLed()" title="이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현재고(현장)에서 뺍니다 — 외주 전표가 없는 품목만, 처음 한 번">➖ 외주출고·PRESS 기초 등록</button>
+      <button class="btn" onclick="extToLed()" title="이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현재고(현장)에서 뺍니다 — 외주 전표가 없는 품목만, 처음 한 번">➖ 외주출고·공정 시작값 등록</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
     </div>
     <div id="extPasteWrap" style="display:none;margin-bottom:8px;padding:8px;border:1px dashed #7C3AED;border-radius:6px;background:#FAF7FE">
@@ -6887,7 +6903,8 @@ function rSum(){
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
        <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const l=extLed(it), x=extOut(it.pn);
          const pr=pressOf(it); if(pr!=null) xp+=pr;
-         const ps=pr!=null?`<div class="sx" title="PRESS = 기초(이동표 ${esc(EXT.press[it.pn].at||EXT.press[it.pn].d)}) + 생산일보 생산 − 불량 − 외주출고 · 검사대기/완제품 = 현재고 − PRESS">PRESS ${nf(pr)} · 검사/완제 ${nf(v.cur-pr)}</div>`:'';
+         const sg=pr!=null?sbcStage(it):null;
+         const ps=sg?`<div class="sx" style="cursor:pointer" onclick="sbcOpen()" title="SBC 공정재고 열기 — 기초 이동표 ${esc(EXT.press[it.pn].at||EXT.press[it.pn].d)}">PRESS ${nf(sg.press)} · 검사대기 ${nf(sg.wait)} · 검사완료 ${nf(sg.done)} <b style="color:#7C3AED">▸</b></div>`:'';
          if(l!=null){ xl+=l; const lv=extLedV(it); xh+=lv.heat; xs+=lv.surf;
            return ps+`<div class="sx" title="현재고 = 사내(현장). 외주 = 외주출고 − 외주입고 전표 (거래처 한성=열처리, 동진·대영=표면처리)${x!=null?' · 전공정이동표 '+esc(EXT.last.at)+' 외주 '+nf(x):''}">외주 ${nf(l)} 별도${x!=null&&x!==l?` <b style="color:#C2410C">(이동표 ${nf(x)})</b>`:''}<br>${extVenTxt(lv.heat,lv.surf)}</div>`; }
          if(ps) return ps;
@@ -13600,11 +13617,58 @@ function extOutV(pn){
   s.rows.forEach(r=>{ if(extPn(r.m,r.side)!==pn) return; o=o||{heat:0,surf:0}; o.heat+=r.heat; o.surf+=r.surf; });
   return o;
 }
-/* 전공정이동표의 품번별 PRESS(생산중 포함) 수량 */
-function extPressQ(pn){
-  const s=EXT&&EXT.last; if(!s) return null; let q=null;
-  s.rows.forEach(o=>{ if(extPn(o.m,o.side)===pn) q=(q||0)+o.press+o.wip; });
-  return q;
+/* 전공정이동표의 품번별 공정 수량 {press(생산중 포함), heat, surf, wait, done} */
+function extStageQ(pn,s){
+  s=s||(EXT&&EXT.last); if(!s) return null; let o=null;
+  s.rows.forEach(r=>{ if(extPn(r.m,r.side)!==pn) return; o=o||{press:0,heat:0,surf:0,wait:0,done:0};
+    o.press+=r.press+r.wip; o.heat+=r.heat; o.surf+=r.surf; o.wait+=r.wait; o.done+=r.done; });
+  return o;
+}
+function extPressQ(pn){ const o=extStageQ(pn); return o?o.press:null; }
+/* SBC 공정별 재고 — 기초(EXT.press[pn] = 이동표 {q:PRESS, w:검사대기, dn:검사완료}) 이후 전표로 움직인다
+   PRESS : + 생산입고 + 생산마감 보정 − MES 불량 − 외주출고
+   검사대기 : + 외주입고 − 출하검사 검사수량(검사입고)
+   검사완료 : + 검사입고 − 검사폐기(출하검사 불량) − 출하
+   열처리·표면처리 : 외주 전표 잔량(extLedV) */
+function sbcStage(it){
+  const a=EXT&&EXT.press&&EXT.press[it.pn]; if(!a) return null;
+  const b=CUT||mEnd(); if(b<a.d) return null;
+  const take=takeOf(it), setp=it.setp?String(it.setp):'';
+  const o={press:+a.q||0,wait:+a.w||0,done:+a.dn||0,etc:0};
+  S.led.forEach(r=>{ if(r.d<=a.d||r.d>b) return;
+    if(r.k==='검사입고'){ if(r.pn===it.pn||(setp&&r.pn===setp)){ o.wait-=r.q; o.done+=r.q; } return; }
+    const t=take(r); if(!t) return; const v=t.io==='I'?t.q:-t.q;
+    if(r.k==='생산입고'||isCloseRow(r)||(r.k==='불량폐기'&&String(r.src||'').indexOf('MES|')===0)) o.press+=v;
+    else if(r.k==='외주출고') o.press+=v;
+    else if(r.k==='외주입고') o.wait+=v;
+    else if(r.k==='검사폐기'||r.k==='출하') o.done+=v;
+    else o.etc+=v; });                                  /* 재고조정·반품 등 — 공정을 알 수 없는 것 */
+  const x=extLedV(it)||{heat:0,surf:0}; o.heat=x.heat; o.surf=x.surf;
+  o.tot=o.press+o.heat+o.surf+o.wait+o.done+o.etc;
+  return o;
+}
+function sbcOpen(){ $('mSbc').classList.add('on'); sbcPaint(); if(!EXT) extPull().then(sbcPaint); }
+function sbcPaint(){
+  const T=$('sbcTbl'); if(!T) return;
+  const its=S.items.filter(it=>!it.hide&&!it.base&&(it.cu||'').trim()==='SBC').sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
+  const ex=EXT&&EXT.last;
+  $('sbcInfo').innerHTML='기준 '+esc(CUT||mEnd())+(ex?' · 전공정이동표 '+esc(ex.at):' · 전공정이동표 없음')
+    +(EXT&&EXT.press?'':' · <b style="color:#C2410C">시작값 미등록</b>');
+  const C=['press','heat','surf','wait','done'], Sum={}, SumX={};
+  const cell=(v,x)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB">${nf(x)}</div>`:''}</td>`;
+  const rows=its.map((it,i)=>{
+    const g=sbcStage(it), x=extStageQ(it.pn), cur=calc(it).cur, l=extLed(it)||0;
+    C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
+    const xt=x?C.reduce((a,c)=>a+x[c],0):null;
+    return `<tr><td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" onclick="closeAll();goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
+      ${C.map(c=>cell(g?g[c]:null,x?x[c]:null)).join('')}
+      <td style="font-weight:800">${g?nf(g.tot):'<span class="dim">-</span>'}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
+      <td>${nf(cur+l)}${g&&Math.round(cur+l-g.tot)?`<div class="sx" style="color:#C2410C">차이 ${nf(cur+l-g.tot)}</div>`:''}</td>
+      <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td></tr>`; }).join('');
+  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>공정 합계</th><th>장부<br>(현재고+외주)</th><th>기타조정</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="10" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
+    <tfoot><tr><td colspan="2" class="c">합 계</td>${C.map(c=>cell(Sum[c]==null?null:Sum[c],SumX[c]==null?null:SumX[c])).join('')}
+      <td style="font-weight:800">${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td colspan="2"></td></tr></tfoot>`;
 }
 /* PRESS 재고 = 기초(전공정이동표 PRESS, EXT.press[pn]={d,q}) + 그 뒤 생산일보 생산수량(MES 생산입고 + 생산마감 보정)
                − MES 불량폐기 − 외주출고(열처리로 보냄). 기초가 없으면 null */
@@ -13626,7 +13690,8 @@ async function extToLed(){
   const d=String(s.d||today()).slice(0,10);
   const L=S.items.filter(it=>!it.hide&&!it.base).map(it=>({it,x:extOut(it.pn),v:extOutV(it.pn)})).filter(o=>o.x>0&&extLed(o.it)==null);
   /* PRESS 기초 — 이동표에 있는 품목 중 아직 기초가 없는 것 */
-  const P=S.items.filter(it=>!it.hide&&!it.base&&!(EXT.press&&EXT.press[it.pn])).map(it=>({it,q:extPressQ(it.pn)})).filter(o=>o.q!=null);
+  const P=S.items.filter(it=>!it.hide&&!it.base&&!(EXT.press&&EXT.press[it.pn])).map(it=>({it,g:extStageQ(it.pn)})).filter(o=>o.g)
+    .map(o=>Object.assign(o,{q:o.g.press}));
   if(!L.length&&!P.length){ toast('외주출고로 옮길 품목·PRESS 기초를 잡을 품목이 없습니다 (이미 등록됨)'); return; }
   /* 외주가 현재고보다 많으면 이동표를 잘못 읽은 것 — 등록하지 않는다 (1156 A 합계줄 253,665 같은 경우) */
   const bad=L.filter(o=>o.x>calc(o.it).cur);
@@ -13634,15 +13699,15 @@ async function extToLed(){
     +bad.map(o=>'· '+o.it.pn+'  현재고 '+nf(calc(o.it).cur)+' < 외주 '+nf(o.x)).join('\n')); return; }
   if(!confirm('전공정이동표 '+s.at+' 기준으로 시작값을 잡습니다. (전표일자 '+d+')\n\n'
     +(L.length?'① 외주(열처리+표면처리) → 외주출고 전표\n'+L.map(o=>'· '+o.it.pn+'  '+extVenTxt(o.v.heat,o.v.surf)).join('\n')+'\n  합계 '+nf(L.reduce((a,o)=>a+o.x,0))+' EA\n\n':'')
-    +(P.length?'② PRESS 기초 (이후 생산일보 생산수량 − 불량 − 외주출고로 계산)\n'+P.map(o=>'· '+o.it.pn+'  '+nf(o.q)).join('\n')+'\n\n':'')
+    +(P.length?'② 공정 시작값 — PRESS · 검사대기 · 검사완료 (이후 전표로 계산)\n'+P.map(o=>'· '+o.it.pn+'  PRESS '+nf(o.g.press)+' · 대기 '+nf(o.g.wait)+' · 완료 '+nf(o.g.done)).join('\n')+'\n\n':'')
     +'이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
   let gN=0;
   L.forEach(({it,v})=>{ if(baseDateGuard(it,d)) gN++;
     EXT_V.forEach(([c,nm,ven])=>{ if(v[c]>0) S.led.push({id:S.seq++,d,pn:it.pn,k:'외주출고',q:v[c],p:ven,lot:'',n:'외주재고 초기등록 · 전공정이동표 '+s.at+' '+nm,by:S.user||''}); }); });
   if(gN) pushItems(true);
   if(P.length){ await extPull();                    /* 다른 PC 기록 위에 더한다 */
-    EXT.press=Object.assign({},EXT.press||{},Object.fromEntries(P.map(o=>[o.it.pn,{d,q:o.q,at:s.at}]))); await extPush(); }
-  save(); render(); toast((L.length?L.length+'품목 외주출고 등록':'')+(L.length&&P.length?' · ':'')+(P.length?P.length+'품목 PRESS 기초':'')+' — 현재고는 이제 사내(현장) 수량입니다');
+    EXT.press=Object.assign({},EXT.press||{},Object.fromEntries(P.map(o=>[o.it.pn,{d,q:o.g.press,w:o.g.wait,dn:o.g.done,at:s.at}]))); await extPush(); }
+  save(); render(); toast((L.length?L.length+'품목 외주출고 등록':'')+(L.length&&P.length?' · ':'')+(P.length?P.length+'품목 공정 시작값':'')+' — 현재고는 이제 사내(현장) 수량입니다');
   try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
 }
 async function extInit(){ await extPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); }
