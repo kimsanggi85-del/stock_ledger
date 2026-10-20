@@ -1106,7 +1106,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.51 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.52 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13771,6 +13771,14 @@ function sbcStage(it){
   return o;
 }
 function sbcOpen(){ $('mSbc').classList.add('on'); sbcPaint(); if(!EXT) extPull().then(sbcPaint); }
+/* 날짜 D 까지의 장부 재고(현장) + 외주 전표 잔량 — 미반영 생산분 계산용 */
+function ledAt(it,D){
+  const take=takeOf(it); let q=+it.bs||0, x=0;
+  S.led.forEach(r=>{ if(r.d>D) return;
+    if(r.d>it.bd){ const t=take(r); if(t) q+=t.io==='I'?t.q:-t.q; }
+    if(r.pn===it.pn&&EXT_K.includes(r.k)) x+=r.k==='외주출고'?r.q:-r.q; });
+  return q+x;
+}
 function sbcPaint(){
   const T=$('sbcTbl'); if(!T) return;
   const its=S.items.filter(it=>!it.hide&&!it.base&&(it.cu||'').trim()==='SBC').sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
@@ -13779,6 +13787,11 @@ function sbcPaint(){
     +' · 검사대기·완료 = '+(ATC?'검사 시트 <b>'+esc(ATC.at)+'</b>':'<b style="color:#C2410C">검사 시트 없음(전표 계산)</b>')
     +' <button class="btn" style="padding:2px 8px;font-size:11px" onclick="atcLoad(false)">🔄 검사 시트 다시 읽기</button>'
     +(EXT&&EXT.press?'':' · <b style="color:#C2410C">시작값 미등록</b>');
+  /* 미반영 생산분 = 장부(이동표 기준일 전날까지) − 이동표 합계. 이동표는 생산을 로트 단위로 늦게 올리고 생산중을 적지 않아
+     생산일보로 잡힌 생산 중 아직 이동표에 안 올라간 수량이 + 로 나온다. − 는 출하 반영 차이 등 확인 필요 */
+  const uD=ex?dayBefore(String(ex.d||'').slice(0,10)):'';
+  if(uD) $('sbcInfo').innerHTML+='<br>· <b>미반영 생산분</b> = 장부('+esc(uD)+'까지, 외주 포함) − 전공정이동표 합계 &nbsp;<span style="color:#1D4ED8">+ 생산했지만 이동표에 아직 안 올라감</span> · <span style="color:#C2410C">− 출하 반영 차이 등 확인 필요</span>';
+  let uSum=0, uN=0;
   const C=['press','heat','surf','wait','done'], Sum={}, SumX={};
   const cell=(v,x,l)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(x)}</div>`:''}${l!=null?`<div class="sx" style="color:#7C3AED" title="전표 계산값">${nf(l)}</div>`:''}</td>`;
   const rows=its.map((it,i)=>{
@@ -13786,16 +13799,19 @@ function sbcPaint(){
     const ac0=g?null:atcOf(it.pn);
     C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; else if(ac0&&(c==='wait'||c==='done')) Sum[c]=(Sum[c]||0)+ac0[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
     const xt=x?C.reduce((a,c)=>a+x[c],0):null;
+    const un=(uD&&xt!=null)?Math.round(ledAt(it,uD)-xt):null; if(un!=null){ uSum+=un; uN++; }
     return `<tr><td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" onclick="closeAll();goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
       ${C.map(c=>{ const wd=c==='wait'||c==='done', ac=wd&&!g?atcOf(it.pn):null;
         return cell(g?g[c]:(ac?ac[c]:null),x?x[c]:null,(g&&g.atc&&wd)?g[c+'L']:null); }).join('')}
       <td style="font-weight:800">${g?nf(g.tot):'<span class="dim">-</span>'}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
       <td>${nf(cur+l)}${g&&Math.round(cur+l-g.tot)?`<div class="sx" style="color:#C2410C">차이 ${nf(cur+l-g.tot)}</div>`:''}</td>
-      <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td></tr>`; }).join('');
-  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>공정 합계</th><th>장부<br>(현재고+외주)</th><th>기타조정</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="10" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
+      <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td>
+      <td style="font-weight:800;color:${un==null||!un?'inherit':un>0?'#1D4ED8':'#C2410C'}" title="${un==null?'이동표에 없는 품번':'장부 '+nf(ledAt(it,uD))+' − 이동표 '+nf(xt)}">${un==null?'<span class="dim">-</span>':(un>0?'+':'')+nf(un)}</td></tr>`; }).join('');
+  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>공정 합계</th><th>장부<br>(현재고+외주)</th><th>기타조정</th><th>미반영<br>생산분</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="11" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
     <tfoot><tr><td colspan="2" class="c">합 계</td>${C.map(c=>cell(Sum[c]==null?null:Sum[c],SumX[c]==null?null:SumX[c])).join('')}
-      <td style="font-weight:800">${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td colspan="2"></td></tr></tfoot>`;
+      <td style="font-weight:800">${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td colspan="2"></td>
+      <td style="font-weight:800">${uN?(uSum>0?'+':'')+nf(uSum):'-'}</td></tr></tfoot>`;
 }
 /* PRESS 재고 = 기초(전공정이동표 PRESS, EXT.press[pn]={d,q}) + 그 뒤 생산일보 생산수량(MES 생산입고 + 생산마감 보정)
                − MES 불량폐기 − 외주출고(열처리로 보냄). 기초가 없으면 null */
