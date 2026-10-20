@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.42 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.43 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6047,7 +6047,7 @@ body.qp-on{overflow:hidden}
       <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
       <button class="btn" onclick="extPasteBox()" title="보안(DRM)·암호 때문에 파일이 안 읽힐 때 — 엑셀에서 표를 복사해 붙여넣습니다">📋 엑셀 표 붙여넣기</button>
       <button class="btn" id="extEditBtn" onclick="extEditTgl()" title="보고 있는 날짜의 열처리·표면처리 수량을 직접 입력·수정합니다 (보안 파일이라 불러오기·복사가 안 될 때)">✏ 외주 수량 수정</button>
-      <button class="btn" onclick="extToLed()" title="이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현재고(현장)에서 뺍니다 — 외주 전표가 없는 품목만, 처음 한 번">➖ 외주출고 전표로 등록</button>
+      <button class="btn" onclick="extToLed()" title="이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현재고(현장)에서 뺍니다 — 외주 전표가 없는 품목만, 처음 한 번">➖ 외주출고·PRESS 기초 등록</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
     </div>
     <div id="extPasteWrap" style="display:none;margin-bottom:8px;padding:8px;border:1px dashed #7C3AED;border-radius:6px;background:#FAF7FE">
@@ -6864,7 +6864,7 @@ function rSum(){
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym
     +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'');
-  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0;
+  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0,xp=0;
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
@@ -6882,7 +6882,10 @@ function rSum(){
        <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
        <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const l=extLed(it), x=extOut(it.pn);
-         if(l!=null){ xl+=l; return `<div class="sx" title="현재고 = 사내(현장). 외주 = 외주출고 − 외주입고 전표${x!=null?' · 전공정이동표 '+esc(EXT.last.at)+' 외주 '+nf(x):''}">외주 ${nf(l)} 별도${x!=null&&x!==l?` <b style="color:#C2410C">(이동표 ${nf(x)})</b>`:''}</div>`; }
+         const pr=pressOf(it); if(pr!=null) xp+=pr;
+         const ps=pr!=null?`<div class="sx" title="PRESS = 기초(이동표 ${esc(EXT.press[it.pn].at||EXT.press[it.pn].d)}) + 생산일보 생산 − 불량 − 외주출고 · 검사대기/완제품 = 현재고 − PRESS">PRESS ${nf(pr)} · 검사/완제 ${nf(v.cur-pr)}</div>`:'';
+         if(l!=null){ xl+=l; return ps+`<div class="sx" title="현재고 = 사내(현장). 외주 = 외주출고 − 외주입고 전표${x!=null?' · 전공정이동표 '+esc(EXT.last.at)+' 외주 '+nf(x):''}">외주 ${nf(l)} 별도${x!=null&&x!==l?` <b style="color:#C2410C">(이동표 ${nf(x)})</b>`:''}</div>`; }
+         if(ps) return ps;
          if(x==null) return '';
          xo+=x; xn++; return `<div class="sx" title="외주 = 전공정이동표 ${esc(EXT.last.at)} 기준 열처리+표면처리 (외주 전표 없음 — 현재고에 포함)">사내 ${nf(v.cur-x)} · 외주 ${nf(x)}</div>`; })()}</td>
        <td class="bxc">${bx>0?`<input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="b" value="${cb||''}" title="박스 (${nf(bx)} ea/박스) · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off">`:'<span class="dim">-</span>'}</td>
@@ -6896,7 +6899,7 @@ function rSum(){
        <td class="amt ${(it.price&&v.cur<0)?'neg':''}">${it.price?nf(a):'<span class="dim">-</span>'}</td></tr>`;
     }).join(''):`<tr><td colspan="13" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="3" class="c">합　계 (${R.length}품목)</td>
-     <td style="font-weight:800">${nf(g)}${xn?`<div class="sx">외주 ${nf(xo)} 포함</div>`:''}${xl?`<div class="sx">외주 ${nf(xl)} 별도(전표)</div>`:''}</td><td colspan="3"></td><td>${nf(f)}</td>
+     <td style="font-weight:800">${nf(g)}${xn?`<div class="sx">외주 ${nf(xo)} 포함</div>`:''}${xp?`<div class="sx">PRESS ${nf(xp)}</div>`:''}${xl?`<div class="sx">외주 ${nf(xl)} 별도(전표)</div>`:''}</td><td colspan="3"></td><td>${nf(f)}</td>
      <td colspan="4"></td>
      <td class="amt" style="font-weight:800" title="${amtN}품목 단가 기준">${nf(amt)}</td></tr></tfoot>`;
 }
@@ -12294,7 +12297,8 @@ function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n);
    그래서 차이분(-1,426)만 CLOSE| 키의 조정전표로 올려 재고를 맞춘다.
    → 이력에 'MES 4,926 / 마감보정 -1,426' 이 남아 추적이 된다. */
 async function syncProdClose(){
-  const d1=daysAgo(CLOSE_DAYS);
+  /* 최근 14일, 그리고 마감 중인 달(월초 1~10일은 전월)의 1일부터 — 그 달 생산이 모두 생산일보 기준이 되게 */
+  const m1=defYm()+'-01', d1=daysAgo(CLOSE_DAYS)<m1?daysAgo(CLOSE_DAYS):m1;
   let rows;
   try{
     const h={apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY};
@@ -12308,29 +12312,59 @@ async function syncProdClose(){
   }catch(e){ console.warn('생산마감:',e.message); return 0; }
   if(!rows||!rows.length) return 0;
 
+  /* 보정량 = 생산일보 실제수량 − 장부에 실제로 들어간 MES 생산입고 (같은 날·같은 품번 합계)
+     예전에는 생산마감 화면의 MES 수량(mes_qty)과의 차이(diff_qty)를 그대로 올렸는데,
+     그 값이 장부 MES 전표(타발수)와 달라 10/1 1106 처럼 실제 19,750 이 3,730 으로 잡히기도 했다 */
+  const sh0={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY};
+  let led;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/'+SB_TABLE+'?select=src_key,led_date,pn,kind,qty&led_date=gte.'+d1
+      +'&or=(src_key.like.MES%7C*,src_key.like.CLOSE%7C*)&limit=20000',{headers:sh0});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    led=await r.json();
+  }catch(e){ console.warn('생산마감 — 장부 MES 전표 확인 실패:',e.message); return 0; }
+  const mesQ={};
+  led.forEach(l=>{ if(l.kind!=='생산입고'||String(l.src_key).indexOf('MES|')!==0) return;
+    const k=String(l.led_date).slice(0,10)+'|'+canonPn(l.pn); mesQ[k]=(mesQ[k]||0)+(+l.qty||0); });
+
   const have=new Set(S.items.map(i=>i.pn));
   const miss=new Set();
-  const recs=[];
+  const G={};                                       /* 날짜|품번 → 생산마감 행들 (설비 여러 대) */
   rows.forEach(x=>{
     const pn=canonPn(String(x.item_code||'').trim());
     const d=String(x.ymd||'').slice(0,10);
-    const df=Math.round(+x.diff_qty||0);
-    if(!pn||!d||!df) return;                       /* 차이가 없으면 전표를 만들지 않는다 */
+    if(!pn||!d) return;
     if(!have.has(pn)){ miss.add(pn); return; }
-    const mes=+x.mes_qty||0, act=+x.actual_qty||0;
-    const why=[x.reason,x.memo].filter(Boolean).join(' · ');
-    recs.push({
-      src_key:'CLOSE|'+d+'|'+(x.machine_code||'')+'|'+pn,
-      led_date:d, pn:pn,
-      kind: df<0?'재고조정(-)':'재고조정(+)',
-      qty: Math.abs(df),
-      party: x.machine_code||'',
-      lot: '',
-      note: ('생산마감 보정 · MES '+nf(mes)+' → 실제 '+nf(act)+(why?' · '+why:'')).slice(0,200),
-      by_name: x.worker||'생산마감',
-      updated_at: nowIso()
+    (G[d+'|'+pn]=G[d+'|'+pn]||[]).push(x);
+  });
+  const recs=[], keys=new Set();
+  Object.keys(G).sort().forEach(k=>{
+    const [d,pn]=k.split('|'), xs=G[k].sort((a,b)=>String(a.machine_code||'').localeCompare(String(b.machine_code||'')));
+    const act=xs.reduce((a,x)=>a+(+x.actual_qty||0),0), mes=mesQ[k]||0, df=Math.round(act-mes);
+    xs.forEach((x,i)=>{
+      const why=[x.reason,x.memo].filter(Boolean).join(' · ');
+      const key='CLOSE|'+d+'|'+(x.machine_code||'')+'|'+pn; if(keys.has(key)) return; keys.add(key);
+      const q=i?0:df;                               /* 차이는 첫 설비 행에만 — 나머지는 0 (예전 값 지우기) */
+      recs.push({
+        src_key:key, led_date:d, pn:pn,
+        kind: q<0?'재고조정(-)':'재고조정(+)',
+        qty: Math.abs(q),
+        party: x.machine_code||'',
+        lot: '',
+        note: (i?'생산마감 보정 · 같은 날 '+xs[0].machine_code+' 설비 행에 합산'
+          :'생산마감 보정 · 장부 MES '+nf(mes)+' → 생산일보 '+nf(act)+(xs.length>1?' (설비 '+xs.length+'대)':'')+(why?' · '+why:'')).slice(0,200),
+        by_name: x.worker||'생산마감',
+        updated_at: nowIso()
+      });
     });
   });
+  /* 품번 표기가 바뀌어 남은 예전 보정(같은 날·같은 설비, 다른 품번 키)은 0 으로 — 이중 보정 방지 */
+  const days=new Set(Object.keys(G).map(k=>k.split('|')[0]));
+  led.forEach(l=>{ const sk=String(l.src_key);
+    if(sk.indexOf('CLOSE|')!==0||keys.has(sk)||!(+l.qty)) return;
+    if(!days.has(String(l.led_date).slice(0,10))) return;
+    recs.push({src_key:sk,led_date:l.led_date,pn:l.pn,kind:'재고조정(+)',qty:0,party:sk.split('|')[2]||'',lot:'',
+      note:'생산마감 보정 · 품번 표기 변경으로 정리됨',by_name:'생산마감',updated_at:nowIso()}); });
   if(miss.size) console.warn('생산마감 품목대장에 없는 품번:',[...miss].join(', '));
   if(!recs.length) return 0;
 
@@ -13551,25 +13585,49 @@ function extLed(it){
   S.led.forEach(r=>{ if(r.pn!==p||!EXT_K.includes(r.k)) return; n++; if(r.d>b) return; q+=r.k==='외주출고'?r.q:-r.q; });
   return n?q:null;
 }
+/* 전공정이동표의 품번별 PRESS(생산중 포함) 수량 */
+function extPressQ(pn){
+  const s=EXT&&EXT.last; if(!s) return null; let q=null;
+  s.rows.forEach(o=>{ if(extPn(o.m,o.side)===pn) q=(q||0)+o.press+o.wip; });
+  return q;
+}
+/* PRESS 재고 = 기초(전공정이동표 PRESS, EXT.press[pn]={d,q}) + 그 뒤 생산일보 생산수량(MES 생산입고 + 생산마감 보정)
+               − MES 불량폐기 − 외주출고(열처리로 보냄). 기초가 없으면 null */
+function pressOf(it){
+  const a=EXT&&EXT.press&&EXT.press[it.pn]; if(!a) return null;
+  const b=CUT||mEnd(); if(b<a.d) return null;
+  const take=takeOf(it); let q=+a.q||0;
+  S.led.forEach(r=>{ if(r.d<=a.d||r.d>b) return;
+    const isP=r.k==='생산입고', isC=isCloseRow(r), isD=r.k==='불량폐기'&&String(r.src||'').indexOf('MES|')===0, isX=r.k==='외주출고';
+    if(!(isP||isC||isD||isX)) return;
+    const t=take(r); if(!t) return;
+    q+=t.io==='I'?t.q:-t.q; });
+  return q;
+}
 /* 처음 한 번 — 전공정이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현장 재고에서 뺀다
    (외주 전표가 아직 없는 품목만, 이동표 기준일 날짜로) */
 async function extToLed(){
   const s=EXT&&EXT.last; if(!s){ toast('먼저 전공정이동표를 불러오세요'); return; }
   const d=String(s.d||today()).slice(0,10);
   const L=S.items.filter(it=>!it.hide&&!it.base).map(it=>({it,x:extOut(it.pn)})).filter(o=>o.x>0&&extLed(o.it)==null);
-  if(!L.length){ toast('외주출고로 옮길 품목이 없습니다 (이미 외주 전표가 있거나 외주 수량 0)'); return; }
+  /* PRESS 기초 — 이동표에 있는 품목 중 아직 기초가 없는 것 */
+  const P=S.items.filter(it=>!it.hide&&!it.base&&!(EXT.press&&EXT.press[it.pn])).map(it=>({it,q:extPressQ(it.pn)})).filter(o=>o.q!=null);
+  if(!L.length&&!P.length){ toast('외주출고로 옮길 품목·PRESS 기초를 잡을 품목이 없습니다 (이미 등록됨)'); return; }
   /* 외주가 현재고보다 많으면 이동표를 잘못 읽은 것 — 등록하지 않는다 (1156 A 합계줄 253,665 같은 경우) */
   const bad=L.filter(o=>o.x>calc(o.it).cur);
   if(bad.length){ alert('외주 수량이 현재고보다 많은 품목이 있어 등록하지 않았습니다.\n전공정이동표를 다시 불러오거나 [✏ 외주 수량 수정]으로 확인하세요.\n\n'
     +bad.map(o=>'· '+o.it.pn+'  현재고 '+nf(calc(o.it).cur)+' < 외주 '+nf(o.x)).join('\n')); return; }
-  if(!confirm('전공정이동표 '+s.at+' 기준 외주(열처리+표면처리) 수량을 외주출고 전표로 등록합니다.\n\n'
-    +L.map(o=>'· '+o.it.pn+'  '+nf(o.x)).join('\n')+'\n\n합계 '+nf(L.reduce((a,o)=>a+o.x,0))+' EA · 전표일자 '+d
-    +'\n등록하면 현재고(현장)에서 빠지고, 이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
+  if(!confirm('전공정이동표 '+s.at+' 기준으로 시작값을 잡습니다. (전표일자 '+d+')\n\n'
+    +(L.length?'① 외주(열처리+표면처리) → 외주출고 전표\n'+L.map(o=>'· '+o.it.pn+'  '+nf(o.x)).join('\n')+'\n  합계 '+nf(L.reduce((a,o)=>a+o.x,0))+' EA\n\n':'')
+    +(P.length?'② PRESS 기초 (이후 생산일보 생산수량 − 불량 − 외주출고로 계산)\n'+P.map(o=>'· '+o.it.pn+'  '+nf(o.q)).join('\n')+'\n\n':'')
+    +'이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
   let gN=0;
   L.forEach(({it,x})=>{ if(baseDateGuard(it,d)) gN++;
     S.led.push({id:S.seq++,d,pn:it.pn,k:'외주출고',q:x,p:'',lot:'',n:'외주재고 초기등록 · 전공정이동표 '+s.at+' 열처리+표면처리',by:S.user||''}); });
   if(gN) pushItems(true);
-  save(); render(); toast(L.length+'품목 외주출고 등록 — 현재고는 이제 사내(현장) 수량입니다');
+  if(P.length){ await extPull();                    /* 다른 PC 기록 위에 더한다 */
+    EXT.press=Object.assign({},EXT.press||{},Object.fromEntries(P.map(o=>[o.it.pn,{d,q:o.q,at:s.at}]))); await extPush(); }
+  save(); render(); toast((L.length?L.length+'품목 외주출고 등록':'')+(L.length&&P.length?' · ':'')+(P.length?P.length+'품목 PRESS 기초':'')+' — 현재고는 이제 사내(현장) 수량입니다');
   try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
 }
 async function extInit(){ await extPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); }
@@ -14377,9 +14435,9 @@ function qpApply(){
    → 생산입고 행에는 마감수량과 차이를, 조정 행에는 '생산마감 보정' 을 표시한다. */
 function closeOf(r){
   if(!r||r.k!=='생산입고') return null;
-  const c=S.led.find(x=>String(x.src||'').indexOf('CLOSE|')===0&&x.pn===r.pn&&x.d===r.d);
-  if(!c) return null;
-  const df=(c.k==='재고조정(+)'?1:-1)*(+c.q||0);
+  const cs=S.led.filter(x=>String(x.src||'').indexOf('CLOSE|')===0&&x.pn===r.pn&&x.d===r.d);
+  if(!cs.length) return null;
+  const c=cs.find(x=>+x.q)||cs[0], df=cs.reduce((a,x)=>a+(x.k==='재고조정(+)'?1:-1)*(+x.q||0),0);
   return {df, actual:(+r.q||0)+df, note:c.n||''};
 }
 function isCloseRow(r){ return String((r&&r.src)||'').indexOf('CLOSE|')===0; }
