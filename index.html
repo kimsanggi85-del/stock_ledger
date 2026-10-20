@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.61 · 원소재 v11.31</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.62 · 원소재 v11.32</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8035,8 +8035,9 @@ function autoBom(verbose){
    · 코일은 개체 단위라 "있는지 / 남은 무게가 얼마인지"를 코일별로 확인한다.
    · 미개봉 코일은 입고중량 그대로, 사용중 코일만 실측한다.
    · 전산 잔량과 다르면 재고조정(+/−) 전표를 발행해 원장을 맞춘다.          */
+/* 실사 대상 = 지금 남아 있는 코일. 소진(MES 투입완료 포함)·반품은 잔량 계산이 덜 됐어도 뺀다 — 이미 실사값을 넣은 것만 남긴다 */
 function cntTargets(){
-  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isOff(c)&&(remOf(c)>0.5||c.ct!=null));
+  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isOff(c)&&(c.ct!=null||(!/^(소진|반품)$/.test(coilSt(c))&&remOf(c)>0.5)));
 }
 function cntAllOk(){
   const T=cntTargets().filter(({c})=>c.ct==null);
