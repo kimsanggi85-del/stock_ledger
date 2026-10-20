@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.59 · 원소재 v11.29</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.60 · 원소재 v11.30</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9026,12 +9026,9 @@ function isFreeKey(v){
   });
 }
 /* 코일이 사급인가 */
-/* MES 업체코드 TJ = 2026-09-09 기초 이관 등록분 (A1008 CSA/CSB 등 48건).
-   같은 코일이 부강스프링 SPCC 입고로 다시 등록돼 있고 MES 소재 재고에는 없으므로 재고·실사에서 뺀다 */
-const isMigr=c=>String((c&&c.sup)||'').trim().toUpperCase()==='TJ';
 function isFree(c){
   if(!c)return false;
-  if(c.cs||isMigr(c))return true;
+  if(c.cs)return true;
   return isFreeKey(c.cno)||isFreeKey(c.ms)||isFreeKey(c.sup);
 }
 /* 코일번호가 '*' 처럼 의미 없는 것 — MES 에서 LOT 이 비어 넘어온 행 */
@@ -13296,7 +13293,7 @@ const RAW_MAP={
   'IW-BDA-1106':{sp:['1X125'],p:1835}, 'IW-BDA-1113':{sp:['1.25X132'],p:1875}, 'IW-BDA-1124':{sp:['1X120'],p:1890},
   'IW-BDA-1156':{sp:['1.25X146'],p:1920}, 'IW-BDA-1159B':{sp:['1X141','1X144'],p:1835}, 'IW-BDA-1165A':{sp:['1X134'],p:1890},
   'IW-BDA-1179':{sp:['1.25X137','1.25X248'],p:1875}};
-const RAW_SKIP=/부강|사급|세동|^TJ$/;                 /* 고객사 사급 소재는 우리 원자재재고가 아니다 */
+const RAW_SKIP=/부강|사급|세동/;                 /* 고객사 사급 소재는 우리 원자재재고가 아니다 */
 const coilSpec=c=>(+c.t||0)+'X'+Math.round(+c.w||0);
 /* 날짜 D 기준 남은 코일 — 입고됐고 아직 투입완료(설비에서 내림)되지 않은 것. 장착중은 입고중량 그대로 */
 function rawAt(pn,D){
