@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.45 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.46 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6873,6 +6873,15 @@ function rSum(){
       +(dn<tt2?' · 남은 '+(tt2-dn)+'개':' · <span style="color:#0B6B3A;font-weight:800">완료</span>')
     : '';
 
+  /* SBC — 물류 흐름(외주 경유)이 달라 전공정이동표 양식(기종 · INNER/OUTER · 공정별)으로 보여준다 */
+  if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
+    if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
+    $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
+      +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
+      +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
+    $('tSum').innerHTML=extTblHtml(EXT.last,false,true);
+    return;
+  }
   if(isMob()&&CARD){
     $('tSum').outerHTML='<div id="tSum"></div>';
     $('tSum').innerHTML=R.length
@@ -6883,7 +6892,8 @@ function rSum(){
   }
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym
-    +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'');
+    +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'')
+    +(scu==='SBC'&&SBC_LIST?' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=0;rSum()" style="color:#7C3AED;font-weight:800">공정별(전공정이동표) 보기 ▸</a>':'');
   let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0,xp=0,xh=0,xs=0;
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
@@ -13567,12 +13577,22 @@ function extPaint(){
     +Object.keys(EXT.hist||{}).sort().map(d=>`<a href="javascript:void 0" onclick="extView('${d}')" style="margin-right:8px;font-weight:${d===s.d?800:400};${d===s.d?'color:#C2410C':''}">${d}${d===(EXT.last||{}).d?'(최신)':''}</a>`).join('');
   const ed=EXT_EDIT, B=$('extEditBtn'); if(B) B.textContent=ed?'💾 수정 저장':'✏ 외주 수량 수정';
   const inp=(i,c,v)=>`<input class="xin" data-i="${i}" data-c="${c}" value="${v||''}" inputmode="numeric" style="width:80px;text-align:right;font-family:var(--mono);border:1.5px solid #7C3AED;border-radius:3px;padding:2px 4px">`;
-  T.innerHTML='<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+n+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
-    +s.rows.map((o,i)=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
-      return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td><td class="l'+(pn?'':' wn')+'">'+(pn?esc(pn):'품목 없음')+'</td>'
-        +EXT_COLS.map(([c])=>(ed&&(c==='heat'||c==='surf'))?'<td>'+inp(i,c,o[c])+'</td>':'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
-        +'<td><b>'+nf(o.tot)+'</b></td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('')+'</tbody>';
+  T.innerHTML=extTblHtml(s,ed?inp:null);
   if(ed) I.innerHTML+='<br><b style="color:#7C3AED">✏ 수정 중 — '+esc(s.d)+' 자료의 열처리·표면처리(동진 포함 합계)를 엑셀 화면대로 입력하고 [💾 수정 저장]</b>';
+}
+/* 전공정이동표 표 — 외주재고 창과 재고현황(고객사 SBC)이 같이 쓴다. inp: 수정 칸 함수, foot: 합계 줄 */
+let SBC_LIST=0;                             /* 1 = 재고현황에서 SBC 도 품목별 표로 */
+function extTblHtml(s,inp,foot){
+  const T={}; EXT_COLS.forEach(([c])=>T[c]=0); let tt=0, tx=0;
+  const body=s.rows.map((o,i)=>{ const pn=extPn(o.m,o.side), x=o.heat+o.surf;
+    EXT_COLS.forEach(([c])=>T[c]+=o[c]); tt+=o.tot; tx+=x;
+    return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td><td class="l'+(pn?'':' wn')+'"'+(pn&&foot?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+'>'+(pn?esc(pn):'품목 없음')+'</td>'
+      +EXT_COLS.map(([c])=>(inp&&(c==='heat'||c==='surf'))?'<td>'+inp(i,c,o[c])+'</td>':'<td class="'+(o[c]<0?'neg':'')+'">'+(o[c]?nf(o[c]):'-')+'</td>').join('')
+      +'<td><b>'+nf(o.tot)+'</b></td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
+  return '<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+n+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
+    +body+'</tbody>'
+    +(foot?'<tfoot><tr><td colspan="3" class="c">합　계 ('+s.rows.length+'행)</td>'+EXT_COLS.map(([c])=>'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')
+      +'<td style="font-weight:800">'+nf(tt)+'</td><td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>':'');
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
 const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1124BA':'X','1124':'X','1165':'X',
