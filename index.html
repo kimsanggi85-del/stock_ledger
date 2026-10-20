@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.40 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.41 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13270,6 +13270,7 @@ const RPT_BAR='<style>.rbar{position:fixed;top:8px;right:10px;z-index:99;display
    결과는 kv_store(공유)에 날짜별로 남겨 월말 재고조사서의 「외주가공재고」로 쓴다. */
 const EXT_KEY='tj_sbc_ext_v1';
 const EXT_COLS=[['wip','생산중'],['press','PRESS'],['heat','열처리'],['surf','표면처리'],['wait','검사대기'],['done','검사완료']];
+const EXT_PV=2;                           /* 전공정이동표 읽기 규칙 버전 — 올리면 다음 자동 갱신 때 같은 파일도 다시 읽는다 */
 let EXT=null;                              /* {last:스냅샷, hist:{YYYY-MM-DD:스냅샷}} */
 const extDb=()=>new Promise((ok,ng)=>{ const r=indexedDB.open('tj_ext',1);
   r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>ok(r.result); r.onerror=()=>ng(r.error); });
@@ -13301,8 +13302,12 @@ function extParse(book,maxK){
       const o={m,side}; EXT_COLS.forEach(([c])=>o[c]=C[c]>=0?Math.round(xnum(r[C[c]])):0);
       const sv=C.sf!=null?ns(r[C.sf]):''; o.sf=sv||(rows.length&&rows[rows.length-1].m===m?rows[rows.length-1].sf:'');
       o.tot=EXT_COLS.reduce((s,[c])=>s+o[c],0); rows.push(o); continue; }
-    /* 표면처리 업체별 보조행(동진 -400 등)은 바로 위 품목에 더한다 — 엑셀 재고 합계도 같은 방식 */
-    if(rows.length&&!a&&String(r[C.surf]||'').trim()!==''){
+    /* 합계·소계 줄에서 멈춘다 — 표 맨 아래 합계가 마지막 품목(1156 A OUTER) 표면처리에 더해지던 문제 */
+    if(rows.length&&r.some(x=>/^(합계|소계|총계|계|TOTAL)$/i.test(ns(x)))) break;
+    /* 표면처리 업체별 보조행(동진 -400 등)은 바로 위 품목에 더한다 — 엑셀 재고 합계도 같은 방식
+       표면처리 칸 말고 다른 공정 칸에는 숫자가 없을 때만 (합계·메모 줄은 제외) */
+    const oth=EXT_COLS.some(([c])=>c!=='surf'&&C[c]>=0&&/\d/.test(String(r[C[c]]==null?'':r[C[c]])));
+    if(rows.length&&!a&&!oth&&String(r[C.surf]||'').trim()!==''){
       /* 「동진: 92,400」처럼 업체명과 숫자가 같이 적힌 칸도 숫자만 읽는다 */
       const m=String(r[C.surf]).replace(/,/g,'').match(/-?\d+(\.\d+)?/), v=m?Math.round(+m[0]):0;
       const o=rows[rows.length-1]; o.surf+=v; o.tot+=v; continue; }
@@ -13366,7 +13371,7 @@ async function extLoad(pick,silent,one,file){
       f=await extPickFile(dh);
     } else { if(silent) return; f=await extPickInput(); }
     if(!f) return;
-    if(silent&&EXT&&EXT.last&&EXT.last.file===f.name&&EXT.last.mod>=f.lastModified) return;   /* 바뀐 게 없으면 그대로 */
+    if(silent&&EXT&&EXT.last&&EXT.last.file===f.name&&EXT.last.mod>=f.lastModified&&(EXT.last.pv||0)>=EXT_PV) return;   /* 바뀐 게 없으면 그대로 (읽는 규칙이 바뀌었으면 다시 읽는다) */
     const d0=new Date(f.lastModified);
     let d=d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate()), at=d+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()), maxK='';
     /* 파일 이름의 「YYYY. M월」이 지난달이면 그 달 말일 마감 자료 — 9월 파일을 10/1에 저장했어도 9/30 로 들어간다 */
@@ -13391,7 +13396,7 @@ async function extLoad(pick,silent,one,file){
         +'· 해결: 엑셀에서 「재고조사」 시트 표를 복사해 [📋 엑셀 표 붙여넣기]로 넣어 주세요.'
       :'엑셀 내용을 해석하지 못했습니다 ('+(e2.message||e2)+')'); }
     const {sheet,rows}=extParse(book,maxK);
-    const snap={d,at,file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows};
+    const snap={d,at,file:f.name,mod:f.lastModified,sheet,by:S.user||'',rows,pv:EXT_PV};
     await extPull();                       /* 다른 PC가 넣은 기록(9월 마감분 등)을 덮어쓰지 않게 서버 최신본에 합친다 */
     EXT=EXT||{hist:{}}; EXT.hist=EXT.hist||{};
     if(!EXT.last||d>=String(EXT.last.d||'')) EXT.last=snap;   /* 지난달 파일은 현재 표시값을 바꾸지 않는다 */
