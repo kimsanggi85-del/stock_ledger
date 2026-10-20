@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.41 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.42 · 원소재 v11.24</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6047,6 +6047,7 @@ body.qp-on{overflow:hidden}
       <button class="btn" onclick="extLoad(false,false,true)" title="원하는 전공정이동표 엑셀을 직접 골라 불러옵니다 (예: 이전\2026\…_2026. 9월.xlsx). 고른 뒤 기준일을 확인합니다">📂 엑셀 파일 직접 선택</button>
       <button class="btn" onclick="extPasteBox()" title="보안(DRM)·암호 때문에 파일이 안 읽힐 때 — 엑셀에서 표를 복사해 붙여넣습니다">📋 엑셀 표 붙여넣기</button>
       <button class="btn" id="extEditBtn" onclick="extEditTgl()" title="보고 있는 날짜의 열처리·표면처리 수량을 직접 입력·수정합니다 (보안 파일이라 불러오기·복사가 안 될 때)">✏ 외주 수량 수정</button>
+      <button class="btn" onclick="extToLed()" title="이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현재고(현장)에서 뺍니다 — 외주 전표가 없는 품목만, 처음 한 번">➖ 외주출고 전표로 등록</button>
       <span id="extInfo" style="font-size:12px;align-self:center;color:#41556a"></span>
     </div>
     <div id="extPasteWrap" style="display:none;margin-bottom:8px;padding:8px;border:1px dashed #7C3AED;border-radius:6px;background:#FAF7FE">
@@ -6470,9 +6471,11 @@ const SEED=`1515-196,2000,5,24,2026-05-13
 1866-599,500,0,5,
 1GE0-0009-1,50,0,16,2026-06-04`;
 /* 입출고 구분: [명칭, 입고I/출고O] — 제조현장 표준 */
-const KINDS=[['생산입고','I'],['검사입고','I'],['구매입고','I'],['반품입고','I'],['재고조정(+)','I'],
+const KINDS=[['생산입고','I'],['검사입고','I'],['구매입고','I'],['반품입고','I'],['외주입고','I'],['재고조정(+)','I'],
              ['출하','O'],['생산투입','O'],['불량폐기','O'],['검사폐기','O'],['선별제외','O'],
-             ['반품출고','O'],['재고조정(-)','O']];
+             ['반품출고','O'],['외주출고','O'],['재고조정(-)','O']];
+/* 외주출고(열처리·표면처리로 보냄) − 외주입고(돌아옴) = 외주업체에 나가 있는 수량. 현장(프레스) 재고에서 빠졌다가 돌아오면 더해진다 */
+const EXT_K=['외주출고','외주입고'];
 const PARTY='SKF,현대트랜시스,일진글로벌,세동산업,진양오일씰,대흥알앤티,부강스프링';
 /* SKF씰 출하대기현황 보드(2026-08-25 08:00 조사) 추가 형번 — 품번,박스단위,재고박스,적정박스 */
 const ADDV='skfboard-20260825';
@@ -6710,6 +6713,7 @@ function takeOf(it){
       if(r.k==='검사입고') return r.d>anc?{q:r.q,io:'O'}:null;          /* 현장 → 2층 이동 */
       if(r.k==='검사폐기') return insp&&r.d>anc?null:{q:r.q,io:'O'};    /* 자동등록 중이면 2층에서 뺀다 */
       if(r.k==='불량폐기'||r.k==='선별제외') return {q:r.q,io:'O'};
+      if(EXT_K.includes(r.k)) return {q:r.q,io:kindIO(r.k)};          /* 외주 이동은 현장 계정 */
       if(r.k.indexOf('재고조정')===0) return {q:r.q,io:kindIO(r.k)};
       return null;                                         /* 출하는 2층 계정 */
     }
@@ -6860,7 +6864,7 @@ function rSum(){
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym
     +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'');
-  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0;
+  let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0;
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
@@ -6877,8 +6881,10 @@ function rSum(){
        <td class="c">${i+1}</td>
        <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
-       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const x=extOut(it.pn); if(x==null) return '';
-         xo+=x; xn++; return `<div class="sx" title="외주 = 전공정이동표 ${esc(EXT.last.at)} 기준 열처리+표면처리">사내 ${nf(v.cur-x)} · 외주 ${nf(x)}</div>`; })()}</td>
+       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const l=extLed(it), x=extOut(it.pn);
+         if(l!=null){ xl+=l; return `<div class="sx" title="현재고 = 사내(현장). 외주 = 외주출고 − 외주입고 전표${x!=null?' · 전공정이동표 '+esc(EXT.last.at)+' 외주 '+nf(x):''}">외주 ${nf(l)} 별도${x!=null&&x!==l?` <b style="color:#C2410C">(이동표 ${nf(x)})</b>`:''}</div>`; }
+         if(x==null) return '';
+         xo+=x; xn++; return `<div class="sx" title="외주 = 전공정이동표 ${esc(EXT.last.at)} 기준 열처리+표면처리 (외주 전표 없음 — 현재고에 포함)">사내 ${nf(v.cur-x)} · 외주 ${nf(x)}</div>`; })()}</td>
        <td class="bxc">${bx>0?`<input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="b" value="${cb||''}" title="박스 (${nf(bx)} ea/박스) · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off">`:'<span class="dim">-</span>'}</td>
        <td class="bxc"><input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="e" value="${ce||''}" title="${bx>0?'낱개':'수량(EA)'} · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off"></td>
        <td class="epb">${bx>0?nf(bx):'<span class="dim">-</span>'}</td>
@@ -6890,7 +6896,7 @@ function rSum(){
        <td class="amt ${(it.price&&v.cur<0)?'neg':''}">${it.price?nf(a):'<span class="dim">-</span>'}</td></tr>`;
     }).join(''):`<tr><td colspan="13" class="c" style="padding:30px;color:#93A0AB">해당 품목이 없습니다.</td></tr>`)
    +`</tbody><tfoot><tr><td colspan="3" class="c">합　계 (${R.length}품목)</td>
-     <td style="font-weight:800">${nf(g)}${xn?`<div class="sx">외주 ${nf(xo)} 포함</div>`:''}</td><td colspan="3"></td><td>${nf(f)}</td>
+     <td style="font-weight:800">${nf(g)}${xn?`<div class="sx">외주 ${nf(xo)} 포함</div>`:''}${xl?`<div class="sx">외주 ${nf(xl)} 별도(전표)</div>`:''}</td><td colspan="3"></td><td>${nf(f)}</td>
      <td colspan="4"></td>
      <td class="amt" style="font-weight:800" title="${amtN}품목 단가 기준">${nf(amt)}</td></tr></tfoot>`;
 }
@@ -11862,6 +11868,7 @@ function mapKind(t,fallback){
   const s=norm(t);if(!s)return fallback;
   const hit=KINDS.find(([k])=>norm(k)===s);if(hit)return hit[0];
   if(/불량|폐기|스크랩/.test(s))return '불량폐기';
+  if(/외주|열처리|도금|표면처리/.test(s))return /입/.test(s)?'외주입고':'외주출고';
   if(/출하|출고|납품|판매/.test(s))return '출하';
   if(/투입|소요|사용/.test(s))return '생산투입';
   if(/구매|매입|입하/.test(s))return '구매입고';
@@ -13536,6 +13543,31 @@ function extOut(pn){
     s.rows.forEach(o=>{ const q=extPn(o.m,o.side); if(q) EXT_MAP[q]=(EXT_MAP[q]||0)+o.heat+o.surf; }); }
   return pn in EXT_MAP?EXT_MAP[pn]:null;
 }
+/* 전표로 잡은 외주 잔량(외주출고 − 외주입고, 기준일까지) — 외주 전표가 한 건도 없으면 null (전공정이동표로 나눠 보여준다)
+   기초일자(bd)와 상관없이 센다: 실사로 현장 재고를 맞춰도 외주업체에 나가 있는 수량은 그대로다 */
+function extLed(it){
+  const b=CUT||mEnd(), p=it.base?'':it.pn; if(!p) return null;
+  let n=0, q=0;
+  S.led.forEach(r=>{ if(r.pn!==p||!EXT_K.includes(r.k)) return; n++; if(r.d>b) return; q+=r.k==='외주출고'?r.q:-r.q; });
+  return n?q:null;
+}
+/* 처음 한 번 — 전공정이동표의 외주(열처리+표면처리) 수량만큼 외주출고 전표를 만들어 현장 재고에서 뺀다
+   (외주 전표가 아직 없는 품목만, 이동표 기준일 날짜로) */
+async function extToLed(){
+  const s=EXT&&EXT.last; if(!s){ toast('먼저 전공정이동표를 불러오세요'); return; }
+  const d=String(s.d||today()).slice(0,10);
+  const L=S.items.filter(it=>!it.hide&&!it.base).map(it=>({it,x:extOut(it.pn)})).filter(o=>o.x>0&&extLed(o.it)==null);
+  if(!L.length){ toast('외주출고로 옮길 품목이 없습니다 (이미 외주 전표가 있거나 외주 수량 0)'); return; }
+  if(!confirm('전공정이동표 '+s.at+' 기준 외주(열처리+표면처리) 수량을 외주출고 전표로 등록합니다.\n\n'
+    +L.map(o=>'· '+o.it.pn+'  '+nf(o.x)).join('\n')+'\n\n합계 '+nf(L.reduce((a,o)=>a+o.x,0))+' EA · 전표일자 '+d
+    +'\n등록하면 현재고(현장)에서 빠지고, 이후 외주로 보낼 때 외주출고 · 돌아올 때 외주입고로 등록합니다.')) return;
+  let gN=0;
+  L.forEach(({it,x})=>{ if(baseDateGuard(it,d)) gN++;
+    S.led.push({id:S.seq++,d,pn:it.pn,k:'외주출고',q:x,p:'',lot:'',n:'외주재고 초기등록 · 전공정이동표 '+s.at+' 열처리+표면처리',by:S.user||''}); });
+  if(gN) pushItems(true);
+  save(); render(); toast(L.length+'품목 외주출고 등록 — 현재고는 이제 사내(현장) 수량입니다');
+  try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
+}
 async function extInit(){ await extPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
@@ -13618,7 +13650,9 @@ function mrData(){
     let q=0,amt=0,lq=0,rkg=0,ramt=0;
     const rows=its.map(it=>{
       const sn=MC&&MC.rows[it.pn];
-      const ex=ext&&ext.by[it.pn], out=ex?ex.heat+ex.surf:0, all=MC?(sn?sn[0]:0):(calc(it).cur||0);
+      /* 외주 전표(외주출고·외주입고)를 쓰는 품목은 장부 현재고가 이미 사내 — 외주는 전표 잔량, 빼지 않는다 */
+      const ex=ext&&ext.by[it.pn], lo=extLed(it), sv=MC?(sn?sn[0]:0):(calc(it).cur||0),
+            out=lo!=null?lo:(ex?ex.heat+ex.surf:0), all=lo!=null?sv+lo:sv;
       const cur=all-out, pr=MC?(sn?sn[1]:0):(+it.price||0), sub=pr?cur*pr:0,
             dead=MC?(!!(sn&&sn[2])&&cur>0):(isDead(it)&&cur>0);
       const rw=MC?((MC.raw&&MC.raw[it.pn])?{kg:MC.raw[it.pn][0],p:MC.raw[it.pn][1],note:MC.raw[it.pn][2]||''}:null):rawAt(it.pn,rawD);
