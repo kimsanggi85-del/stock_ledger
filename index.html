@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.60 · 원소재 v11.30</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.61 · 원소재 v11.31</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10759,6 +10759,13 @@ function rawPayload(){
 async function pushRaw(silent){
   if(rawBusy)return; rawBusy=true;
   try{
+    /* 저장 전에 서버가 이 기기가 마지막으로 받은 뒤 바뀌었으면 먼저 받아 합친다.
+       (옛 자료를 들고 있던 기기가 통째로 덮어써서, 다른 곳에서 지운 코일이 되살아나던 문제) */
+    try{
+      const q=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+RAW_KEY+'&select=updated_at',{headers:rawHdr(),cache:'no-store'});
+      if(q.ok){ const j=await q.json(); const su=j[0]&&j[0].updated_at;
+        if(su&&(!S.rawPullAt||new Date(su)>new Date(S.rawPullAt))){ await pullRaw(true); try{ autoBom(false); }catch(e){} } }
+    }catch(e){ console.warn('pushRaw 사전 받기:',e.message); }
     const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
       {method:'POST',headers:rawHdr('return=minimal,resolution=merge-duplicates'),
        body:JSON.stringify([{key:RAW_KEY,value:rawPayload(),updated_at:nowIso()}])});
