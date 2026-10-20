@@ -1097,7 +1097,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.48 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.49 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6038,7 +6038,7 @@ body.qp-on{overflow:hidden}
     <div class="hint" style="margin-bottom:9px">
       · 흐름: <b>프레스 생산 → PRESS → 열처리(한성) → 표면처리(동진) → 검사대기 → 검사완료 → 출하</b><br>
       · <b>PRESS</b> = 생산일보 생산수량(MES + 생산마감 보정) − MES 불량 − 외주출고 · <b>열처리/표면처리</b> = 외주출고 − 외주입고 (거래처 한성 / 동진·대영)<br>
-      · <b>검사대기</b> = 외주에서 입고된 수량(외주입고) − 출하검사 검사수량 · <b>검사완료</b> = 출하검사 앱 검사완료(검사수량 − 불량) − 출하<br>
+      · <b>검사대기·검사완료</b> = 검사실 구글 시트(재고gs_ATC) 값 — 새로고침 때 함께 읽습니다. 셀 아래 <span style="color:#7C3AED">보라 숫자</span> = 전표 계산값(외주입고 − 검사, 검사 − 출하)<br>
       · 시작값은 전공정이동표 기준 — 아직 없으면 [🏭 SBC 외주재고] 창의 <b>[➖ 외주출고·공정 시작값 등록]</b>을 한 번 누르세요. 회색 숫자 = 전공정이동표
     </div>
     <div id="sbcInfo" style="font-size:12px;margin-bottom:6px;color:#41556a"></div>
@@ -6884,6 +6884,7 @@ function rSum(){
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
     $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
+      +(ATC?' · 검사대기·완료 = 검사 시트 <b>'+esc(ATC.at)+'</b>':'')
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
     $('tSum').innerHTML=sbcTblHtml(EXT.last);
@@ -12545,6 +12546,7 @@ async function syncMes(silent){
   try{ inspInfo=await syncInsp(); }catch(e){ console.warn('출하검사 연동:',e.message); }
   try{ await syncIqc(true); }catch(e){ console.warn('수입검사 연동:',e.message); }
   try{ await syncEq(true); }catch(e){ console.warn('MES 설비 연동:',e.message); }
+  try{ await atcLoad(true); }catch(e){ console.warn('검사 시트:',e.message); }
   try{ await pushManual(); }catch(e){ console.warn('수기전표 공유:',e.message); }
   /* 출하(일반) 앱 등록분을 전표로 올린다 — 아래에서 서버 전표를 받아올 때 함께 반영된다 */
   try{
@@ -13652,11 +13654,12 @@ function sbcTblHtml(s){
     if(LM){ Object.keys(LM).forEach(k=>{ if(!rs.some(o=>extMKey(o.m)===k)) rs.push({m:LM[k].m,side:rs[0]?rs[0].side:'',wip:0,press:0,heat:0,surf:0,wait:0,done:0,_led:1}); }); }
     const hv=(o,c)=>{ if(!LM) return o[c]; const a=LM[extMKey(o.m)]; return a?a[c]:0; };
     const x={press:0,wait:0,done:0}; rs.forEach(o=>{ x.press+=o.press+o.wip; x.wait+=o.wait; x.done+=o.done; });
-    const P=g?{press:g.press,wait:g.wait,done:g.done}:x;
+    const ac=it?atcOf(pn):null;
+    const P=g?{press:g.press,wait:g.wait,done:g.done}:(ac?{press:x.press,wait:ac.wait,done:ac.done}:x);
     const out=rs.reduce((a,o)=>a+hv(o,'heat')+hv(o,'surf'),0), tot=P.press+P.wait+P.done+out;
     T.press+=P.press; T.wait+=P.wait; T.done+=P.done;
     const n=rs.length, rsp=n>1?' rowspan="'+n+'"':'', bd='border-top:2px solid #C9D3DD';
-    const pc=c=>`<td${rsp} class="${P[c]<0?'neg':''}" style="vertical-align:middle;${bd}">${P[c]?nf(P[c]):'-'}${g?gray(x[c]):''}</td>`;
+    const pc=c=>`<td${rsp} class="${P[c]<0?'neg':''}" style="vertical-align:middle;${bd}">${P[c]?nf(P[c]):'-'}${(g||(ac&&c!=='press'))&&P[c]!==x[c]?gray(x[c]):''}</td>`;
     const oc=(o,c,st)=>{ const v=hv(o,c); return `<td class="${v<0?'neg':''}" style="${st}">${v?nf(v):'-'}${LM?gray(o[c]):''}</td>`; };
     return rs.map((o,i)=>{ T.heat+=hv(o,'heat'); T.surf+=hv(o,'surf'); const st=i?'':bd;
       return '<tr>'
@@ -13666,7 +13669,7 @@ function sbcTblHtml(s){
         +oc(o,'heat',st)+oc(o,'surf',st)
         +(i?'':pc('wait')+pc('done')+`<td${rsp} style="font-weight:800;vertical-align:middle;${bd}">${nf(tot)}</td>`)
         +'</tr>'; }).join(''); }).join('');
-  return '<thead><tr><th>앱 품번</th><th>기종</th><th>구분</th><th>PRESS<br><span style="font-size:10px">(생산중 포함)</span></th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>합계</th></tr></thead><tbody>'
+  return '<thead><tr><th>앱 품번</th><th>기종</th><th>구분</th><th>PRESS<br><span style="font-size:10px">(생산중 포함)</span></th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기'+(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':'')+'</th><th>검사완료'+(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':'')+'</th><th>합계</th></tr></thead><tbody>'
     +body+'</tbody><tfoot><tr><td colspan="3" class="c">합　계 ('+ord.length+'품번)</td>'
     +['press','heat','surf','wait','done'].map(c=>'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')
     +'<td style="font-weight:800">'+nf(T.press+T.heat+T.surf+T.wait+T.done)+'</td></tr></tfoot>';
@@ -13750,6 +13753,9 @@ function sbcStage(it){
     else if(r.k==='검사폐기'||r.k==='출하') o.done+=v;
     else o.etc+=v; });                                  /* 재고조정·반품 등 — 공정을 알 수 없는 것 */
   const x=extLedV(it)||{heat:0,surf:0}; o.heat=x.heat; o.surf=x.surf;
+  /* 검사대기·검사완료는 검사실 구글 시트가 출처 — 전표 계산값은 waitL·doneL 로 남겨 대조 */
+  const ac=atcOf(it.pn); o.waitL=o.wait; o.doneL=o.done;
+  if(ac){ o.wait=ac.wait; o.done=ac.done; o.atc=1; }
   o.tot=o.press+o.heat+o.surf+o.wait+o.done+o.etc;
   return o;
 }
@@ -13759,15 +13765,19 @@ function sbcPaint(){
   const its=S.items.filter(it=>!it.hide&&!it.base&&(it.cu||'').trim()==='SBC').sort((x,y)=>x.pn.localeCompare(y.pn,'en',{numeric:true}));
   const ex=EXT&&EXT.last;
   $('sbcInfo').innerHTML='기준 '+esc(CUT||mEnd())+(ex?' · 전공정이동표 '+esc(ex.at):' · 전공정이동표 없음')
+    +' · 검사대기·완료 = '+(ATC?'검사 시트 <b>'+esc(ATC.at)+'</b>':'<b style="color:#C2410C">검사 시트 없음(전표 계산)</b>')
+    +' <button class="btn" style="padding:2px 8px;font-size:11px" onclick="atcLoad(false)">🔄 검사 시트 다시 읽기</button>'
     +(EXT&&EXT.press?'':' · <b style="color:#C2410C">시작값 미등록</b>');
   const C=['press','heat','surf','wait','done'], Sum={}, SumX={};
-  const cell=(v,x)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB">${nf(x)}</div>`:''}</td>`;
+  const cell=(v,x,l)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(x)}</div>`:''}${l!=null?`<div class="sx" style="color:#7C3AED" title="전표 계산값">${nf(l)}</div>`:''}</td>`;
   const rows=its.map((it,i)=>{
     const g=sbcStage(it), x=extStageQ(it.pn), cur=calc(it).cur, l=extLed(it)||0;
-    C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
+    const ac0=g?null:atcOf(it.pn);
+    C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; else if(ac0&&(c==='wait'||c==='done')) Sum[c]=(Sum[c]||0)+ac0[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
     const xt=x?C.reduce((a,c)=>a+x[c],0):null;
     return `<tr><td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" onclick="closeAll();goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
-      ${C.map(c=>cell(g?g[c]:null,x?x[c]:null)).join('')}
+      ${C.map(c=>{ const wd=c==='wait'||c==='done', ac=wd&&!g?atcOf(it.pn):null;
+        return cell(g?g[c]:(ac?ac[c]:null),x?x[c]:null,(g&&g.atc&&wd)?g[c+'L']:null); }).join('')}
       <td style="font-weight:800">${g?nf(g.tot):'<span class="dim">-</span>'}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
       <td>${nf(cur+l)}${g&&Math.round(cur+l-g.tot)?`<div class="sx" style="color:#C2410C">차이 ${nf(cur+l-g.tot)}</div>`:''}</td>
       <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td></tr>`; }).join('');
@@ -13818,7 +13828,67 @@ async function extToLed(){
   save(); render(); toast((L.length?L.length+'품목 외주출고 등록':'')+(L.length&&P.length?' · ':'')+(P.length?P.length+'품목 공정 시작값':'')+' — 현재고는 이제 사내(현장) 수량입니다');
   try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
 }
-async function extInit(){ await extPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); }
+/* ═══ SBC 검사대기·검사완료 — 검사실 구글 시트(재고gs_ATC_임시_텔레그램전송_저장시) ═══
+   「품번(1106CB Inner) · 검사대기 · 검사완료」 표를 CSV 로 읽는다 (시트가 링크 공유라 로그인 없이 읽힘).
+   읽은 값은 kv_store 에 남겨 시트를 못 읽는 PC 도 같은 값을 쓴다. 기종 → 앱 품번은 품목 별칭(extPn)으로 */
+const ATC_SHEET={id:'1eLHy5crJyGLXn2PCyyul-WsGlpyXaQSd6KXSRtCj2sM',gid:'1487603047'};
+const ATC_KEY='tj_sbc_atc_v1';
+let ATC=null;                              /* {at:'YYYY-MM-DD HH:MM', rows:[{m,side,wait,done}]} */
+function csvGrid(t){
+  const out=[]; let row=[],cell='',q=false;
+  for(let i=0;i<t.length;i++){ const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); out.push(row); row=[]; cell=''; }
+    else if(c!=='\r') cell+=c; }
+  row.push(cell); if(row.some(x=>x!=='')) out.push(row);
+  return out;
+}
+function atcParse(g){
+  const ns=x=>String(x||'').replace(/\s+/g,'');
+  let hr=-1,cw=-1,cd=-1;
+  for(let i=0;i<Math.min(g.length,10)&&hr<0;i++){ const r=g[i]||[];
+    cw=r.findIndex(x=>ns(x)==='검사대기'); cd=r.findIndex(x=>ns(x)==='검사완료'); if(cw>=0&&cd>=0) hr=i; }
+  if(hr<0) throw new Error('「검사대기」「검사완료」 머리글을 찾지 못했습니다');
+  const rows=[];
+  for(let i=hr+1;i<g.length;i++){ const r=g[i]||[], a=String(r[0]||'').trim();
+    const mt=a.match(/^(.+?)\s*(Inner|Outer)$/i); if(!mt) continue;
+    rows.push({m:mt[1].trim(),side:mt[2].toUpperCase(),wait:Math.round(xnum(r[cw])),done:Math.round(xnum(r[cd]))}); }
+  if(!rows.length) throw new Error('Inner/Outer 행이 없습니다');
+  return rows;
+}
+async function atcPull(){
+  try{ const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+ATC_KEY+'&select=value',{headers:itHeaders()});
+    if(!r.ok) return; const j=await r.json(), v=j&&j[0]&&j[0].value; if(v&&v.rows) ATC=v; }catch(e){}
+}
+/* 시트를 다시 읽는다 — 새로고침(동기화)·SBC 화면에서. 실패하면 서버에 남은 값을 그대로 쓴다 */
+async function atcLoad(silent){
+  try{
+    const u='https://docs.google.com/spreadsheets/d/'+ATC_SHEET.id+'/gviz/tq?tqx=out:csv&gid='+ATC_SHEET.gid+'&_='+Date.now();
+    const r=await fetch(u); if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows=atcParse(csvGrid(await r.text())), d=new Date();
+    ATC={at:today()+' '+p2(d.getHours())+':'+p2(d.getMinutes()),rows,by:S.user||''};
+    try{ await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',{method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+      body:JSON.stringify([{key:ATC_KEY,value:ATC,updated_at:nowIso()}])}); }catch(e){}
+    if(!silent) toast('검사 시트 읽음 — '+rows.length+'행 ('+ATC.at+')');
+  }catch(e){
+    console.warn('검사 시트:',e.message);
+    if(!ATC) await atcPull();
+    if(!silent) toast('검사 시트를 읽지 못했습니다'+(ATC?' — 서버에 남은 '+ATC.at+' 값 사용':'')+' ('+e.message+')');
+  }
+  try{ if($('mSbc')&&$('mSbc').classList.contains('on')) sbcPaint(); }catch(e){}
+  return ATC;
+}
+/* 앱 품번별 검사대기·검사완료 (시트 기종 Inner/Outer 를 품번으로 합친다) — 시트가 없거나 지난달을 보면 null */
+function atcOf(pn){
+  if(!ATC||!ATC.rows) return null;
+  if((CUT||mEnd())<String(ATC.at).slice(0,10)&&(CUT||mEnd())<today()) return null;   /* 지난달 기준 화면에는 현재 시트 값을 쓰지 않는다 */
+  let o=null;
+  ATC.rows.forEach(a=>{ if(extPn(a.m,a.side)!==pn) return; o=o||{wait:0,done:0}; o.wait+=a.wait; o.done+=a.done; });
+  return o;
+}
+async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); atcLoad(true).then(()=>render()); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
