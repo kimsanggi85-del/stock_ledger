@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.55 · 원소재 v11.25</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.55 · 원소재 v11.26</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10930,7 +10930,7 @@ async function syncRawMes(silent){
       ug:+x.unit_per_qty||0,kg:Math.round((+x.use_weight||0)*100)/100,sq:+x.shot_qty||0,ok:+x.normal_shot||0,ng:+x.abnormal_shot||0}));
     out.use=S.ru.length; out.useKg=S.ru.reduce((a,x)=>a+x.kg,0);
     /* ② 입고 = 코일 1본 (입고번호+항번). LOT 이름은 업체가 재사용하므로 코일의 정체는 입고번호다 */
-    const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag,updated_at'
+    const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag,updated_at,divide_flag,origin_net_weight'
       +'&receipt_date=gte.2025-01-01&order=receipt_date.asc,receipt_no.asc,seq.asc',H);   /* 2025년 입고 코일이 이듬해 생산에 투입되므로 참고 범위를 넓힌다 */
     /* 기준일 이전 입고분은 재고에 넣지 않고 추적 참고용으로만 보관 */
     RCV_REF=new Map();
@@ -10964,6 +10964,15 @@ async function syncRawMes(silent){
     if(syncAt){ S.mesSyncAt=syncAt; out.syncAt=syncAt; }
     /* 앱에서 지운 MES 코일 — MES 에서 지웠는데 동기화가 아직 안 돈 경우. 그 뒤 동기화에도 남아 있으면 MES 에 있는 것이므로 되살린다 */
     const hidOf=src=>{ const t2=S.rawDel&&S.rawDel[src]; return t2&&String(t2)>'' ? t2 : ''; };
+    /* 분할 입고(divide_flag Y) — MES 는 원 코일(항번 1)의 중량을 비워 두고 나머지 항번에만 중량을 적는다.
+       그대로 두면 항번 1 코일이 대장에서 빠지므로(투입 기록은 있음) 원 중량 − 다른 항번 합으로 채운다 */
+    const divW=new Map();
+    rcv.forEach(r=>{ if(String(r.divide_flag||'').toUpperCase()!=='Y'||String(r.io_flag||'1')!=='1') return;
+      const rno=String(r.receipt_no||'').split('|')[0].trim(), o=divW.get(rno)||{org:0,sum:0};
+      o.org=Math.max(o.org,+r.origin_net_weight||0); if(+r.weight>0) o.sum+=+r.weight; divW.set(rno,o); });
+    rcv.forEach(r=>{ if(+r.weight>0||String(r.divide_flag||'').toUpperCase()!=='Y') return;
+      const o=divW.get(String(r.receipt_no||'').split('|')[0].trim()); const w=o?Math.round((o.org-o.sum)*10)/10:0;
+      if(w>0){ r.weight=w; r._div=1; } });
     if(rcv.length){
       S.mesMode=true;
       const keep=new Set();
@@ -10997,7 +11006,7 @@ async function syncRawMes(silent){
         }
         const put={d:String(r.receipt_date||'').slice(0,10)||c.d||today(),ms:lotBase(lot),wt:Math.round(+r.weight*10)/10,
           sup:vendorNm(r.vendor_site_id||r.supplier),rno,rseq:seq,rc:r.raw_item_code||'',mes,
-          n:'MES 입고 '+rno+'-'+seq+' · '+(r.raw_item_code||'')+(mes.st==='1'?' · '+eqName(mes.mc)+' 장착중':mes.st==='2'?' · 투입완료 '+(mes.pout||mes.pon):' · 미투입')};
+          n:'MES 입고 '+rno+'-'+seq+' · '+(r.raw_item_code||'')+(r._div?' · 분할 원코일(원 중량 − 다른 항번)':'')+(mes.st==='1'?' · '+eqName(mes.mc)+' 장착중':mes.st==='2'?' · 투입완료 '+(mes.pout||mes.pon):' · 미투입')};
         if(sp.mt&&!isLocked(c,'mt'))put.mt=sp.mt; if(sp.t&&!isLocked(c,'t'))put.t=sp.t; if(sp.w&&!isLocked(c,'w'))put.w=sp.w;
         if(isLocked(c,'wt'))delete put.wt;
         Object.keys(put).forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(put[k])){c[k]=put[k];} });
