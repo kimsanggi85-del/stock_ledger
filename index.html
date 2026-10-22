@@ -1121,7 +1121,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.75 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.76 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13963,8 +13963,9 @@ function sbcTblHtml(s){
     +'<td style="font-weight:800;background:#EEF4FF">'+nf(tc)+'</td><td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
-const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1124BA':'X','1124':'X','1165':'X',
-  '1179':'O','1179C':'X','1159C':'O','1159B':'X','1156':'O','1156A':'X'};
+/* 영업 확정출하 List(주별출하요약) 색 구분 기준 — 진한 초록 = 표면처리 O, 연두 = 표면처리 X */
+const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1113AD':'X','1124BA':'X','1124':'X','1165':'X','1165A':'X',
+  '1179':'O','1179T':'O','1179C':'X','1159C':'O','1159B':'X','1156':'O','1156A':'X'};
 function extSf(o){ const v=String(o.sf||'').trim();
   if(/^(유|O)$/i.test(v)) return 'O'; if(/^(무|X)$/i.test(v)) return 'X';
   return EXT_SF[String(o.m).replace(/\s+/g,'').toUpperCase()]||''; }
@@ -14330,7 +14331,8 @@ function fcPaint(){
   const nx=yms.filter(k=>k>=FC_YM).slice(0,2), remain={};
   /* 묶음 = 앱 품번 + 전공정이동표 기종 줄(뒷공정 기종) — 1106 CB(표면처리 O) / 1106 CA(X), 1113 AA·D / E, 1179 / 1179 C, 1159C / 1159B … 따로.
      프레스(생산중·PRESS)는 기종 구분 전이라 품번 첫 줄에 '프레스 ○○'로만 보여준다 */
-  const gk=r=>{ const p=fcPn(r.m); if(!p.iw) return mkey(r.m); const rk=rowKeyOf(r.m,sbcRowKeys(p.iw)); return rk?p.key+':'+rk:(p.key||mkey(r.m)); };
+  /* 이동표 기종 줄이 없으면(이동표 미등록 기종) 계획 기종 이름으로 나눈다 — 재고는 그 품번 첫 줄에 장부로 */
+  const gk=r=>{ const p=fcPn(r.m); if(!p.iw) return mkey(r.m); const rk=rowKeyOf(r.m,sbcRowKeys(p.iw)); return rk?p.key+':'+rk:p.key+'~'+mkey(r.m); };
   nx.forEach(k=>FC.months[k].rows.forEach(r=>{ const pk=gk(r); r.q.forEach((q,i)=>{ if(r.cols[i]>=td) remain[pk]=(remain[pk]||0)+q; }); }));
   const G={}, order=[];
   M.rows.forEach(r=>{ const p=fcPn(r.m), k=gk(r); if(!G[k]){ G[k]={k,p,rk:k.indexOf(':')>0?k.split(':')[1]:'',rows:[]}; order.push(k); } G[k].rows.push(r); });
@@ -14355,18 +14357,21 @@ function fcPaint(){
     /* 재고 — 기종 줄이 있으면 뒷공정 기종별(이동표·검사 시트 − 그 뒤 출하), 없으면 장부 */
     const si=spl(g.p.iw), so=spl(g.p.ow), byM=!!(g.rk&&si&&so);
     const bi=byM?Math.round(si.cur[g.rk]||0):(g.p.iw?book(g.p.iw):null), bo=byM?Math.round(so.cur[g.rk]||0):(g.p.ow?book(g.p.ow):null);
-    const bk=(bi==null||bo==null)?null:Math.min(bi,bo), rem=remain[k]||0, gap=bk==null?null:bk-rem;
     const first=!firstP[pk]; firstP[pk]=1;
+    /* 장부(기종 구분 없음)는 품번 첫 줄에만 — 과부족도 그 품번의 장부 묶음 남은 계획을 합쳐 본다 */
+    const sib=byM?[]:order.filter(x=>x!==k&&(G[x].p.key||x)===pk&&!G[x].rk);
+    const bk0=(bi==null||bo==null)?null:Math.min(bi,bo), bk=(!byM&&!first)?null:bk0;
+    const rem=remain[k]||0, remS=sib.reduce((x,y)=>x+(remain[y]||0),0), gap=bk==null?null:bk-rem-(first&&!byM?remS:0);
     const pr=(first&&byM)?Math.min(si.press,so.press):null;
     plan.forEach((v,i)=>Tt.plan[i]+=v); Tt.sum+=sum; Tt.act+=act; Tt.rem+=rem;
     body+='<tr'+(first?'':' style="background:#FAFAFF"')+'><td class="l" style="font-weight:800">'+(first?esc(pk):'')+'</td>'
-      +'<td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+(g.rk&&sfTxt(g.rk)?'<div class="sx" style="color:'+(EXT_SF[g.rk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(g.rk)+'</div>':'')+'</td>'
+      +'<td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+((sk=>sfTxt(sk)?'<div class="sx" style="color:'+(EXT_SF[sk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(sk)+'</div>':'')(g.rk||mkey(g.rows[0].m)))+'</td>'
       +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+dv(k,ships[i],v)+'</td>').join('')
       +'<td style="font-weight:800">'+nf(sum)+'</td>'
       +'<td title="Inner '+nf(ai)+' / Outer '+nf(ao)+'">'+(act?nf(act):'-')+(ai!==ao?'<div class="sx">IW '+nf(ai)+' · OW '+nf(ao)+'</div>':'')+'</td>'
       +'<td style="font-weight:800">'+(rem?nf(rem):'-')+'</td>'
-      +'<td style="background:#EEF4FF"'+(byM?' title="뒷공정(열처리·표면처리·검사대기·검사완료) '+esc(g.rk)+' − 검사 시트 이후 출하"':' title="장부 총재고"')+'>'+(bk==null?'<span class="dim">품목 없음</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':''))
-        +(pr!=null?'<div class="sx" style="color:#64748B" title="생산중+PRESS — 기종(표면처리 O/X) 구분 전">+ 프레스 '+nf(pr)+' (기종 구분 전)</div>':'')+(!byM&&bk!=null?'<div class="sx" style="color:#93A0AB">장부</div>':'')+'</td>'
+      +'<td style="background:#EEF4FF"'+(byM?' title="뒷공정(열처리·표면처리·검사대기·검사완료) '+esc(g.rk)+' − 검사 시트 이후 출하"':' title="장부 총재고"')+'>'+(bk==null?'<span class="dim">'+((!byM&&!first&&bk0!=null)?'↑ 장부 합산':'품목 없음')+'</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':''))
+        +(pr!=null?'<div class="sx" style="color:#64748B" title="생산중+PRESS — 기종(표면처리 O/X) 구분 전">+ 프레스 '+nf(pr)+' (기종 구분 전)</div>':'')+(!byM&&bk!=null?'<div class="sx" style="color:#93A0AB">장부'+(sib.length?' (기종 합산)':'')+'</div>':'')+'</td>'
       +'<td style="font-weight:800" class="'+(gap==null?'':gap<0?'neg':'pos')+'">'+(gap==null?'-':(gap>0?'+':'')+nf(gap))+'</td></tr>';
   });
   const hd=ships.map((d,i)=>'<th'+(d<td?' style="color:#93A0AB"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">출하 '+d.slice(5).replace('-','/')+'</span></th>').join('');
