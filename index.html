@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.64 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.65 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6125,6 +6125,8 @@ body.qp-on{overflow:hidden}
   <div class="mb">
     <div class="hint" style="margin-bottom:9px">
       · 흐름: <b>프레스 생산 → PRESS → 열처리(한성) → 표면처리(동진) → 검사대기 → 검사완료 → 출하</b><br>
+      · <b style="color:#1D4ED8">총재고(장부 기준) = 생산(MES + 생산마감 보정) − 불량 − 출하</b> (외주 포함) — <b>SBC 재고의 기준값</b>입니다. 출하는 레이스웨이 앱 [출하대기장 → SBC] 등록분이 당일 빠집니다.<br>
+      · <b>공정 합계(참고)</b> = 아래 공정 칸의 합. 총재고와 다르면 주황 「차이」 — − 는 공정 이동(외주·검사) 미등록으로 같은 물량이 두 번 잡힌 것, + 는 시트·이동표에 빠진 물량<br>
       · <b>PRESS</b> = 생산일보 생산수량(MES + 생산마감 보정) − MES 불량 − 외주출고 · <b>열처리/표면처리</b> = 외주출고 − 외주입고 (거래처 한성 / 동진·대영)<br>
       · <b>검사대기·검사완료</b> = 검사실 구글 시트(재고gs_ATC) 값 — 새로고침 때 함께 읽습니다. 셀 아래 <span style="color:#7C3AED">보라 숫자</span> = 전표 계산값(외주입고 − 검사, 검사 − 출하)<br>
       · 시작값은 전공정이동표 기준 — 아직 없으면 [🏭 SBC 외주재고] 창의 <b>[➖ 외주출고·공정 시작값 등록]</b>을 한 번 누르세요. 회색 숫자 = 전공정이동표
@@ -13947,11 +13949,12 @@ function sbcPaint(){
      생산일보로 잡힌 생산 중 아직 이동표에 안 올라간 수량이 + 로 나온다. − 는 출하 반영 차이 등 확인 필요 */
   const uD=ex?dayBefore(String(ex.d||'').slice(0,10)):'';
   if(uD) $('sbcInfo').innerHTML+='<br>· <b>미반영 생산분</b> = 장부('+esc(uD)+'까지, 외주 포함) − 전공정이동표 합계 &nbsp;<span style="color:#1D4ED8">+ 생산했지만 이동표에 아직 안 올라감</span> · <span style="color:#C2410C">− 출하 반영 차이 등 확인 필요</span>';
-  let uSum=0, uN=0;
+  let uSum=0, uN=0, shipSum=0, bookSum=0;
   const C=['press','heat','surf','wait','done'], Sum={}, SumX={};
   const cell=(v,x,l)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(x)}</div>`:''}${l!=null?`<div class="sx" style="color:#7C3AED" title="전표 계산값">${nf(l)}</div>`:''}</td>`;
   const rows=its.map((it,i)=>{
-    const g=sbcStage(it), x=extStageQ(it.pn), cur=calc(it).cur, l=extLed(it)||0;
+    const g=sbcStage(it), x=extStageQ(it.pn), v=calc(it), cur=v.cur, l=extLed(it)||0;
+    const book=cur+l, sq=v.sq||0; shipSum+=sq; bookSum+=book;     /* 총재고 = 장부(생산 − 불량 − 출하, 외주 포함) — 기준값 */
     const ac0=g?null:atcOf(it.pn);
     C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; else if(ac0&&(c==='wait'||c==='done')) Sum[c]=(Sum[c]||0)+ac0[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
     const xt=x?C.reduce((a,c)=>a+x[c],0):null;
@@ -13959,14 +13962,16 @@ function sbcPaint(){
     return `<tr><td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" onclick="closeAll();goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
       ${C.map(c=>{ const wd=c==='wait'||c==='done', ac=wd&&!g?atcOf(it.pn):null;
         return cell(g?g[c]:(ac?ac[c]:null),x?x[c]:null,(g&&g.atc&&wd)?g[c+'L']:null); }).join('')}
-      <td style="font-weight:800">${g?nf(g.tot):'<span class="dim">-</span>'}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
-      <td>${nf(cur+l)}${g&&Math.round(cur+l-g.tot)?`<div class="sx" style="color:#C2410C">차이 ${nf(cur+l-g.tot)}</div>`:''}</td>
+      <td style="color:#B3261E">${sq?nf(sq):'<span class="dim">-</span>'}</td>
+      <td style="font-weight:800;background:#EEF4FF">${nf(book)}</td>
+      <td>${g?nf(g.tot):'<span class="dim">-</span>'}${g&&Math.round(book-g.tot)?`<div class="sx" style="color:#C2410C" title="총재고(장부) − 공정 합계. − 면 공정 칸에 같은 물량이 두 번 잡힌 것(공정 이동 미등록), + 면 공정 칸에 빠진 물량">차이 ${(book-g.tot>0?'+':'')+nf(book-g.tot)}</div>`:''}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
       <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td>
       <td style="font-weight:800;color:${un==null||!un?'inherit':un>0?'#1D4ED8':'#C2410C'}" title="${un==null?'이동표에 없는 품번':'장부 '+nf(ledAt(it,uD))+' − 이동표 '+nf(xt)}">${un==null?'<span class="dim">-</span>':(un>0?'+':'')+nf(un)}</td></tr>`; }).join('');
-  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>공정 합계</th><th>장부<br>(현재고+외주)</th><th>기타조정</th><th>미반영<br>생산분</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="11" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
+  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th style="color:#B3261E">출하<br>(당월)</th><th style="background:#DCE8FB">총재고<br>(장부 기준)</th><th>공정 합계<br>(참고)</th><th>기타조정</th><th>미반영<br>생산분</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="12" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
     <tfoot><tr><td colspan="2" class="c">합 계</td>${C.map(c=>cell(Sum[c]==null?null:Sum[c],SumX[c]==null?null:SumX[c])).join('')}
-      <td style="font-weight:800">${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td colspan="2"></td>
+      <td style="color:#B3261E;font-weight:800">${nf(shipSum)}</td><td style="font-weight:800;background:#EEF4FF">${nf(bookSum)}</td>
+      <td>${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td></td>
       <td style="font-weight:800">${uN?(uSum>0?'+':'')+nf(uSum):'-'}</td></tr></tfoot>`;
 }
 /* PRESS 재고 = 기초(전공정이동표 PRESS, EXT.press[pn]={d,q}) + 그 뒤 생산일보 생산수량(MES 생산입고 + 생산마감 보정)
