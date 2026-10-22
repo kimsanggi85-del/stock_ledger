@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.35</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.36</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8018,7 +8018,8 @@ function autoBom(verbose){
   const src=useMes?[]:S.led.filter(r=>r.k==='생산입고'&&r.q>0&&r.d>=BD&&bomOf(r.pn)&&!isFreeKey(r.pn));
   const M=new Map(S.mesMode?[]:src.map(r=>[r.id,r]));
   RU.forEach(x=>M.set('RU|'+x.k,x));
-  MC.forEach(c=>{ const q=c.mes.st==='2'?(+c.wt||0):c.mes.st==='1'?c.mes.usew:0; if(q>0.01)M.set('INV|'+c.src,{d:(c.mes.st==='2'?(c.mes.pout||c.mes.pon):c.mes.pon)||c.d,q,c}); });
+  /* 장착중 사용중량이 입고중량보다 크면(MES 에서 같은 HEAT 의 다른 코일 사용량이 섞이는 등) 입고중량까지만 뺀다 — 잔량이 마이너스로 재고를 깎지 않게 */
+  MC.forEach(c=>{ const q=c.mes.st==='2'?(+c.wt||0):c.mes.st==='1'?Math.min(c.mes.usew,+c.wt||0):0; if(q>0.01)M.set('INV|'+c.src,{d:(c.mes.st==='2'?(c.mes.pout||c.mes.pon):c.mes.pon)||c.d,q,c}); });
   let del=0;
   for(let i=S.mled.length-1;i>=0;i--){
     const m=S.mled[i]; if(!m.auto)continue;
@@ -11201,7 +11202,8 @@ async function syncRawMes(silent){
         }
         const put={d:String(r.receipt_date||'').slice(0,10)||c.d||today(),ms:lotBase(lot),wt:Math.round(+r.weight*10)/10,
           sup:vendorNm(r.vendor_site_id||r.supplier),rno,rseq:seq,rc:r.raw_item_code||'',mes,
-          n:'MES 입고 '+rno+'-'+seq+' · '+(r.raw_item_code||'')+(r._div?' · 분할 원코일(원 중량 − 다른 항번)':'')+(mes.st==='1'?' · '+eqName(mes.mc)+' 장착중':mes.st==='2'?' · 투입완료 '+(mes.pout||mes.pon):' · 미투입')};
+          n:'MES 입고 '+rno+'-'+seq+' · '+(r.raw_item_code||'')+(r._div?' · 분할 원코일(원 중량 − 다른 항번)':'')
+            +(mes.st==='1'&&mes.usew>(+r.weight||0)+1?' · ⚠ MES 사용중량 '+nf(mes.usew)+'kg > 입고 '+nf(+r.weight)+'kg (입고중량까지만 차감)':'')+(mes.st==='1'?' · '+eqName(mes.mc)+' 장착중':mes.st==='2'?' · 투입완료 '+(mes.pout||mes.pon):' · 미투입')};
         if(sp.mt&&!isLocked(c,'mt'))put.mt=sp.mt; if(sp.t&&!isLocked(c,'t'))put.t=sp.t; if(sp.w&&!isLocked(c,'w'))put.w=sp.w;
         if(isLocked(c,'wt'))delete put.wt;
         Object.keys(put).forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(put[k])){c[k]=put[k];} });
