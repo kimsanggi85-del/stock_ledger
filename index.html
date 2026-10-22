@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.66 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.67 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1187,6 +1187,7 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
     <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
     <button class="btn pc-only" onclick="sbcOpen()" title="SBC 공정별 재고 — PRESS · 열처리(한성) · 표면처리(동진) · 검사대기 · 검사완료" style="background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800">🏭 SBC 공정재고</button>
+    <button class="btn pc-only" onclick="fcOpen()" title="영업 확정출하 List(3.예상수량) — 차수별 출하계획 대비 실출하·재고 과부족" style="background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800">📅 SBC 출하계획</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -6136,6 +6137,25 @@ body.qp-on{overflow:hidden}
   </div>
 </div></div>
 
+<!-- SBC 출하계획 (영업 확정출하 List) -->
+<div class="mask" id="mFc"><div class="modal" style="max-width:1200px">
+  <h3>📅 SBC 출하계획 — 확정출하 List<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:8px">
+      · 공유 폴더(<b>W: 12_공통자료 → 32_Raceway 재고관리</b>)의 <b>「3.예상수량(확정출하list)_YYYY_Rev○.xlsx」</b> → <b>「주별출하요약」</b> 시트에서 달마다 가장 최근 기준일 표를 읽습니다. (전공정이동표와 같은 폴더 지정을 씁니다)<br>
+      · 수량은 <b>기종별 세트(Inner·Outer 각각 같은 수량)</b>입니다. 실출하·총재고는 Inner/Outer 중 <b>적은 쪽</b>으로 비교합니다.<br>
+      · <b>남은 계획</b> = 오늘 이후 출하일 차수 합계(이번 달 + 다음 달) · <b>과부족</b> = 총재고(장부) − 남은 계획 → <span class="neg">빨강 = 모자람</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <button class="btn k" onclick="fcLoad(false)">🔄 다시 읽기</button>
+      <button class="btn" onclick="fcLoad(false,true)">📂 파일 직접 선택</button>
+      <span id="fcTabs"></span>
+      <span id="fcInfo" style="font-size:12px;color:#41556a"></span>
+    </div>
+    <div class="gw"><div class="scroll" style="max-height:62vh"><table class="t" id="fcTbl"></table></div></div>
+  </div>
+</div></div>
+
 <!-- SBC 외주가공재고 (전공정이동표) -->
 <div class="mask" id="mExt"><div class="modal" style="max-width:860px">
   <h3>SBC 외주가공재고 — 전공정이동표<span onclick="closeAll()">✕</span></h3>
@@ -6978,7 +6998,8 @@ function rSum(){
       +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +'<br><span style="font-size:11.5px">· <b style="color:#B3261E">출하(당월)</b> = 레이스웨이 앱 출하(출하대기장 → SBC), 앱 품번 첫 줄에 표시 · <b style="color:#1D4ED8">현재고</b> = 합계 − 검사 시트를 읽은 뒤의 출하 (그 전 출하는 시트 값에 이미 빠져 있음)</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
-      +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
+      +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>'
+      +' &nbsp;<a href="javascript:void 0" onclick="fcOpen()" style="color:#1D4ED8;font-weight:800">📅 출하계획 ▸</a>';
     $('tSum').classList.add('sbcT'); $('gt-sum').parentElement.classList.add('gtTall'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
     return;
   }
@@ -14116,7 +14137,141 @@ function atcOf(pn){
   ATC.rows.forEach(a=>{ if(extPn(a.m,a.side)!==pn) return; o=o||{wait:0,done:0}; o.wait+=a.wait; o.done+=a.done; });
   return o;
 }
-async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); atcDaily().then(()=>render()); }
+/* ═══ SBC 출하계획 — 영업 확정출하 List (3.예상수량(확정출하list)_YYYY_Rev○.xlsx 「주별출하요약」) ═══
+   달마다 '○○ 기준 주간예상수량(N월)' 표가 아래로 쌓인다. 달마다 가장 늦은 기준일 표를 쓴다.
+   표: 차수 / 출하일 / 납기일 줄 → 기종 줄(수량 = Inner·Outer 각각) → 주간출하합계 */
+const FC_KEY='tj_sbc_fc_v1';
+let FC=null, FC_YM='';
+const xlDate=v=>{ const n=+v; if(!(n>20000&&n<80000)) return ''; const d=new Date(Date.UTC(1899,11,30)+Math.round(n)*864e5);
+  return d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()); };
+function fcCellDate(v,y){                 /* 엑셀 날짜(숫자) 또는 '12/1~12/4' · '10/08' 글자 */
+  const d=xlDate(v); if(d) return d;
+  const m=String(v||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/); return m?y+'-'+p2(+m[1])+'-'+p2(+m[2]):''; }
+function fcParse(book){
+  const nm=Object.keys(book).find(n=>/주별출하요약/.test(n)); if(!nm) throw new Error('「주별출하요약」 시트가 없습니다 (시트: '+Object.keys(book).join(', ')+')');
+  const g=book[nm], months={}, txt=r=>(r||[]).map(x=>String(x||'')).join(' ');
+  for(let i=0;i<g.length;i++){
+    const t=txt(g[i]); const mh=t.match(/기준\s*주간\s*예상수량\s*\(\s*(\d{1,2})\s*월\s*\)/); if(!mh) continue;
+    const base=xlDate((g[i]||[]).find(x=>xlDate(x)))||''; if(!base) continue;
+    const mo=+mh[1], by=+base.slice(0,4), bm=+base.slice(5,7);
+    const y=mo<bm-6?by+1:(mo>bm+6?by-1:by), ym=y+'-'+p2(mo);
+    const rev=(t.match(/(\d+)\s*$/)||['',''])[1];
+    let cols=null; const rows=[];
+    for(let j=i+1;j<g.length&&j<i+60;j++){
+      const r=g[j]||[], c2=String(r[2]||'').trim();
+      if(/기준\s*주간\s*예상수량/.test(txt(r))) break;
+      if(c2==='차수'){ continue; }
+      if(c2==='출하일'){ cols=[]; for(let k=3;k<12;k++){ const d=fcCellDate(r[k],y); if(d) cols.push({k,ship:d}); } continue; }
+      if(c2==='납기일'&&cols){ cols.forEach(o=>o.due=fcCellDate(r[o.k],y)); continue; }
+      if(/주간출하합계/.test(c2)){ continue; }
+      if(!cols||!c2||/합계|Pallet|^\*|표면처리|작성자/.test(c2)||/\//.test(c2)||xlDate(c2)) continue;   /* '03/24' 같은 날짜 메모 줄은 건너뛴다 (기종 1179·1156 은 숫자라도 기종) */
+      const q=cols.map(o=>Math.round(+String(r[o.k]||'').replace(/,/g,'')||0));
+      rows.push({m:c2.replace(/\s+/g,' '),q,cols:cols.map(o=>o.ship)});
+    }
+    if(!rows.length) continue;
+    const old=months[ym]; if(old&&old.base>base) continue;
+    /* 섹션이 둘이면(예전 ATC/KOREA) 차수 날짜가 다를 수 있어 줄마다 날짜를 가진다 */
+    const ships=[...new Set(rows.flatMap(r=>r.cols))].sort();
+    months[ym]={base,rev,ships,rows};
+  }
+  if(!Object.keys(months).length) throw new Error('「기준 주간예상수량(N월)」 표를 찾지 못했습니다');
+  return months;
+}
+async function fcPickFile(dh){
+  const fs=[];
+  for await (const e of dh.values()){
+    if(e.kind!=='file'||/^~\$/.test(e.name)||!/\.xls[xm]$/i.test(e.name)) continue;
+    if(!/예상수량|확정출하/.test(e.name)) continue;
+    const y=(e.name.match(/(20\d{2})/)||['','0000'])[1], rv=+((e.name.match(/Rev\s*(\d+)/i)||['','0'])[1]);
+    const f=await e.getFile(); fs.push({f,k:y+p2(rv),t:f.lastModified});
+  }
+  if(!fs.length) throw new Error('폴더에 「3.예상수량(확정출하list)」 엑셀이 없습니다');
+  fs.sort((a,b)=>b.k.localeCompare(a.k)||b.t-a.t);
+  return fs[0].f;
+}
+async function fcPull(){ try{ const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+FC_KEY+'&select=value',{headers:itHeaders()});
+  if(!r.ok) return; const j=await r.json(), v=j&&j[0]&&j[0].value; if(v&&v.months) FC=v; }catch(e){} }
+async function fcLoad(silent,one){
+  let f=null;
+  try{
+    if(one) f=await extPickInput();
+    else if(window.showDirectoryPicker){
+      let dh=await extIdb('dir').catch(()=>null);
+      if(dh){ let ps=await dh.queryPermission({mode:'read'});
+        if(ps!=='granted'){ if(silent) return; ps=await dh.requestPermission({mode:'read'}); }
+        if(ps!=='granted') dh=null; }
+      if(!dh){ if(silent) return; dh=await window.showDirectoryPicker({id:'sbcext',mode:'read'}); await extIdb('dir',dh).catch(()=>{}); }
+      f=await fcPickFile(dh);
+    } else { if(silent) return; f=await extPickInput(); }
+    if(!f) return;
+    if(silent&&FC&&FC.file===f.name&&FC.mod>=f.lastModified) return;      /* 바뀐 게 없으면 그대로 */
+    let book;
+    try{ book=await readXlsx(f); }
+    catch(e2){ throw new Error(String(e2.message)==='ZIP'?'보안(DRM)·암호 파일이거나 .xls 형식이라 읽을 수 없습니다':'엑셀 해석 실패 ('+(e2.message||e2)+')'); }
+    const months=fcParse(book), d0=new Date(f.lastModified);
+    await fcPull();
+    const keep=Object.assign({},(FC&&FC.months)||{});
+    Object.keys(months).forEach(k=>keep[k]=months[k]);
+    Object.keys(keep).sort().slice(0,-14).forEach(k=>delete keep[k]);   /* 약 1년치 */
+    FC={file:f.name,mod:f.lastModified,at:today()+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),
+      fileAt:d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate())+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',months:keep};
+    try{ await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',{method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+      body:JSON.stringify([{key:FC_KEY,value:FC,updated_at:nowIso()}])}); }catch(e){}
+    if(!silent) toast('출하계획 읽음 — '+f.name+' · '+Object.keys(months).length+'개월');
+  }catch(e){
+    if(e&&e.name==='AbortError') return;
+    if(!silent){ alert('출하계획 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
+    console.warn('출하계획:',e);
+  }
+  if($('mFc')&&$('mFc').classList.contains('on')) fcPaint();
+}
+async function fcOpen(){ $('mFc').classList.add('on'); if(!FC) await fcPull(); fcPaint(); fcLoad(true); }
+/* 기종 이름 → 앱 품번 {iw,ow,key} — '1113 AD (신규)' 처럼 괄호는 뺀다 */
+function fcPn(m){ const b=String(m).replace(/\(.*?\)/g,'').trim();
+  const iw=extPn(b,'INNER'), ow=extPn(b,'OUTER'); return {iw,ow,key:iw?iw.replace(/^IW-BDA-/,''):''}; }
+function fcPaint(){
+  const T=$('fcTbl'); if(!T) return;
+  if(!FC||!FC.months){ T.innerHTML='<tbody><tr><td class="c" style="padding:24px;color:#93A0AB">아직 읽은 출하계획이 없습니다 — [🔄 다시 읽기]로 폴더의 파일을 읽거나 [📂 파일 직접 선택]</td></tr></tbody>'; $('fcTabs').innerHTML=''; return; }
+  const yms=Object.keys(FC.months).sort(), cur=today().slice(0,7);
+  if(!FC_YM||!FC.months[FC_YM]) FC_YM=FC.months[cur]?cur:yms[yms.length-1];
+  $('fcTabs').innerHTML=yms.slice(-4).map(k=>'<button class="btn'+(k===FC_YM?' k':'')+'" style="padding:4px 10px" onclick="FC_YM=\''+k+'\';fcPaint()">'+(+k.slice(5))+'월</button>').join(' ');
+  const M=FC.months[FC_YM], td=today();
+  $('fcInfo').innerHTML='· '+esc(FC.file)+' (저장 '+esc(FC.fileAt||'')+') · <b>'+(+FC_YM.slice(5))+'월 표 기준일 '+esc(M.base.slice(5).replace('-','/'))+'</b>'+(M.rev!==''?' · 수정 '+esc(M.rev)+'회':'');
+  /* 남은 계획 = 오늘 이후 출하일 (이 달 + 다음 달) */
+  const nx=yms.filter(k=>k>=FC_YM).slice(0,2), remain={};
+  nx.forEach(k=>FC.months[k].rows.forEach(r=>{ const pk=fcPn(r.m).key||r.m; r.q.forEach((q,i)=>{ if(r.cols[i]>=td) remain[pk]=(remain[pk]||0)+q; }); }));
+  /* 품번별로 묶는다 (1106 = CB + CA, 1113 = AA·E·D, 1179 = 1179·C, 1159B = B·C) */
+  const G={}, order=[];
+  M.rows.forEach(r=>{ const p=fcPn(r.m), k=p.key||r.m; if(!G[k]){ G[k]={k,p,rows:[]}; order.push(k); } G[k].rows.push(r); });
+  const ships=M.ships, a=FC_YM+'-01', b=mEnd&&FC_YM===ym?mEnd():FC_YM+'-'+p2(new Date(+FC_YM.slice(0,4),+FC_YM.slice(5),0).getDate());
+  const shipQ=pn=>S.led.reduce((s2,r)=>s2+((r.k==='출하'&&r.pn===pn&&r.d>=a&&r.d<=b)?r.q:0),0);
+  const itOf=pn=>S.items.find(i=>i.pn===pn);
+  const book=pn=>{ const it=itOf(pn); if(!it) return null; const bk=ym, bc=CUT; try{ ym=td.slice(0,7); CUT=''; return Math.round(calc(it).cur+(extLed(it)||0)); }finally{ ym=bk; CUT=bc; } };
+  const Tt={plan:Array(ships.length).fill(0),sum:0,act:0,rem:0};
+  let body='';
+  order.forEach(k=>{ const g=G[k];
+    const plan=ships.map(d=>g.rows.reduce((s2,r)=>s2+r.cols.reduce((s3,c,i)=>s3+(c===d?r.q[i]:0),0),0));
+    const sum=plan.reduce((x,y)=>x+y,0); if(!sum&&!remain[k]) return;
+    const ai=g.p.iw?shipQ(g.p.iw):0, ao=g.p.ow?shipQ(g.p.ow):0, act=Math.min(ai,ao);
+    const bi=g.p.iw?book(g.p.iw):null, bo=g.p.ow?book(g.p.ow):null, bk=(bi==null||bo==null)?null:Math.min(bi,bo);
+    const rem=remain[k]||0, gap=bk==null?null:bk-rem;
+    plan.forEach((v,i)=>Tt.plan[i]+=v); Tt.sum+=sum; Tt.act+=act; Tt.rem+=rem;
+    body+='<tr><td class="l" style="font-weight:800">'+esc(k)+'</td><td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+'</td>'
+      +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+'</td>').join('')
+      +'<td style="font-weight:800">'+nf(sum)+'</td>'
+      +'<td title="Inner '+nf(ai)+' / Outer '+nf(ao)+'">'+(act?nf(act):'-')+(ai!==ao?'<div class="sx">IW '+nf(ai)+' · OW '+nf(ao)+'</div>':'')+'</td>'
+      +'<td style="font-weight:800">'+(rem?nf(rem):'-')+'</td>'
+      +'<td style="background:#EEF4FF">'+(bk==null?'<span class="dim">품목 없음</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':''))+'</td>'
+      +'<td style="font-weight:800" class="'+(gap==null?'':gap<0?'neg':'pos')+'">'+(gap==null?'-':(gap>0?'+':'')+nf(gap))+'</td></tr>';
+  });
+  const hd=ships.map((d,i)=>'<th'+(d<td?' style="color:#93A0AB"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">출하 '+d.slice(5).replace('-','/')+'</span></th>').join('');
+  T.innerHTML='<thead><tr><th>품번</th><th>기종</th>'+hd+'<th>월 계획</th><th>실출하<br><span style="font-size:10px">('+(+FC_YM.slice(5))+'월, 적은 쪽)</span></th>'
+    +'<th>남은 계획<br><span style="font-size:10px">(오늘 이후)</span></th><th style="background:#DCE8FB">총재고<br><span style="font-size:10px">(장부, 적은 쪽)</span></th><th>과부족</th></tr></thead>'
+    +'<tbody>'+(body||'<tr><td colspan="'+(ships.length+7)+'" class="c" style="padding:20px;color:#93A0AB">계획 수량이 없습니다</td></tr>')+'</tbody>'
+    +'<tfoot><tr><td colspan="2" class="c">합　계</td>'+Tt.plan.map(v=>'<td>'+(v?nf(v):'-')+'</td>').join('')
+    +'<td style="font-weight:800">'+nf(Tt.sum)+'</td><td>'+nf(Tt.act)+'</td><td style="font-weight:800">'+nf(Tt.rem)+'</td><td colspan="2"></td></tr></tfoot>';
+}
+async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker){ extLoad(false,true); fcPull().then(()=>fcLoad(true)); } atcDaily().then(()=>render()); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
