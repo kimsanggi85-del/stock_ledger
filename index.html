@@ -1103,13 +1103,25 @@ body.qp-on{overflow:hidden}
 #tSum.sbcT td .sx{font-size:10px;line-height:1;margin:0}
 #tSum.sbcT tfoot td{text-align:right}
 #tSum.sbcT tfoot td:first-child{text-align:center}
+/* 모바일 — 일반 재고표용으로 숨기던 1·2번째 칸(SBC 표에서는 기종·INNER/OUTER)을 다시 보이고, 기종 칸을 왼쪽에 고정 */
+@media (max-width:760px){
+  #tSum.sbcT td:nth-child(1),#tSum.sbcT th:nth-child(1),#tSum.sbcT td:nth-child(2),#tSum.sbcT th:nth-child(2){display:table-cell}
+  #tSum.sbcT td:nth-child(3),#tSum.sbcT th:nth-child(3){position:static;box-shadow:none}
+  #tSum.sbcT tbody td:nth-child(1),#tSum.sbcT thead th:nth-child(1),#tSum.sbcT tfoot td:nth-child(1){position:sticky;left:0;z-index:3;background:#fff;box-shadow:2px 0 0 #aab7c3}
+  #tSum.sbcT thead th:nth-child(1){z-index:5;background:#e9eef3}
+  #tSum.sbcT tfoot td:nth-child(1){background:#edf2f6}
+  #fcTbl th:first-child,#fcTbl td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 0 #aab7c3}
+  #fcTbl thead th:first-child{z-index:4;background:#e9eef3}
+  #fcTbl td,#fcTbl th{white-space:nowrap}
+  #mCntRemind .crHint{display:block!important}
+}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.70 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.72 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6077,7 +6089,7 @@ body.qp-on{overflow:hidden}
     <div style="font-size:15px;font-weight:700;color:#1F3A5F;line-height:1.6;margin-bottom:8px">
       <span id="crYm">10월</span> 월마감입니다.<br>
       <span style="color:#B3261E">재고실사표를 다운로드해서 실사해 주세요.</span></div>
-    <div class="hint" style="margin-bottom:10px">
+    <div class="hint crHint" style="margin-bottom:10px">
       · 실사 마감일: <b id="crCut">-</b> (재고조사서 기준일)<br>
       · 실사표에 적어 온 값을 입력한 뒤 <b>[조정전표 발행]</b>까지 해야 재고에 반영됩니다.<br>
       · 원소재 실사 전 <b>[🔄 새로고침]</b>으로 MES 투입 상태를 최신으로 받으세요.</div>
@@ -13019,7 +13031,7 @@ function mcSum(it,v){
   const sfB=bx?Math.round(sf/bx):0;
   const dt=v.last?v.last.slice(5).replace('-','/'):'-';
   return `<div class="mx-r ${cls}" data-pn="${pn}">
-    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}</div>
+    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}${v.sq&&SHIP_SPLIT.includes(pnBase(it.pn))?(o2=>{ const ks=Object.keys(o2).sort(); return ks.length>1?'<i style="display:block;font-style:normal;font-size:10px;color:#B3261E">출하 '+ks.map(k=>k+' '+nf(o2[k])).join(' · ')+'</i>':''; })(shipByModel(it.pn,mStart(),CUT||mEnd())):''}</div>
     <button type="button" class="mx-c cur" onclick="event.stopPropagation();openQty('${pn}','cur')"><b class="${v.cur<0?'neg':''}">${nf(v.cur)}</b><i>${v.box}박스</i></button>
     <button type="button" class="mx-c sf" onclick="event.stopPropagation();openQty('${pn}','sf')"><b>${nf(sf)}</b><i>${sfB}박스</i></button>
     <div class="mx-c gap ${gc}"><b>${v.gap>0?'+':''}${nf(v.gap)}</b><i>${bx?((v.gap/bx).toFixed(1)+'박스'):''}</i></div>
@@ -13074,14 +13086,15 @@ window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목대장','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
 const SUB={
-  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','sumOut(\'print\')'],['📗','엑셀','sumOut(\'xls\')'],['📄','CSV','sumOut(\'csv\')']],
+  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','sumOut(\'print\')'],['📗','엑셀','sumOut(\'xls\')'],['📄','CSV','sumOut(\'csv\')'],
+    ['🏭','SBC외주','extOpen()'],['🏭','SBC공정','sbcOpen()'],['📅','출하계획','fcOpen()']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
   trc:[['🔍','추적','rTrc()','pri'],['🏢','고객사','openCust()'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
   raw:[['🔄','새로고침','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
-  help:[['🖨','안내 인쇄','window.print()','pri'],['📊','재고현황으로','setTab(\'sum\')']]
+  help:[['🖨','안내 인쇄','window.print()','pri'],['📊','재고현황으로','setTab(\'sum\')'],['📋','월말실사 안내','cntRemind(true)']]
 };
 function rL2(){
   const el=$('l2'); if(!el)return;
@@ -13848,6 +13861,21 @@ function isVariant(code,pn){ const b=pnBase(pn), c=String(code||'').replace(/\s+
 /* 품번·기간의 출하를 기종 코드별로 {1159B:81000, 1159C:15000} */
 function shipByModel(pn,a,b){ const o={}; S.led.forEach(r=>{ if(r.k!=='출하'||r.pn!==pn||r.d<a||r.d>b) return; const m=shipModel(r); o[m]=(o[m]||0)+r.q; }); return o; }
 const SHIP_SPLIT=['1159B'];          /* 출하를 기종별로 나눠 보여줄 품번(기종 코드) */
+/* SBC 기종별 당월 납품 — 앱 품번(IW/OW)별, 1159B 는 1159B / 1159C 를 따로 (레이스웨이 원본 표기) */
+function sbcShipRows(y){
+  const [Y,M]=y.split('-').map(Number), a=y+'-01', b=y+'-'+p2(new Date(Y,M,0).getDate());
+  const iws=S.items.filter(i=>(i.cu||'').trim()==='SBC'&&!i.hide&&/^IW-/i.test(i.pn)).sort((x,z)=>x.pn.localeCompare(z.pn,'en',{numeric:true}));
+  const out=[];
+  iws.forEach(it=>{ const ow=it.pn.replace(/^IW-/i,'OW-'), base=pnBase(it.pn);
+    const I=shipByModel(it.pn,a,b), O=shipByModel(ow,a,b);
+    const ks=[...new Set(Object.keys(I).concat(Object.keys(O)))];
+    if(!SHIP_SPLIT.includes(base)){ const iq=Object.values(I).reduce((x,v)=>x+v,0), oq=Object.values(O).reduce((x,v)=>x+v,0);
+      if(iq||oq) out.push({m:base,iw:iq,ow:oq,pn:it.pn}); return; }
+    ks.sort((x,z)=>(x===base?-1:z===base?1:x.localeCompare(z)));
+    ks.forEach(k=>{ if(I[k]||O[k]) out.push({m:k,iw:I[k]||0,ow:O[k]||0,pn:it.pn,v:k!==base}); });
+  });
+  return out;
+}
 function sbcTblHtml(s){
   const C=['wip','press','heat','surf','wait','done'], T={}; C.forEach(c=>T[c]=0); let tt=0, tx=0;
   const LMs={}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
@@ -14525,6 +14553,13 @@ function _printMonthReport(D){
       <td class="r b">${nf(st.amt+st.ramt)}</td><td></td></tr></tfoot></table>
       <div class="nt">· 재고 합계 = PRESS + 검사대기·완제품 (외주업체 재고는 별도) · 전공정이동표 ${esc(D.ext.s.at)} 기준 · 단가는 기종·INNER/OUTER 별</div>`;
   };
+  /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
+  const shipHtml=()=>{ const R=sbcShipRows(y); if(!R.length) return '';
+    const ti=R.reduce((x,r)=>x+r.iw,0), to=R.reduce((x,r)=>x+r.ow,0);
+    return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159C 는 1159B 와 따로</div>
+      <table class="inv" style="width:60%"><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
+      +R.map(r=>`<tr><td class="c">${r.v?'└ ':''}${esc(r.m)}</td><td class="pn">${esc(r.pn)}${r.v?' 중':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
+      +`</tbody><tfoot><tr><td colspan="2" class="c b">합 계</td><td class="r b">${nf(ti)}</td><td class="r b">${nf(to)}</td><td class="r b">${nf(ti+to)}</td></tr></tfoot></table>`; };
   const matHtml=g=>{
     const T=g.mat; if(!T||!T.length) return '';
     const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월', c=v=>`<td class="r">${v?nf(v):'-'}</td>`;
@@ -14558,7 +14593,7 @@ function _printMonthReport(D){
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       ${g.doc?docHtml(g):`<table class="inv">${colg}${thead(!!(g.ext&&g.ext.length))}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
-        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>`}${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
+        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>`}${cu==='SBC'?shipHtml():''}${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
   });
 
   /* 2) 마지막 페이지: 업체별 분석표 */
@@ -14801,6 +14836,18 @@ function mrXlsx(D){
     }
     const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XM=(g&&g.extM)||[], XF=(g&&g.flow)||[];
     let r2=rt+2;
+    /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
+    const SR=cu==='SBC'?sbcShipRows(D.y):[];
+    if(SR.length){ let r=r2;
+      sh.set(r++,0,'■SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159C 는 1159B 와 따로',XS.meta);
+      sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
+      ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      const a0=r;
+      SR.forEach(x=>{ sh.set(r,0,(x.v?'└ ':'')+x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,x.pn+(x.v?' 중':''),XS.pn); sh.merge(r,2,r,3,XS.pn);
+        sh.set(r,4,x.iw,XS.n); sh.set(r,5,x.ow,XS.n); sh.set(r,6,x.iw+x.ow,XS.tN,`E${r+1}+F${r+1}`); r++; });
+      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
+      [4,5,6].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===4?x.iw:ci===5?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
+      r2=r+2; }
     /* 원자재재고 (규격별) — SKF씰 등 */
     const XT=(g&&g.mat)||[];
     if(XT.length){ let r=r2; const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월';
