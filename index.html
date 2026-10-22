@@ -1103,13 +1103,27 @@ body.qp-on{overflow:hidden}
 #tSum.sbcT td .sx{font-size:10px;line-height:1;margin:0}
 #tSum.sbcT tfoot td{text-align:right}
 #tSum.sbcT tfoot td:first-child{text-align:center}
+#tSum.sbcT .sdS{display:none}
 /* 모바일 — 일반 재고표용으로 숨기던 1·2번째 칸(SBC 표에서는 기종·INNER/OUTER)을 다시 보이고, 기종 칸을 왼쪽에 고정 */
 @media (max-width:760px){
   #tSum.sbcT td:nth-child(1),#tSum.sbcT th:nth-child(1),#tSum.sbcT td:nth-child(2),#tSum.sbcT th:nth-child(2){display:table-cell}
-  #tSum.sbcT td:nth-child(3),#tSum.sbcT th:nth-child(3){position:static;box-shadow:none}
-  #tSum.sbcT tbody td:nth-child(1),#tSum.sbcT thead th:nth-child(1),#tSum.sbcT tfoot td:nth-child(1){position:sticky;left:0;z-index:3;background:#fff;box-shadow:2px 0 0 #aab7c3}
-  #tSum.sbcT thead th:nth-child(1){z-index:5;background:#e9eef3}
-  #tSum.sbcT tfoot td:nth-child(1){background:#edf2f6}
+  /* 머리글(위)·기종·구분·앱 품번(왼쪽 3칸) 고정 — 표 안에서 위아래·좌우로 넘긴다 */
+  .gw .scroll:has(#tSum.sbcT){max-height:72vh;overflow:auto}
+  #tSum.sbcT{min-width:900px}
+  #tSum.sbcT col:nth-child(1){width:66px}#tSum.sbcT col:nth-child(2){width:38px}#tSum.sbcT col:nth-child(3){width:104px}
+  #tSum.sbcT td:nth-child(-n+3),#tSum.sbcT th:nth-child(-n+3){position:sticky;z-index:3;background:#fff}
+  #tSum.sbcT td:nth-child(1),#tSum.sbcT th:nth-child(1){left:0}
+  #tSum.sbcT td:nth-child(2),#tSum.sbcT th:nth-child(2){left:66px}
+  #tSum.sbcT td:nth-child(3),#tSum.sbcT th:nth-child(3){left:104px;box-shadow:2px 0 0 #aab7c3}
+  /* 휴대폰 공통 설정(.t th 고정 해제 !important)보다 우선 */
+  #tSum.sbcT thead th{position:sticky!important;top:0!important;z-index:4;background:#e9eef3}
+  #tSum.sbcT thead th:nth-child(-n+3){z-index:6}
+  #tSum.sbcT tfoot td{position:sticky!important;bottom:0!important;z-index:4;background:#edf2f6}
+  #tSum.sbcT tfoot td:nth-child(n+2){left:auto}
+  #tSum.sbcT tfoot td:first-child{left:0;z-index:6}
+  #tSum.sbcT td,#tSum.sbcT th{padding-left:5px;padding-right:5px}
+  #tSum.sbcT td:nth-child(3){white-space:normal;line-height:1.2;font-size:11px}
+  #tSum.sbcT .sdL{display:none}#tSum.sbcT .sdS{display:inline}
   #fcTbl th:first-child,#fcTbl td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 0 #aab7c3}
   #fcTbl thead th:first-child{z-index:4;background:#e9eef3}
   #fcTbl td,#fcTbl th{white-space:nowrap}
@@ -1121,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.76 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.77 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1233,6 +1247,11 @@ body.qp-on{overflow:hidden}
       <span><b>기준월</b><i id="i1">2026-09</i></span><span><b>재고구분</b><i id="iw1">전체 (현장 + 출하대기 + 2층검사실)</i></span>
       <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-14 15:27</i></span>
       <span><b>단위</b>EA</span>
+    </div>
+    <div id="sbcMbar" class="m-only" style="display:none;gap:6px;margin:0 0 8px;flex-wrap:wrap">
+      <button class="btn" style="flex:1;background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800" onclick="sbcOpen()">🏭 공정재고</button>
+      <button class="btn" style="flex:1;background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800" onclick="fcOpen()">📅 출하계획</button>
+      <button class="btn" style="flex:1;background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800" onclick="extOpen()">🏭 외주재고</button>
     </div>
     <div class="gw"><div class="gt"><span id="gt-sum">재고 현황 · 총 <b>131</b>품목 · 기준월 2026-09</span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tSum"><thead><tr><th>No</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('wh')">구분</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('pn')">품번 ▲</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('cur')">현재고</th><th>박스</th><th>낱개</th><th>ea/박스</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('sq')">당월출하(납품)</th><th>안전재고</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('gap')">과부족</th><th>재고일수</th><th>최종 입출고</th></tr></thead><tbody><tr>
        <td class="c">1</td>
@@ -7004,6 +7023,7 @@ function rSum(){
       +(dn<tt2?' · 남은 '+(tt2-dn)+'개':' · <span style="color:#0B6B3A;font-weight:800">완료</span>')
     : '';
 
+  if($('sbcMbar')) $('sbcMbar').style.display=scu==='SBC'?'flex':'none';   /* 휴대폰 — SBC 창 바로가기 */
   /* SBC — 물류 흐름(외주 경유)이 달라 전공정이동표 양식(기종 · INNER/OUTER · 공정별)으로 보여준다 */
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
@@ -13938,7 +13958,7 @@ function sbcTblHtml(s){
     const mk=String(o.m).replace(/\s+/g,'').toUpperCase(), ri=s.rows.indexOf(o);
     const sh=(!it||seenK.has(pn+'|'+mk))?{m:0,a:0}:(seenK.add(pn+'|'+mk),shipOf(pn,mk)), cur=tot-sh.a;
     tm+=sh.m; ta+=sh.a; tc+=cur;
-    return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td>'
+    return '<tr><td class="l">'+esc(o.m)+'</td><td class="c"><span class="sdL">'+o.side+'</span><span class="sdS">'+(o.side==='INNER'?'IN':'OUT')+'</span></td>'
       +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(pn)+' 품목에 B·C 합산"':'')+'>'
         +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk)):esc(pn))
           +(sfTxt(mk)?'<div class="sx" style="color:'+(EXT_SF[mk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(mk)+'</div>':''):'품목 없음')+'</td>'
