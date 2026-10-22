@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.36</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.37</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -4424,7 +4424,7 @@ body.qp-on{overflow:hidden}
   <div class="pt"><h2>원소재 재고 (코일)</h2><span class="sub">RAW COIL STOCK · 코일 단위 입출고 및 원단위 자동차감</span>
     <div class="pa"><button class="btn" onclick="rRaw()">조회</button><button class="btn" onclick="window.print()">인쇄</button><button class="btn" onclick="exportRaw()">엑셀</button></div></div>
 
-  <div class="sum" style="grid-template-columns:repeat(8,1fr)">
+  <div class="sum" style="grid-template-columns:repeat(9,1fr)">
     <div><span>남은 코일</span><b id="r1">80</b><em>코일</em></div>
     <div><span>현재고 중량</span><b id="r2">58,559</b><em>kg</em></div>
     <div class="g"><span>이번 달 입고</span><b id="r3">8,012</b><em>kg</em></div>
@@ -4433,6 +4433,7 @@ body.qp-on{overflow:hidden}
     <div><span>프레스에 물린</span><b id="r6">21</b><em>코일</em></div>
     <div class="w"><span>검사 등록 빠짐</span><b id="r8">0</b><em>코일</em></div>
     <div class="w"><span>사용연한 임박·초과</span><b id="r7">3</b><em>코일</em></div>
+    <div class="w" style="cursor:pointer" onclick="$('rawSt').value='__long';setRV('coil')" title="입고 후 60일 넘게 미투입 — 누르면 코일대장에서 장기재고만"><span>장기재고(60일↑)</span><b id="r9">0</b><em id="r9k">코일</em></div>
   </div>
 
   <div class="guide">
@@ -4494,6 +4495,7 @@ body.qp-on{overflow:hidden}
     <input id="rawQ" placeholder="코일번호 · 업체 · 품번 검색" class="kbi" style="width:180px;margin-left:10px">
     <select id="rawSt" class="fsel" style="min-width:112px">
       <option value="">전체 상태</option><option>대기</option><option>사용중</option><option>소진</option><option>반품</option>
+      <option value="__long">📦 장기재고(60일↑ 미투입)</option>
       <option value="__hold">⛔ 검사 안 끝난 것</option>
       <option value="__miss">🩹 보완 등록분</option>
       <option value="__free">🏷 사급·관리제외만 보기</option>
@@ -7984,8 +7986,11 @@ function coilSt(c){
   if(r<=0.5)return '소진';
   return S.mled.some(m=>m.cid===c.id&&mKindIO(m.k)==='O')?'사용중':'대기';
 }
-function coilAge(c){ return c.d?Math.floor((new Date(mEnd())-new Date(c.d))/864e5):0; }
-function isDeadCoil(c){ return coilSt(c)!=='소진'&&coilSt(c)!=='반품'&&coilAge(c)>90; }
+/* 경과일 — 지난달을 보면 그 달 말일, 이번 달은 오늘 기준 */
+function coilAge(c){ return c.d?Math.floor((new Date(rawAsOf()||today())-new Date(c.d))/864e5):0; }
+/* 장기재고 = 입고 후 60일 넘게 미투입(대기)으로 남은 코일 (사급(부강·세동 포함)·관리제외·반품·소진 제외) */
+const RAW_LONG=60;
+function isDeadCoil(c){ return !isOff(c)&&!RAW_SKIP.test(c.sup||'')&&coilSt(c)==='대기'&&remOf(c)>0.5&&coilAge(c)>RAW_LONG; }
 
 /* ── 원단위 FIFO 자동차감 ─────────────────────────────────── */
 function autoBom(verbose){
@@ -9465,6 +9470,7 @@ function rRaw(){
   anim('r1',nC);anim('r2',Math.round(rem));anim('r3',Math.round(iq));anim('r4',Math.round(oq));
   const mounted=S.coils.filter(c=>mountOf(c.cno)).length;
   anim('r5',nShort);anim('r6',mounted);anim('r7',dead);
+  {const LG=S.coils.filter(isDeadCoil); anim('r9',LG.length); const e=$('r9k'); if(e) e.textContent='코일 · '+kg(LG.reduce((a2,c)=>a2+remOf(c),0))+' kg';}
   anim('r8',S.coils.filter(c=>c.iq==='미등록'&&remOf(c)>0.5&&!isOff(c)).length);
   {const el=$('freeInfo');
    if(el)el.innerHTML=freeN?'🏷 사급 '+freeN+'코일은 재고에서 제외 <a href="#" onclick="openFree();return false" style="color:#5B4B8A">관리</a>':'';}
@@ -9586,6 +9592,15 @@ function rRaw(){
         +(over.length+soon.length>8?' 외 '+(over.length+soon.length-8)+'본':'')+'</b></div>');
     }
   }
+  /* 장기재고 — 60일 넘게 미투입 */
+  {
+    const LG=S.coils.filter(isDeadCoil).sort((x,y)=>String(x.d).localeCompare(String(y.d)));
+    if(LG.length) msgs.push('📦 <b>장기재고(입고 '+RAW_LONG+'일 넘게 미투입) '+LG.length+'본 / '+kg(LG.reduce((a2,c)=>a2+remOf(c),0))+' kg</b>'
+      +' — 창고에 실제로 있는지 확인하세요. 이미 썼는데 MES 투입 기록이 빠진 것이면 재고가 그만큼 많게 잡힙니다. &nbsp;'
+      +'<button class="btn" style="padding:3px 10px;font-size:11px" onclick="$(\'rawSt\').value=\'__long\';setRV(\'coil\')">목록 보기</button>'
+      +'<div style="margin-top:5px"><b>'+LG.slice(0,8).map(c=>esc(c.cno)+' ('+esc(c.d)+' · '+coilAge(c)+'일 · '+kg(remOf(c))+'kg)').join(', ')
+      +(LG.length>8?' 외 '+(LG.length-8)+'본':'')+'</b></div>');
+  }
   /* 코일번호가 비어 있는 행 */
   {
     const jk=S.coils.filter(isJunk);
@@ -9690,7 +9705,8 @@ function rRaw(){
 
   if(RV==='coil'){
     const R=S.coils.map((c,i)=>({c,i})).filter(({c})=>{
-      if(fst==='__hold'){ if(usable(c))return false; }
+      if(fst==='__long'){ if(!isDeadCoil(c))return false; }
+      else if(fst==='__hold'){ if(usable(c))return false; }
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
       else if(fst==='__free'){ if(!isOff(c))return false; }
       else if(fst==='__all'){ /* 전부 표시 */ }
@@ -9738,7 +9754,7 @@ function rRaw(){
          <td class="${used?'neg':''}">${used?kg(used):'-'}</td>
          <td style="font-weight:700" class="${r<=0.5?'':'pos'}">${kg(r)}</td>
          <td>${pct.toFixed(0)}%</td>
-         <td class="c" style="font-family:var(--sans);color:${sc};font-weight:700">${st}</td>
+         <td class="c" style="font-family:var(--sans);color:${sc};font-weight:700">${st}${isDeadCoil(c)?'<div style="font-size:9.5px;color:#B3261E">장기재고</div>':''}</td>
          <td class="c" style="padding:0"><select class="ce cs" data-ci="${i}" data-f="iq"
             style="color:${c.iq==='불합격'?'#B3261E':(c.iq==='미등록'?'#8A6D1F':(usable(c)?'#0B6B3A':'#9A6400'))};font-weight:700">
             ${['합격','특채','미등록','대기','불합격'].map(v=>`<option ${c.iq===v?'selected':''}>${v}</option>`).join('')}
@@ -9853,7 +9869,8 @@ function rRaw(){
 
   else if(RV==='cnt'){
     const R=cntTargets().filter(({c})=>{
-      if(fst==='__hold'){ if(usable(c))return false; }
+      if(fst==='__long'){ if(!isDeadCoil(c))return false; }
+      else if(fst==='__hold'){ if(usable(c))return false; }
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
       else if(fst&&fst!=='__all'&&fst!=='__free'&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.lc).includes(q);});
@@ -10201,7 +10218,7 @@ function exportRaw(){
     <tr>${h.map(x=>'<th>'+x+'</th>').join('')}</tr>
     ${rows.map(r=>'<tr>'+r.map(v=>`<td style="${typeof v==='number'?'text-align:right':''}">${v}</td>`).join('')+'</tr>').join('')}</table>`;
   const c1=T('원소재 코일대장',['입고일','코일No','재질','두께t','폭W','입고중량kg','투입kg','잔량kg','상태','검사','공급업체','MILL SHEET','위치','경과일','사용연한','잔여일','비고'],
-    S.coils.map(c=>[c.d,c.cno,c.mt,+c.t,+c.w,+c.wt,+((+c.wt)-remOf(c)).toFixed(2),remOf(c),coilSt(c),c.iq||'',c.sup||'',c.ms||'',c.lc||'',coilAge(c),dueOf(c),dueLeft(c),c.n||'']));
+    S.coils.map(c=>[c.d,c.cno,c.mt,+c.t,+c.w,+c.wt,+((+c.wt)-remOf(c)).toFixed(2),remOf(c),coilSt(c)+(isDeadCoil(c)?' · 장기재고':''),c.iq||'',c.sup||'',c.ms||'',c.lc||'',coilAge(c),dueOf(c),dueLeft(c),c.n||'']));
   const c2=T('규격별 재고',['재질','두께t','폭W','보유코일','재고kg','당월입고kg','당월투입kg','안전재고kg','과부족'],
     specAgg().map(o=>[o.mt,o.t,o.w,o.n,+o.rem.toFixed(1),+o.iq.toFixed(1),+o.oq.toFixed(1),o.sf,+o.gap.toFixed(1)]));
   const a=mStart(),b=mEnd();
@@ -10718,6 +10735,7 @@ function mcCoil(c,i,n){
   return `<tr><td onclick="openCoil(${i})">
     <div class="mtitle"><span class="pn">${esc(c.cno)}</span>
       <span class="tag" style="background:#EEF2F6;color:${sc}">${st}</span>
+      ${isDeadCoil(c)?'<span class="tag" style="background:#FBE9E7;color:#B3261E">장기재고</span>':''}
       ${isFree(c)?'<span class="tag" style="background:#EDE7F6;color:#5B4B8A">사급</span>':''}
       ${usable(c)?'':'<span class="tag" style="background:#FBE9E7;color:#B3261E">'+esc(c.iq)+'</span>'}
       ${c.iq==='미등록'?'<span class="tag" style="background:#FFF3DC;color:#8A6D1F">보완</span>':''}</div>
