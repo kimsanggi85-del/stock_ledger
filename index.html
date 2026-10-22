@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.67 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.68 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14204,20 +14204,26 @@ async function fcLoad(silent,one){
       f=await fcPickFile(dh);
     } else { if(silent) return; f=await extPickInput(); }
     if(!f) return;
+    { const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); }
     if(silent&&FC&&FC.file===f.name&&FC.mod>=f.lastModified) return;      /* 바뀐 게 없으면 그대로 */
     let book;
     try{ book=await readXlsx(f); }
     catch(e2){ throw new Error(String(e2.message)==='ZIP'?'보안(DRM)·암호 파일이거나 .xls 형식이라 읽을 수 없습니다':'엑셀 해석 실패 ('+(e2.message||e2)+')'); }
     const months=fcParse(book), d0=new Date(f.lastModified);
     await fcPull();
-    const keep=Object.assign({},(FC&&FC.months)||{});
-    Object.keys(months).forEach(k=>keep[k]=months[k]);
+    const keep=Object.assign({},(FC&&FC.months)||{}), chg=[];
+    /* 같은 달 표가 바뀌었으면(새 기준일 또는 수량 수정) 직전 표를 prev 로 남겨 ▲▼ 변경을 보여준다 */
+    Object.keys(months).forEach(k=>{ const o=keep[k], n=months[k];
+      const sig=x=>JSON.stringify(x.rows.map(r=>[r.m,r.q,r.cols]));
+      if(o&&sig(o)!==sig(n)){ n.prev={base:o.base,rev:o.rev,rows:o.rows,at:FC&&FC.fileAt||''}; chg.push(+k.slice(5)+'월'); }
+      else if(o&&o.prev) n.prev=o.prev;
+      keep[k]=n; });
     Object.keys(keep).sort().slice(0,-14).forEach(k=>delete keep[k]);   /* 약 1년치 */
     FC={file:f.name,mod:f.lastModified,at:today()+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),
       fileAt:d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate())+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',months:keep};
     try{ await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',{method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
       body:JSON.stringify([{key:FC_KEY,value:FC,updated_at:nowIso()}])}); }catch(e){}
-    if(!silent) toast('출하계획 읽음 — '+f.name+' · '+Object.keys(months).length+'개월');
+    if(!silent||chg.length) toast('출하계획 '+(chg.length?'변경 반영 — '+chg.join('·')+' 수량이 바뀌었습니다':'읽음 — '+f.name+' · '+Object.keys(months).length+'개월'));
   }catch(e){
     if(e&&e.name==='AbortError') return;
     if(!silent){ alert('출하계획 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
@@ -14225,6 +14231,9 @@ async function fcLoad(silent,one){
   }
   if($('mFc')&&$('mFc').classList.contains('on')) fcPaint();
 }
+/* 앱을 켜 둔 채로도 20분마다 폴더의 파일이 바뀌었는지 확인 — 바뀌었을 때만 다시 읽는다 (폴더 읽기 허용된 PC) */
+let FC_CHK='';
+setInterval(()=>{ if(window.showDirectoryPicker&&document.visibilityState!=='hidden') fcLoad(true).then(()=>{ const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); }); },20*60*1000);
 async function fcOpen(){ $('mFc').classList.add('on'); if(!FC) await fcPull(); fcPaint(); fcLoad(true); }
 /* 기종 이름 → 앱 품번 {iw,ow,key} — '1113 AD (신규)' 처럼 괄호는 뺀다 */
 function fcPn(m){ const b=String(m).replace(/\(.*?\)/g,'').trim();
@@ -14236,7 +14245,9 @@ function fcPaint(){
   if(!FC_YM||!FC.months[FC_YM]) FC_YM=FC.months[cur]?cur:yms[yms.length-1];
   $('fcTabs').innerHTML=yms.slice(-4).map(k=>'<button class="btn'+(k===FC_YM?' k':'')+'" style="padding:4px 10px" onclick="FC_YM=\''+k+'\';fcPaint()">'+(+k.slice(5))+'월</button>').join(' ');
   const M=FC.months[FC_YM], td=today();
-  $('fcInfo').innerHTML='· '+esc(FC.file)+' (저장 '+esc(FC.fileAt||'')+') · <b>'+(+FC_YM.slice(5))+'월 표 기준일 '+esc(M.base.slice(5).replace('-','/'))+'</b>'+(M.rev!==''?' · 수정 '+esc(M.rev)+'회':'');
+  $('fcInfo').innerHTML='· '+esc(FC.file)+' (저장 '+esc(FC.fileAt||'')+') · <b>'+(+FC_YM.slice(5))+'월 표 기준일 '+esc(M.base.slice(5).replace('-','/'))+'</b>'+(M.rev!==''?' · 수정 '+esc(M.rev)+'회':'')
+    +(M.prev?' · <span style="color:#1D4ED8">▲▼ = 직전 표('+esc(M.prev.base.slice(5).replace('-','/'))+' 기준) 대비 변경</span>':'')
+    +' · 마지막 확인 '+esc(FC_CHK||'-');
   /* 남은 계획 = 오늘 이후 출하일 (이 달 + 다음 달) */
   const nx=yms.filter(k=>k>=FC_YM).slice(0,2), remain={};
   nx.forEach(k=>FC.months[k].rows.forEach(r=>{ const pk=fcPn(r.m).key||r.m; r.q.forEach((q,i)=>{ if(r.cols[i]>=td) remain[pk]=(remain[pk]||0)+q; }); }));
@@ -14248,6 +14259,9 @@ function fcPaint(){
   const itOf=pn=>S.items.find(i=>i.pn===pn);
   const book=pn=>{ const it=itOf(pn); if(!it) return null; const bk=ym, bc=CUT; try{ ym=td.slice(0,7); CUT=''; return Math.round(calc(it).cur+(extLed(it)||0)); }finally{ ym=bk; CUT=bc; } };
   const Tt={plan:Array(ships.length).fill(0),sum:0,act:0,rem:0};
+  /* 직전 표 대비 변경 (품번·출하일별) */
+  const PV={}; if(M.prev) M.prev.rows.forEach(r=>{ const k2=fcPn(r.m).key||r.m; r.q.forEach((q,i)=>{ const kk=k2+'|'+r.cols[i]; PV[kk]=(PV[kk]||0)+q; }); });
+  const dv=(k2,d,v)=>{ if(!M.prev) return ''; const o=PV[k2+'|'+d]||0, x=v-o; return x?'<div class="sx" style="color:'+(x>0?'#1D4ED8':'#B3261E')+';font-weight:800" title="직전 표('+esc(M.prev.base.slice(5).replace('-','/'))+' 기준) '+nf(o)+' → '+nf(v)+'">'+(x>0?'▲+':'▼')+nf(x)+'</div>':''; };
   let body='';
   order.forEach(k=>{ const g=G[k];
     const plan=ships.map(d=>g.rows.reduce((s2,r)=>s2+r.cols.reduce((s3,c,i)=>s3+(c===d?r.q[i]:0),0),0));
@@ -14257,7 +14271,7 @@ function fcPaint(){
     const rem=remain[k]||0, gap=bk==null?null:bk-rem;
     plan.forEach((v,i)=>Tt.plan[i]+=v); Tt.sum+=sum; Tt.act+=act; Tt.rem+=rem;
     body+='<tr><td class="l" style="font-weight:800">'+esc(k)+'</td><td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+'</td>'
-      +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+'</td>').join('')
+      +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+dv(k,ships[i],v)+'</td>').join('')
       +'<td style="font-weight:800">'+nf(sum)+'</td>'
       +'<td title="Inner '+nf(ai)+' / Outer '+nf(ao)+'">'+(act?nf(act):'-')+(ai!==ao?'<div class="sx">IW '+nf(ai)+' · OW '+nf(ao)+'</div>':'')+'</td>'
       +'<td style="font-weight:800">'+(rem?nf(rem):'-')+'</td>'
