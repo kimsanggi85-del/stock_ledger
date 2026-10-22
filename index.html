@@ -1103,13 +1103,39 @@ body.qp-on{overflow:hidden}
 #tSum.sbcT td .sx{font-size:10px;line-height:1;margin:0}
 #tSum.sbcT tfoot td{text-align:right}
 #tSum.sbcT tfoot td:first-child{text-align:center}
+#tSum.sbcT .sdS{display:none}
+/* 모바일 — 일반 재고표용으로 숨기던 1·2번째 칸(SBC 표에서는 기종·INNER/OUTER)을 다시 보이고, 기종 칸을 왼쪽에 고정 */
+@media (max-width:760px){
+  #tSum.sbcT td:nth-child(1),#tSum.sbcT th:nth-child(1),#tSum.sbcT td:nth-child(2),#tSum.sbcT th:nth-child(2){display:table-cell}
+  /* 머리글(위)·기종·구분·앱 품번(왼쪽 3칸) 고정 — 표 안에서 위아래·좌우로 넘긴다 */
+  .gw .scroll:has(#tSum.sbcT){max-height:72vh;overflow:auto}
+  #tSum.sbcT{min-width:900px}
+  #tSum.sbcT col:nth-child(1){width:66px}#tSum.sbcT col:nth-child(2){width:38px}#tSum.sbcT col:nth-child(3){width:104px}
+  #tSum.sbcT td:nth-child(-n+3),#tSum.sbcT th:nth-child(-n+3){position:sticky;z-index:3;background:#fff}
+  #tSum.sbcT td:nth-child(1),#tSum.sbcT th:nth-child(1){left:0}
+  #tSum.sbcT td:nth-child(2),#tSum.sbcT th:nth-child(2){left:66px}
+  #tSum.sbcT td:nth-child(3),#tSum.sbcT th:nth-child(3){left:104px;box-shadow:2px 0 0 #aab7c3}
+  /* 휴대폰 공통 설정(.t th 고정 해제 !important)보다 우선 */
+  #tSum.sbcT thead th{position:sticky!important;top:0!important;z-index:4;background:#e9eef3}
+  #tSum.sbcT thead th:nth-child(-n+3){z-index:6}
+  #tSum.sbcT tfoot td{position:sticky!important;bottom:0!important;z-index:4;background:#edf2f6}
+  #tSum.sbcT tfoot td:nth-child(n+2){left:auto}
+  #tSum.sbcT tfoot td:first-child{left:0;z-index:6}
+  #tSum.sbcT td,#tSum.sbcT th{padding-left:5px;padding-right:5px}
+  #tSum.sbcT td:nth-child(3){white-space:normal;line-height:1.2;font-size:11px}
+  #tSum.sbcT .sdL{display:none}#tSum.sbcT .sdS{display:inline}
+  #fcTbl th:first-child,#fcTbl td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 0 #aab7c3}
+  #fcTbl thead th:first-child{z-index:4;background:#e9eef3}
+  #fcTbl td,#fcTbl th{white-space:nowrap}
+  #mCntRemind .crHint{display:block!important}
+}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.55 · 원소재 v11.26</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.35</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1136,7 +1162,7 @@ body.qp-on{overflow:hidden}
   <div class="navitem" data-g="stock"><button type="button">재고관리 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="sum"><i>📊</i>재고 현황<em>STOCK</em></a><a data-t="sum" data-fn="syncMes(false)" class="act pri"><i>🔃</i>새로고침</a><a data-t="sum" data-fn="render()" class="act"><i>🔄</i>조회</a><a data-t="sum" data-fn="diag()" class="act"><i>🩺</i>진단</a><a data-t="sum" data-fn="sumOut('print')" class="act"><i>🖨</i>인쇄</a><a data-t="sum" data-fn="sumOut('xls')" class="act"><i>📗</i>엑셀</a><a data-t="sum" data-fn="sumOut('csv')" class="act"><i>📄</i>CSV</a></div><div class="mega-col"><a class="scr" data-t="cnt"><i>✅</i>재고 실사<em>COUNT</em></a><a data-t="cnt" data-fn="applyCount()" class="act pri"><i>✅</i>조정전표발행</a><a data-t="cnt" data-fn="exportCnt()" class="act"><i>⬇</i>실사표받기</a><a data-t="cnt" data-fn="pick('fCnt')" class="act"><i>📄</i>실사CSV</a><a data-t="cnt" data-fn="clearCount()" class="act"><i>🧹</i>실사값지우기</a><a data-t="cnt" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr" data-t="bin"><i>📒</i>품목별 입출고 이력<em>HISTORY</em></a><a data-t="bin" data-fn="window.print()" class="act pri"><i>🖨</i>인쇄</a><a data-t="bin" data-fn="printAllBins()" class="act"><i>📚</i>일괄인쇄</a></div></div></div>
   <div class="navitem on" data-g="io"><button type="button">입출고 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="io"><i>↔</i>입출고 내역<em>IN / OUT</em></a><a data-t="io" data-fn="openIO()" class="act pri"><i>➕</i>입출고등록</a><a data-t="io" data-fn="openImp()" class="act"><i>📥</i>엑셀실적</a><a data-t="io" data-fn="exportCsv('io')" class="act"><i>📄</i>CSV</a><a data-t="io" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div><div class="mega-col"><a class="scr on" data-t="trc"><i>🔗</i>LOT 추적<em>TRACE</em></a><a data-t="trc" data-fn="rTrc()" class="act pri"><i>🔍</i>추적</a><a data-t="trc" data-fn="openCust()" class="act"><i>🏢</i>고객사</a><a data-t="trc" data-fn="exportTrc()" class="act"><i>📗</i>엑셀</a><a data-t="trc" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
   <div class="navitem" data-g="raw"><button type="button">원소재 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="raw"><i>🧱</i>원소재(코일)<em>RAW COIL</em></a><a data-t="raw" data-fn="refreshAll()" class="act pri"><i>🔄</i>새로고침</a><a data-t="raw" data-fn="setRV('sup')" class="act"><i>🏢</i>업체별</a><a data-t="raw" data-fn="setRV('eq')" class="act"><i>🏭</i>설비현황</a><a data-t="raw" data-fn="setRV('coil')" class="act"><i>🧱</i>코일목록</a><a data-t="raw" data-fn="openCoil(-1)" class="act"><i>➕</i>코일등록</a><a data-t="raw" data-fn="exportRaw()" class="act"><i>📗</i>엑셀</a><a data-t="raw" data-fn="window.print()" class="act"><i>🖨</i>인쇄</a></div></div></div>
-  <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
+  <div class="navitem" data-g="master"><button type="button">기준정보 ▾</button><div class="mega"><div class="mega-col"><a class="scr" data-t="cfg"><i>⚙</i>품목대장<em>ITEMS</em></a><a data-t="cfg" data-fn="openItem(-1)" class="act pri"><i>➕</i>품목등록</a><a data-t="cfg" data-fn="pick('fCsv')" class="act"><i>📄</i>CSV등록</a><a data-t="cfg" data-fn="fixNm()" class="act"><i>🧹</i>품명정리</a><a data-t="cfg" data-fn="backup()" class="act"><i>💾</i>백업</a><a data-t="cfg" data-fn="pick('fBk')" class="act"><i>📂</i>복원</a><a data-t="cfg" data-fn="wipe()" class="act"><i>🗑</i>전체삭제</a></div><div class="mega-col"><a class="scr" data-t="help"><i>❓</i>사용안내<em>HELP</em></a><a data-t="help" data-fn="window.print()" class="act pri"><i>🖨</i>안내 인쇄</a><a data-t="help" data-fn="cntRemind(true)" class="act"><i>📋</i>월말실사 안내</a><a data-t="help" data-fn="setTab('sum')" class="act"><i>📊</i>재고현황으로</a></div></div></div>
   <div class="nav-f" id="navF"><label style="font-size:12px">재고구분</label><select id="whSel" style="font-weight:700">
     <option value="">전체 (현장+출하대기+2층검사실)</option>
     <option value="현장">현장재고 · 생산팀</option>
@@ -1187,6 +1213,8 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
     <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
     <button class="btn pc-only" onclick="sbcOpen()" title="SBC 공정별 재고 — PRESS · 열처리(한성) · 표면처리(동진) · 검사대기 · 검사완료" style="background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800">🏭 SBC 공정재고</button>
+    <button class="btn pc-only" onclick="fcOpen()" title="영업 확정출하 List(3.예상수량) — 차수별 출하계획 대비 실출하·재고 과부족" style="background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800">📅 SBC 출하계획</button>
+    <button class="btn pc-only" id="sbcAutoBtn" onclick="sbcAutoNow()" title="SBC 공유 폴더 자료 지금 다시 읽기" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800;padding:4px 8px">🔄</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -1219,6 +1247,11 @@ body.qp-on{overflow:hidden}
       <span><b>기준월</b><i id="i1">2026-09</i></span><span><b>재고구분</b><i id="iw1">전체 (현장 + 출하대기 + 2층검사실)</i></span>
       <span><b>작성자</b><i id="i2">-</i></span><span><b>출력일시</b><i id="i3">2026-09-14 15:27</i></span>
       <span><b>단위</b>EA</span>
+    </div>
+    <div id="sbcMbar" class="m-only" style="display:none;gap:6px;margin:0 0 8px;flex-wrap:wrap">
+      <button class="btn" style="flex:1;background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800" onclick="sbcOpen()">🏭 공정재고</button>
+      <button class="btn" style="flex:1;background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800" onclick="fcOpen()">📅 출하계획</button>
+      <button class="btn" style="flex:1;background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800" onclick="extOpen()">🏭 외주재고</button>
     </div>
     <div class="gw"><div class="gt"><span id="gt-sum">재고 현황 · 총 <b>131</b>품목 · 기준월 2026-09</span><span class="r">클릭 시 행 선택</span></div><div class="scroll"><table class="t" id="tSum"><thead><tr><th>No</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('wh')">구분</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('pn')">품번 ▲</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('cur')">현재고</th><th>박스</th><th>낱개</th><th>ea/박스</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('sq')">당월출하(납품)</th><th>안전재고</th><th style="cursor:pointer;user-select:none" title="클릭 시 정렬" onclick="setSort('gap')">과부족</th><th>재고일수</th><th>최종 입출고</th></tr></thead><tbody><tr>
        <td class="c">1</td>
@@ -6009,12 +6042,88 @@ body.qp-on{overflow:hidden}
       </div>
     </div>
 
+    <div class="hs" id="helpCnt">
+      <h3>8. 재고실사 사용설명서 (프레스품 · 원소재)</h3>
+      <div class="flow">
+        <div><b>①</b><span>새로고침</span><em>실사 직전 MES·출하 자료를<br>최신으로 받기</em></div>
+        <div><b>②</b><span>실사표 받기</span><em>엑셀로 내려받아<br>현장에서 기록</em></div>
+        <div><b>③</b><span>실사값 입력</span><em>화면 직접 입력 · 사진 · 파일<br>(입력만으로는 재고 안 바뀜)</em></div>
+        <div><b>④</b><span>차이 확인</span><em>차이 난 품목·코일<br>재확인</em></div>
+        <div><b>⑤</b><span>조정전표 발행</span><em>차이만큼 재고조정 전표<br>→ 전산 = 실물</em></div>
+      </div>
+      <div class="hint">· <b>실사값은 입력만 해서는 재고에 반영되지 않습니다.</b> 반드시 [조정전표 발행]까지 눌러야 전산재고가 실물과 같아집니다.<br>
+        · 실사값은 <b>이 기기(브라우저)에만</b> 저장됩니다. 한 사람이 한 기기에서 입력하고 발행까지 마치세요.<br>
+        · 실사 시작 전에 <b>[🔃 새로고침]</b>(프레스품) / <b>[🔄 새로고침]</b>(원소재)을 눌러 그날 생산·출하·투입까지 받은 뒤 시작합니다.</div>
+
+      <h4 style="margin:14px 0 6px;font-size:13px;color:#1F3A5F">8-1. 프레스품(제품) 재고실사 — [재고관리 ▸ ✅ 재고 실사]</h4>
+      <table class="t"><thead><tr><th style="width:24px">순서</th><th style="width:170px">할 일</th><th>방법 · 주의</th></tr></thead><tbody>
+        <tr><td class="c">1</td><td class="l"><b>재고구분 선택</b></td><td class="l">상단 <b>재고구분</b>에서 실사할 장소를 고릅니다 — <b>현장재고(생산팀)</b> / <b>출하대기(검사실)</b> / <b>2층 검사실</b>.<br>
+          현장·2층으로 나뉜 품목(예: <b>1888-0005</b> 현장 / <b>1888-0005 [2F]</b> 2층)은 <b>장소별로 따로</b> 셉니다. 한쪽 수량을 다른 쪽에 합쳐 넣지 마세요.</td></tr>
+        <tr><td class="c">2</td><td class="l"><b>실사일자</b></td><td class="l">실제로 센 날짜를 넣습니다. 조정전표가 이 날짜로 발행됩니다.</td></tr>
+        <tr><td class="c">3</td><td class="l"><b>실사표 받기</b></td><td class="l"><b>[⬇ 실사표 내려받기]</b> → 품번·품명·보관위치·박스단위·전산재고가 들어간 표(CSV). 현장에 출력해 <b>실사박스</b> 칸에 적어 옵니다.</td></tr>
+        <tr><td class="c">4</td><td class="l"><b>실사값 입력</b></td><td class="l">① 화면 <b>실사(박스)</b> 칸에 <b>박스수</b>만 입력 → 실사(EA)·차이·정확도 자동 계산<br>
+          ② 내려받은 실사표의 <b>실사박스</b> 칸을 채워 그대로 <b>[📄 실사 CSV 불러오기]</b>로 올리기<br>
+          ③ 현황판(화이트보드) 사진 → <b>📷 사진인식</b> → 노란 행 확인 후 <b>[체크한 행을 실사표에 입력]</b><br>
+          · <b>빈칸 = 미실사</b>(전표 안 만듦) · 실물이 없으면 <b>0</b> 입력</td></tr>
+        <tr><td class="c">5</td><td class="l"><b>차이 확인</b></td><td class="l">필터 <b>[차이발생]</b>으로 차이 난 품목만 보고 재확인합니다. 상단에 실사입력·차이발생·차이수량·<b>재고정확도</b>가 표시됩니다.</td></tr>
+        <tr><td class="c">6</td><td class="l"><b>전표 구분 선택</b></td><td class="l"><b>+차이</b>(실물이 많음): 보통 <b>재고조정(+)</b><br>
+          <b>−차이</b>(실물이 적음): 보통 <b>재고조정(−)</b> · 검사 후 폐기분이면 <b>검사폐기</b> · 선별 제외분이면 <b>선별제외</b><br>
+          · 출하검사·검사수량 자동연동이 켜져 있으면 <b>생산입고/검사폐기</b>는 이중 계상되므로 프로그램이 재고조정으로 바꿔 발행합니다.</td></tr>
+        <tr><td class="c">7</td><td class="l"><b>[차이 조정전표 발행]</b></td><td class="l">차이가 있는 품목만 재고조정 전표가 만들어지고 실사값은 비워집니다. 결과는 <b>입출고 내역 · 품목별 입출고 이력</b>에서 「재고실사 차이조정」으로 확인합니다.</td></tr>
+        <tr><td class="c">8</td><td class="l"><b>인쇄 · 결재</b></td><td class="l">발행 <b>전에</b> [인쇄]로 <b>재고실사표(TJP-QP-0803)</b>를 출력해 실사자·입회자·승인 결재를 받습니다 (발행하면 실사값이 비워집니다).</td></tr>
+      </tbody></table>
+
+      <h4 style="margin:14px 0 6px;font-size:13px;color:#1F3A5F">8-2. 원소재(코일) 재고실사 — [원소재 ▸ ✅ 재고 실사]</h4>
+      <table class="t"><thead><tr><th style="width:24px">순서</th><th style="width:170px">할 일</th><th>방법 · 주의</th></tr></thead><tbody>
+        <tr><td class="c">1</td><td class="l"><b>새로고침</b></td><td class="l">원소재 화면 <b>[🔄 새로고침]</b> → MES 입고·장착·투입완료를 최신으로 받습니다. 상단 「MES 소재 동기화 시각」이 오늘인지 확인하세요.</td></tr>
+        <tr><td class="c">2</td><td class="l"><b>실사 대상</b></td><td class="l">지금 남아 있는 코일만 나옵니다 — <b>대기(미투입)</b> · <b>사용중(설비 장착)</b>.<br>
+          <b>소진(투입완료)·반품·사급/관리제외</b> 코일은 나오지 않습니다.</td></tr>
+        <tr><td class="c">3</td><td class="l"><b>실사일자 · 실사자</b></td><td class="l">실사일자와 실사자 성명을 넣습니다. 조정전표에 이 날짜·이름이 남습니다.</td></tr>
+        <tr><td class="c">4</td><td class="l"><b>실사표 받기</b></td><td class="l"><b>[⬇ 실사표 받기]</b> → 코일No·재질·두께·폭·공급업체·보관위치·<b>전산 잔량(kg)</b> 엑셀. <b>실사 잔량(kg)</b> 칸에 적어 옵니다.</td></tr>
+        <tr><td class="c">5</td><td class="l"><b>실사값 입력</b></td><td class="l">· <b>미개봉 코일</b>: <b>[있음]</b> → 전산 잔량 그대로 확인<br>
+          · <b>사용중 코일</b>: 저울로 잰 <b>실제 kg</b> 입력<br>
+          · <b>코일이 없음</b>: <b>[없음]</b> (= 0kg, 전량 재고조정 −)<br>
+          · 다 확인했으면 <b>[✔ 나머지 전산값 그대로]</b>로 미입력분 일괄 확인 (실제로 본 코일만)<br>
+          · 적어 온 엑셀은 <b>코일No, 실사kg</b> 두 칸으로 저장해 <b>[📥 실사값 올리기]</b></td></tr>
+        <tr><td class="c">6</td><td class="l"><b>차이 확인</b></td><td class="l">행 색 — <span class="pos">초록 = 일치</span> · <span class="neg">빨강 = 과다/부족</span> · 흰색 = 미실사. 빨간 행은 코일번호·HEAT를 다시 확인합니다.</td></tr>
+        <tr><td class="c">7</td><td class="l"><b>[✅ 조정전표 발행]</b></td><td class="l">전산과 다른 코일만 <b>재고조정(+/−) 전표</b>가 발행되고 실사값은 비워집니다. [입출고 내역]에서 「실사조정 (전산 → 실사)」으로 확인합니다.</td></tr>
+      </tbody></table>
+      <div class="hint">· <b>MES에 없는 코일</b>(잘못 등록·중복 입고)은 실사로 0 처리하지 말고 <b>MES에서 입고를 삭제</b>하세요. 다음 MES 동기화 때 웹앱에서도 같이 빠집니다(LOT 기록 정리).<br>
+        · <b>MES에 있는데 실사표에 없는 코일</b>은 [원소재 ▸ 코일 목록] 상태 필터로 찾아보고, 그래도 없으면 MES 입고 등록을 확인합니다.<br>
+        · 코일 잔량은 MES 투입 상태로 계산합니다 — <b>장착중 = 입고중량 − 사용중량</b>, <b>투입완료 = 0</b>. 실사 차이가 반복되는 코일은 MES 장착·투입완료 처리가 빠졌는지 먼저 확인하세요.<br>
+        · 월말 원자재 마감(원소재 ▸ 📅 월마감)은 실사 조정 후 확정하세요.</div>
+    </div>
+
     <div class="hs">
       <h3>7. 데이터 보관</h3>
       <div class="hint" style="font-size:12px;color:#41556a">· 데이터는 이 브라우저(PC)에 저장됩니다. 다른 PC나 브라우저에서는 보이지 않으므로 <b>백업 파일로 이동</b>하세요.<br>· 브라우저 데이터 삭제 시 함께 삭제됩니다. MES 자동전표는 동기화로 복구되지만 수동 전표·실사값·품목 설정은 백업이 있어야 복구됩니다.<br>· 월말 마감 순서: 실사 → 조정전표 → 총괄표 인쇄(결재) → 엑셀 저장 → 백업</div>
     </div>
   </div>
 </div>
+
+<!-- 월말 재고실사 안내 -->
+<div class="mask" id="mCntRemind"><div class="modal" style="max-width:520px">
+  <h3>📋 월마감 재고실사 안내<span onclick="cntRemindClose()">✕</span></h3>
+  <div class="mb">
+    <div style="font-size:15px;font-weight:700;color:#1F3A5F;line-height:1.6;margin-bottom:8px">
+      <span id="crYm">10월</span> 월마감입니다.<br>
+      <span style="color:#B3261E">재고실사표를 다운로드해서 실사해 주세요.</span></div>
+    <div class="hint crHint" style="margin-bottom:10px">
+      · 실사 마감일: <b id="crCut">-</b> (재고조사서 기준일)<br>
+      · 실사표에 적어 온 값을 입력한 뒤 <b>[조정전표 발행]</b>까지 해야 재고에 반영됩니다.<br>
+      · 원소재 실사 전 <b>[🔄 새로고침]</b>으로 MES 투입 상태를 최신으로 받으세요.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn k" style="height:auto;min-height:40px;padding:9px 6px;line-height:1.3" onclick="exportCnt()">⬇ 프레스품 실사표</button>
+      <button class="btn k" style="height:auto;min-height:40px;padding:9px 6px;line-height:1.3" onclick="cntSheet()">⬇ 원소재 실사표</button>
+      <button class="btn" style="height:auto;min-height:36px;padding:8px 6px;line-height:1.3" onclick="cntRemindClose();setTab('cnt')">✅ 프레스품 실사 화면</button>
+      <button class="btn" style="height:auto;min-height:36px;padding:8px 6px;line-height:1.3" onclick="cntRemindClose();setTab('raw');setRV('cnt')">✅ 원소재 실사 화면</button>
+    </div>
+    <div style="margin-top:8px;text-align:center"><a href="#" onclick="cntRemindClose();cntHelp();return false" style="font-size:12px">📖 재고실사 사용설명서 보기</a></div>
+    <div class="act" style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+      <button class="btn" style="height:auto;padding:8px 12px" onclick="cntRemindSnooze()">오늘 하루 보지 않기</button>
+      <button class="btn g" style="height:auto;padding:8px 12px" onclick="cntRemindDone()">이번 달 실사 완료</button></div>
+  </div>
+</div></div>
 
 <!-- 고객사 규칙 -->
 <div class="mask" id="mCust"><div class="modal" style="max-width:560px">
@@ -6049,12 +6158,34 @@ body.qp-on{overflow:hidden}
   <div class="mb">
     <div class="hint" style="margin-bottom:9px">
       · 흐름: <b>프레스 생산 → PRESS → 열처리(한성) → 표면처리(동진) → 검사대기 → 검사완료 → 출하</b><br>
+      · <b style="color:#1D4ED8">총재고(장부 기준) = 생산(MES + 생산마감 보정) − 불량 − 출하</b> (외주 포함) — <b>SBC 재고의 기준값</b>입니다. 출하는 레이스웨이 앱 [출하대기장 → SBC] 등록분이 당일 빠집니다.<br>
+      · <b>공정 합계(참고)</b> = 아래 공정 칸의 합. 총재고와 다르면 주황 「차이」 — − 는 공정 이동(외주·검사) 미등록으로 같은 물량이 두 번 잡힌 것, + 는 시트·이동표에 빠진 물량<br>
       · <b>PRESS</b> = 생산일보 생산수량(MES + 생산마감 보정) − MES 불량 − 외주출고 · <b>열처리/표면처리</b> = 외주출고 − 외주입고 (거래처 한성 / 동진·대영)<br>
       · <b>검사대기·검사완료</b> = 검사실 구글 시트(재고gs_ATC) 값 — 새로고침 때 함께 읽습니다. 셀 아래 <span style="color:#7C3AED">보라 숫자</span> = 전표 계산값(외주입고 − 검사, 검사 − 출하)<br>
       · 시작값은 전공정이동표 기준 — 아직 없으면 [🏭 SBC 외주재고] 창의 <b>[➖ 외주출고·공정 시작값 등록]</b>을 한 번 누르세요. 회색 숫자 = 전공정이동표
     </div>
     <div id="sbcInfo" style="font-size:12px;margin-bottom:6px;color:#41556a"></div>
     <div class="gw"><div class="scroll" style="max-height:60vh"><table class="t" id="sbcTbl"></table></div></div>
+  </div>
+</div></div>
+
+<!-- SBC 출하계획 (영업 확정출하 List) -->
+<div class="mask" id="mFc"><div class="modal" style="max-width:1200px">
+  <h3>📅 SBC 출하계획 — 확정출하 List<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div class="hint" style="margin-bottom:8px">
+      · 공유 폴더(<b>W: 12_공통자료 → 32_Raceway 재고관리</b>)의 <b>「3.예상수량(확정출하list)_YYYY_Rev○.xlsx」</b> → <b>「주별출하요약」</b> 시트에서 달마다 가장 최근 기준일 표를 읽습니다. (전공정이동표와 같은 폴더 지정을 씁니다)<br>
+      · 수량은 <b>기종별 세트(Inner·Outer 각각 같은 수량)</b>입니다. 실출하·총재고는 Inner/Outer 중 <b>적은 쪽</b>으로 비교합니다.<br>
+      · <b>남은 계획</b> = 오늘 이후 출하일 차수 합계(이번 달 + 다음 달) · <b>재고</b> = 뒷공정(열처리·표면처리·검사대기·검사완료) 기종별(표면처리 O/X) − 검사 시트 이후 출하 · 프레스(생산중·PRESS)는 기종 구분 전이라 따로 표시<br>
+      · <b>과부족</b> = 재고 − 남은 계획 → <span class="neg">빨강 = 모자람</span> (프레스 물량은 넣지 않음)
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <button class="btn k" onclick="fcLoad(false)">🔄 다시 읽기</button>
+      <button class="btn" onclick="fcLoad(false,true)">📂 파일 직접 선택</button>
+      <span id="fcTabs"></span>
+      <span id="fcInfo" style="font-size:12px;color:#41556a"></span>
+    </div>
+    <div class="gw"><div class="scroll" style="max-height:62vh"><table class="t" id="fcTbl"></table></div></div>
   </div>
 </div></div>
 
@@ -6892,14 +7023,17 @@ function rSum(){
       +(dn<tt2?' · 남은 '+(tt2-dn)+'개':' · <span style="color:#0B6B3A;font-weight:800">완료</span>')
     : '';
 
+  if($('sbcMbar')) $('sbcMbar').style.display=scu==='SBC'?'flex':'none';   /* 휴대폰 — SBC 창 바로가기 */
   /* SBC — 물류 흐름(외주 경유)이 달라 전공정이동표 양식(기종 · INNER/OUTER · 공정별)으로 보여준다 */
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
     $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
       +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
       +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
+      +'<br><span style="font-size:11.5px">· <b style="color:#B3261E">출하(당월)</b> = 레이스웨이 앱 출하(출하대기장 → SBC), 앱 품번 첫 줄에 표시 · <b style="color:#1D4ED8">현재고</b> = 합계 − 검사 시트를 읽은 뒤의 출하 (그 전 출하는 시트 값에 이미 빠져 있음)</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
-      +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>';
+      +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>'
+      +' &nbsp;<a href="javascript:void 0" onclick="fcOpen()" style="color:#1D4ED8;font-weight:800">📅 출하계획 ▸</a>';
     $('tSum').classList.add('sbcT'); $('gt-sum').parentElement.classList.add('gtTall'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
     return;
   }
@@ -6933,7 +7067,7 @@ function rSum(){
        <td class="c">${i+1}</td>
        <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
        <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
-       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${(()=>{ const l=extLed(it), x=extOut(it.pn);
+       <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${isSbc(it)?(sp=>sp&&sp.keys.length>1?'<div class="sx" style="color:#7C3AED;font-weight:600" title="뒷공정(열처리·표면처리·검사) 기종별 − 검사 시트 이후 출하 · 프레스(생산중+PRESS)는 기종 구분 전">'+sp.keys.map(k=>k+' '+nf(sp.cur[k])).join(' · ')+' · 프레스 '+nf(sp.press)+'</div>':'')(sbcSplit(it.pn)):''}${(()=>{ const l=extLed(it), x=extOut(it.pn);
          const pr=pressOf(it); if(pr!=null) xp+=pr;
          const sg=pr!=null?sbcStage(it):null;
          const ps=sg?`<div class="sx" style="cursor:pointer" onclick="sbcOpen()" title="SBC 공정재고 열기 — 기초 이동표 ${esc(EXT.press[it.pn].at||EXT.press[it.pn].d)}">PRESS ${nf(sg.press)} · 검사대기 ${nf(sg.wait)} · 검사완료 ${nf(sg.done)} <b style="color:#7C3AED">▸</b></div>`:'';
@@ -6946,7 +7080,7 @@ function rSum(){
        <td class="bxc">${bx>0?`<input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="b" value="${cb||''}" title="박스 (${nf(bx)} ea/박스) · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off">`:'<span class="dim">-</span>'}</td>
        <td class="bxc"><input type="text" class="sumBx kbi" placeholder="-" data-pn="${pn}" data-u="e" value="${ce||''}" title="${bx>0?'낱개':'수량(EA)'} · 클릭: 숫자판 / 키보드 입력 가능" inputmode="none" autocomplete="off"></td>
        <td class="epb">${bx>0?nf(bx):'<span class="dim">-</span>'}</td>
-       <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}</td>
+       <td class="${v.sq?'neg':''}" style="font-weight:700">${v.sq?nf(v.sq):'-'}${v.sq&&isSbc(it)?(o2=>{ const ks=Object.keys(o2).sort(); return ks.length>1?'<div class="sx" style="font-weight:600;color:#64748B">'+ks.map(k=>k+' '+nf(o2[k])).join(' · ')+'</div>':''; })(shipByModel(it.pn,mStart(),CUT||mEnd())):''}</td>
        <td>${nf(it.sf)}</td>
        <td class="${v.gap<0?'neg':''}">${v.gap>0?'+':''}${nf(v.gap)}</td>
        <td class="${v.doi!==null&&v.doi<7?'wn':''}">${v.doi===null?'-':nf(Math.round(v.doi))}</td>
@@ -8035,8 +8169,9 @@ function autoBom(verbose){
    · 코일은 개체 단위라 "있는지 / 남은 무게가 얼마인지"를 코일별로 확인한다.
    · 미개봉 코일은 입고중량 그대로, 사용중 코일만 실측한다.
    · 전산 잔량과 다르면 재고조정(+/−) 전표를 발행해 원장을 맞춘다.          */
+/* 실사 대상 = 지금 남아 있는 코일. 소진(MES 투입완료 포함)·반품은 잔량 계산이 덜 됐어도 뺀다 — 이미 실사값을 넣은 것만 남긴다 */
 function cntTargets(){
-  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isOff(c)&&(remOf(c)>0.5||c.ct!=null));
+  return S.coils.map((c,i)=>({c,i})).filter(({c})=>!isOff(c)&&(c.ct!=null||(!/^(소진|반품)$/.test(coilSt(c))&&remOf(c)>0.5)));
 }
 function cntAllOk(){
   const T=cntTargets().filter(({c})=>c.ct==null);
@@ -8583,7 +8718,7 @@ async function loadShipHist(force){
         if(!(/출하대기/.test(dep) && /SBC/i.test(dst))) return null;
         return {id:'GN'+x.id,d:String(x.move_date||'').slice(0,10),
           pn:sbc, k:'출하', q:+x.qty||0, p:(cuOf(sbc)||dst), lot:String(x.lot||''),
-          n:'출하(레이스웨이)'+(raw.toUpperCase().startsWith(sbc.replace(/^(IW|OW)-BDA-/i,'').toUpperCase())?'':' · '+raw)+(x.lot?'':' · LOT 미기록'),
+          n:'출하(레이스웨이) · '+raw+(x.lot?'':' · LOT 미기록'),   /* 원본 기종(1106CA Inner 등)을 항상 남겨 뒷공정 기종별로 나눈다 */
           by:'레이스웨이', src:'GN|'+x.id};
       }
       /* 그 밖에는 일반출하 — 일진·부강 등 */
@@ -9560,8 +9695,9 @@ function rRaw(){
       else if(fst==='__all'){ /* 전부 표시 */ }
       else if(isOff(c))return false;                       /* 평소에는 사급·무의미 코일을 감춘다 */
       else if(fst&&coilSt(c)!==fst)return false;
-      return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);});
-    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 · 잔량합계 <b>'
+      return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);})
+      .sort((x,y)=>String(y.c.d||'').localeCompare(String(x.c.d||''))||y.c.id-x.c.id);   /* 최근 입고가 위로 */
+    $('gt-raw').innerHTML='코일대장 · 총 <b>'+R.length+'</b>본 (최근 입고 순) · 잔량합계 <b>'
       +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
       +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
       +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>'
@@ -9677,11 +9813,15 @@ function rRaw(){
   }
 
   else if(RV==='led'){
-    const R=S.mled.filter(m=>m.d>=a&&m.d<=b)
+    /* MES 입고는 전표가 아니라 코일 자체로만 있으므로 입고 줄을 만들어 함께 보여준다 (보기 전용) */
+    const VR=S.coils.map((c,i)=>({c,i})).filter(({c})=>c.src&&/^(MESRCV|MESLOT)\|/.test(c.src)&&c.d>=a&&c.d<=b&&!isOff(c))
+      .map(({c,i})=>({id:-c.id,virt:1,vi:i,d:c.d,cid:c.id,cno:c.cno,k:'구매입고',q:+c.wt||0,pn:'',
+        n:'MES 입고 '+(c.rno?c.rno+'-'+(c.rseq||1):'')+(c.rc?' · '+c.rc:''),by:c.sup||'MES'}));
+    const R=S.mled.filter(m=>m.d>=a&&m.d<=b).concat(VR)
       .filter(m=>{const c=S.coils.find(x=>x.id===m.cid); return !c||!isOff(c);})
       .filter(m=>!q||nz((m.cno||'')+' '+(m.pn||'')+' '+m.k).includes(q))
-      .sort((x,y)=>x.d.localeCompare(y.d)||x.id-y.id);
-    $('gt-raw').innerHTML='원소재 입출고 · 총 <b>'+R.length+'</b>건 · '+a+' ~ '+b;
+      .sort((x,y)=>y.d.localeCompare(x.d)||(mKindIO(x.k)==='I'?0:1)-(mKindIO(y.k)==='I'?0:1)||Math.abs(y.id)-Math.abs(x.id));
+    $('gt-raw').innerHTML='원소재 입출고 · 총 <b>'+R.length+'</b>건 (MES 입고 '+VR.filter(m=>R.includes(m)).length+'건 포함) · '+a+' ~ '+b+' · 최근 순';
     $('rawHint').innerHTML='· <b>자동</b> 표시 전표는 제품 [생산입고] 전표에서 원단위로 산출된 것입니다. 제품 전표가 바뀌면 재계산됩니다.';
     if(MC){
       $('tRaw').innerHTML='<tbody>'+(R.length?R.map(m=>mcRawIo(m)).join('')
@@ -9697,12 +9837,12 @@ function rRaw(){
         return `<tr ${m.sh?'style="background:#FDECEA"':''}>
          <td class="c">${i+1}</td><td class="c">${m.d}</td>
          <td class="c" style="font-family:var(--sans);color:${io==='I'?'#0B6B3A':'#B3261E'};font-weight:700">${esc(m.k)}</td>
-         <td class="l" style="font-weight:700;cursor:pointer" onclick="openMio(${m.id})">${esc(m.cno||'-')}</td>
+         <td class="l" style="font-weight:700;cursor:pointer" onclick="${m.virt?'openCoil('+m.vi+')':'openMio('+m.id+')'}">${esc(m.cno||'-')}</td>
          <td class="l" style="font-family:var(--sans)">${c?esc(specNm(c)):'-'}</td>
          <td class="${io==='I'?'pos':''}">${io==='I'?kg(m.q):'-'}</td>
          <td class="${io==='O'?'neg':''}">${io==='O'?kg(m.q):'-'}</td>
          <td class="l">${esc(m.pn||'')}</td>
-         <td class="c" style="font-family:var(--sans);font-size:10px">${m.auto?'<span style="background:#E3EDF7;color:#1F5FA8;padding:1px 5px;border-radius:8px">자동</span>':'수기'}</td>
+         <td class="c" style="font-family:var(--sans);font-size:10px">${m.virt?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px">MES</span>':m.auto?'<span style="background:#E3EDF7;color:#1F5FA8;padding:1px 5px;border-radius:8px">자동</span>':'수기'}</td>
          <td class="l" style="font-family:var(--sans)">${esc(m.n||'')}</td>
          <td class="c" style="font-family:var(--sans)">${esc(m.by||'')}</td></tr>`;
        }).join(''):`<tr><td colspan="11" class="c" style="padding:30px;color:#93A0AB">해당 기간 입출고 내역이 없습니다.</td></tr>`)
@@ -10398,8 +10538,44 @@ async function autoRawMes(force){
     save();
     await pushRaw(true);
     if(tab==='raw') rRaw();
+    if($('refreshInfo')&&S.refAt)$('refreshInfo').textContent='마지막 최신화 '+S.refAt+mesSyncTxt();
     if(rm.rcvAdd) console.log('MES 소재 자동 반영 — 새 코일 '+rm.rcvAdd+'본');
+    return rm;
   }catch(e){ console.warn('MES 소재 자동 반영:',e.message); }
+}
+/* ═══ MES 소재 동기화 감시 (준실시간) ═══
+   90초마다 서버 입고표·투입표의 마지막 갱신 시각만 1줄씩 확인하고, mes_raw_sync.py 가 새로 돌았으면
+   30분을 기다리지 않고 바로 원소재를 다시 받는다. 화면이 안 보이는(백그라운드) 동안은 쉬고, 다시 보이면 바로 확인한다. */
+const MES_WATCH_MS=90e3;
+let mesWatchBusy=false, mesWatchTmr=null;
+async function mesWatch(){
+  if(mesWatchBusy||document.visibilityState==='hidden') return;
+  mesWatchBusy=true;
+  try{
+    const H={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY};
+    const top=async t=>{ const r=await fetch(SB_URL+'/rest/v1/'+t+'?select=updated_at&order=updated_at.desc&limit=1',{headers:H,cache:'no-store'});
+      if(!r.ok)throw new Error(t+' HTTP '+r.status); const j=await r.json(); return (j[0]&&j[0].updated_at)||''; };
+    const [a,b]=await Promise.all([top('raw_receipt'),top('raw_inventory')]);
+    const key=a+'|'+b;
+    if(!a||key===S.mesWatchKey) return;
+    const first=!S.mesWatchKey;
+    /* 처음 확인 때는 이미 받은 자료(입고표 시각)와 같으면 다시 받지 않는다 */
+    if(first&&S.mesSyncAt&&new Date(a)<=new Date(S.mesSyncAt)&&+S.rawMesAt>0){ S.mesWatchKey=key; save(); return; }
+    if(rawMesBusy||(typeof refBusy!=='undefined'&&refBusy)) return;   /* 다음 차례에 다시 */
+    const n0=S.coils.length;
+    const rm=await autoRawMes(true);
+    if(!rm||rm.err) return;
+    S.mesWatchKey=key; save();
+    const msg=[]; if(rm.rcvAdd)msg.push('새 입고 '+rm.rcvAdd+'본'); if(rm.cleared)msg.push('삭제 '+rm.cleared+'본');
+    if(msg.length) toast('MES 소재 자동 반영 — '+msg.join(' · ')+' (코일 '+n0+' → '+S.coils.length+'본)');
+  }catch(e){ console.warn('MES 소재 감시:',e.message); }
+  finally{ mesWatchBusy=false; }
+}
+function mesWatchStart(){
+  if(mesWatchTmr) return;
+  mesWatchTmr=setInterval(()=>mesWatch(),MES_WATCH_MS);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') mesWatch(); });
+  setTimeout(()=>mesWatch(),20e3);
 }
 async function refreshAll(){
   if(refBusy)return; refBusy=true;
@@ -10455,7 +10631,7 @@ async function refreshAll(){
     /* MES 소재(입고·투입)를 수입검사·설비보다 먼저 — 앞 단계가 느리거나 실패해도 입고는 들어오게 */
     for(let w=0;w<30&&rawMesBusy;w++) await new Promise(r2=>setTimeout(r2,1000));   /* 자동 연동과 겹치면 기다린다 */
     let rm=null; try{ rm=await withTimeout(syncRawMes(true),120000,'MES 소재 연동'); }catch(e){ rm={err:e.message}; }
-    if(rm&&!rm.err) S.rawMesAt=Date.now();
+    if(rm&&!rm.err){ S.rawMesAt=Date.now(); if(rm.syncAt)S.mesWatchKey=''; }   /* 수동 새로고침 뒤 감시 기준 다시 잡기 */
     if(rm&&!rm.err){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
@@ -10650,10 +10826,10 @@ function mcSpec(o){
 }
 function mcRawIo(m){
   const c=S.coils.find(x=>x.id===m.cid), io=mKindIO(m.k);
-  return `<tr ${m.sh?'style="border-color:#e0a9a2"':''}><td onclick="openMio(${m.id})">
+  return `<tr ${m.sh?'style="border-color:#e0a9a2"':''}><td onclick="${m.virt?'openCoil('+m.vi+')':'openMio('+m.id+')'}">
     <div class="mtitle"><span class="pn">${esc(m.cno||'-')}</span>
       <span class="tag" style="background:${io==='I'?'#E4F1EA':'#FBE9E7'};color:${io==='I'?'#0B6B3A':'#B3261E'}">${esc(m.k)}</span>
-      ${m.auto?'<span class="tag" style="background:#E3EDF7;color:#1F5FA8">자동</span>':''}</div>
+      ${m.virt?'<span class="tag" style="background:#E4F1EA;color:#0B6B3A">MES</span>':m.auto?'<span class="tag" style="background:#E3EDF7;color:#1F5FA8">자동</span>':''}</div>
     <div class="mrow"><b class="mbig" style="color:${io==='I'?'#0B6B3A':'#B3261E'}">${io==='I'?'+':'−'}${kg(m.q)}</b>
       <span>kg</span><span style="margin-left:auto">${m.d}</span></div>
     <div class="mrow"><span>${c?esc(specNm(c)):''}</span>${m.pn?'<span>'+esc(m.pn)+'</span>':''}</div>
@@ -10718,6 +10894,13 @@ function rawPayload(){
 async function pushRaw(silent){
   if(rawBusy)return; rawBusy=true;
   try{
+    /* 저장 전에 서버가 이 기기가 마지막으로 받은 뒤 바뀌었으면 먼저 받아 합친다.
+       (옛 자료를 들고 있던 기기가 통째로 덮어써서, 다른 곳에서 지운 코일이 되살아나던 문제) */
+    try{
+      const q=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+RAW_KEY+'&select=updated_at',{headers:rawHdr(),cache:'no-store'});
+      if(q.ok){ const j=await q.json(); const su=j[0]&&j[0].updated_at;
+        if(su&&(!S.rawPullAt||new Date(su)>new Date(S.rawPullAt))){ await pullRaw(true); try{ autoBom(false); }catch(e){} } }
+    }catch(e){ console.warn('pushRaw 사전 받기:',e.message); }
     const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
       {method:'POST',headers:rawHdr('return=minimal,resolution=merge-duplicates'),
        body:JSON.stringify([{key:RAW_KEY,value:rawPayload(),updated_at:nowIso()}])});
@@ -10973,11 +11156,23 @@ async function syncRawMes(silent){
     rcv.forEach(r=>{ if(+r.weight>0||String(r.divide_flag||'').toUpperCase()!=='Y') return;
       const o=divW.get(String(r.receipt_no||'').split('|')[0].trim()); const w=o?Math.round((o.org-o.sum)*10)/10:0;
       if(w>0){ r.weight=w; r._div=1; } });
+    /* MES 에서 지운 입고 — 동기화가 덮어쓰기만 하고 지우지는 않으면 서버에 옛 행이 남는다.
+       동기화 때마다 입고표 전체가 같은 시각으로 다시 올라오므로, 마지막 동기화보다 30분 넘게 오래된 행은
+       이번 동기화에서 MES 가 보내지 않은 것(= MES 에서 삭제)으로 본다.
+       오래된 행이 전체의 1/5 을 넘으면 동기화 방식이 다른 것이므로 이 판단을 쓰지 않는다. */
+    const stale=new Set();
+    if(syncAt){
+      const lim=new Date(syncAt).getTime()-30*60e3;
+      const old=rcv.filter(r=>r.updated_at&&new Date(r.updated_at).getTime()<lim);
+      if(old.length&&old.length<=rcv.length/5) old.forEach(r=>stale.add(r));
+      out.stale=stale.size;
+    }
     if(rcv.length){
       S.mesMode=true;
       const keep=new Set();
       rcv.forEach(r=>{
         if(String(r.io_flag||'1')!=='1')return;
+        if(stale.has(r))return;                          /* MES 에서 삭제된 입고 */
         if(String(r.receipt_date||'')<MES_FROM)return;   /* 참고용 — 코일로 만들지 않는다 */                /* 2 = 반출·취소 */
         const rno=String(r.receipt_no||'').split('|')[0].trim(); const seq=Math.round(+r.seq||1);
         const key=rno+'|'+seq; const src='MESRCV|'+key;
@@ -11041,8 +11236,9 @@ async function syncRawMes(silent){
       const mesBase=new Set(S.coils.filter(c=>c.src&&c.src.indexOf('MESRCV|')===0&&keep.has(c.src))
         .map(c=>String(c.cno||'').split('#')[0].replace(/-\d+$/,'')));
       const slitDone=c=>!/^MESRCV\|/.test(c.src)&&mesBase.has(String(c.cno||'').split('#')[0]);
+      /* MES 입고 코일(MESRCV)은 MES 에서 지워지면 실사·조정 전표가 달려 있어도 같이 지운다 */
       const rm=S.coils.filter(c=>c.src&&/^(MESRCV|MESSTK|IQC2|MESLOT)\|/.test(c.src)&&!keep.has(c.src)
-        &&(slitDone(c)||!S.mled.some(m=>m.cid===c.id&&!m.auto)));
+        &&(/^MESRCV\|/.test(c.src)||slitDone(c)||!S.mled.some(m=>m.cid===c.id&&!m.auto)));
       if(rm.length){ const ids=new Set(rm.map(c=>c.id)); markDel(rm.map(c=>c.cno)); S.mled=S.mled.filter(m=>!ids.has(m.cid)); S.coils=S.coils.filter(c=>!ids.has(c.id)); out.cleared=rm.length; }
       S.coils.sort((a,b)=>String(a.d||'').localeCompare(String(b.d||''))||a.id-b.id);
       rawDirty=true;
@@ -12632,6 +12828,7 @@ async function syncMes(silent){
     if(btn)btn.disabled=false; mesBusy=false;
     setTimeout(()=>mcAuto().catch(()=>{}),0);     /* 지정 마감월(9월 → 10/2) 자동 마감확정 */
     setTimeout(()=>autoRawMes().catch(()=>{}),1500);   /* MES 소재 입고·투입 (30분에 한 번) */
+    mesWatchStart();                                     /* 그 사이 MES 동기화가 새로 돌면 90초 안에 반영 */
     return {ok:true,add,upd,del,rows:rows.length};
   }catch(e){
     mesStat('MES 연결 안됨','#FF9E9E');
@@ -12864,7 +13061,7 @@ function mcSum(it,v){
   const sfB=bx?Math.round(sf/bx):0;
   const dt=v.last?v.last.slice(5).replace('-','/'):'-';
   return `<div class="mx-r ${cls}" data-pn="${pn}">
-    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}</div>
+    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}${v.sq&&isSbc(it)?(o2=>{ const ks=Object.keys(o2).sort(); return ks.length>1?'<i style="display:block;font-style:normal;font-size:10px;color:#B3261E">출하 '+ks.map(k=>k+' '+nf(o2[k])).join(' · ')+'</i>':''; })(shipByModel(it.pn,mStart(),CUT||mEnd())):''}</div>
     <button type="button" class="mx-c cur" onclick="event.stopPropagation();openQty('${pn}','cur')"><b class="${v.cur<0?'neg':''}">${nf(v.cur)}</b><i>${v.box}박스</i></button>
     <button type="button" class="mx-c sf" onclick="event.stopPropagation();openQty('${pn}','sf')"><b>${nf(sf)}</b><i>${sfB}박스</i></button>
     <div class="mx-c gap ${gc}"><b>${v.gap>0?'+':''}${nf(v.gap)}</b><i>${bx?((v.gap/bx).toFixed(1)+'박스'):''}</i></div>
@@ -12919,14 +13116,15 @@ window.addEventListener('orientationchange',()=>setTimeout(render,350));
 
 const TABN=[['sum','📊','재고 현황','STOCK'],['io','↔','입출고 내역','IN / OUT'],['raw','🧱','원소재(코일)','RAW COIL'],['cfg','⚙','품목대장','ITEMS'],['bin','📒','품목별 입출고 이력','HISTORY'],['cnt','✅','재고 실사','COUNT'],['trc','🔗','LOT 추적','TRACE'],['help','❓','사용안내','HELP']];
 const SUB={
-  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','sumOut(\'print\')'],['📗','엑셀','sumOut(\'xls\')'],['📄','CSV','sumOut(\'csv\')']],
+  sum:[['🔃','새로고침','syncMes(false)','pri'],['🔄','조회','render()'],['🩺','진단','diag()'],['🖨','인쇄','sumOut(\'print\')'],['📗','엑셀','sumOut(\'xls\')'],['📄','CSV','sumOut(\'csv\')'],
+    ['🏭','SBC외주','extOpen()'],['🏭','SBC공정','sbcOpen()'],['📅','출하계획','fcOpen()']],
   bin:[['🖨','인쇄','window.print()','pri'],['📚','일괄인쇄','printAllBins()']],
   io:[['➕','입출고등록','openIO()','pri'],['📥','엑셀실적','openImp()'],['📄','CSV','exportCsv(\'io\')'],['🖨','인쇄','window.print()']],
   cnt:[['✅','조정전표발행','applyCount()','pri'],['⬇','실사표받기','exportCnt()'],['📄','실사CSV','pick(\'fCnt\')'],['🧹','실사값지우기','clearCount()'],['🖨','인쇄','window.print()']],
   trc:[['🔍','추적','rTrc()','pri'],['🏢','고객사','openCust()'],['📗','엑셀','exportTrc()'],['🖨','인쇄','window.print()']],
   raw:[['🔄','새로고침','refreshAll()','pri'],['🏢','업체별','setRV(\'sup\')'],['🏭','설비현황','setRV(\'eq\')'],['🧱','코일목록','setRV(\'coil\')'],['➕','코일등록','openCoil(-1)'],['📗','엑셀','exportRaw()'],['🖨','인쇄','window.print()']],
   cfg:[['➕','품목등록','openItem(-1)','pri'],['📄','CSV등록','pick(\'fCsv\')'],['🧹','품명정리','fixNm()'],['💾','백업','backup()'],['📂','복원','pick(\'fBk\')'],['🗑','전체삭제','wipe()']],
-  help:[['🖨','안내 인쇄','window.print()','pri'],['📊','재고현황으로','setTab(\'sum\')']]
+  help:[['🖨','안내 인쇄','window.print()','pri'],['📊','재고현황으로','setTab(\'sum\')'],['📋','월말실사 안내','cntRemind(true)']]
 };
 function rL2(){
   const el=$('l2'); if(!el)return;
@@ -13683,37 +13881,120 @@ function mesWip(it,from){
     const t=take(r); if(t) q+=t.io==='I'?t.q:-t.q; });
   return q;
 }
+/* ═══ SBC 출하 기종 구분 — 1159C 처럼 앱 품번(1159B)과 끝 글자가 다른 기종은 레이스웨이 원본 표기가
+   전표 비고(「· 1159C Inner」)에 남는다. 그 표기로 기종을 나눠 본다.
+   1159B = 표면처리 삭제(X), 1159C = 표면처리(O) — 다른 제품이지만 프레스 생산 실적이 1159 하나로 들어와
+   앱 재고(장부)는 1159B 품목에 B·C 합산으로 잡힌다 ═══ */
+/* 기종 코드 → 표면처리 표기 (전공정이동표 기종 기본값 EXT_SF) */
+const sfTxt=code=>{ const v=EXT_SF[String(code||'').replace(/\s+/g,'').toUpperCase()]; return v==='O'?'표면처리 O':v==='X'?'표면처리 X(삭제)':''; };
+const pnBase=pn=>String(pn||'').replace(/^(IW|OW)-BDA-/i,'').toUpperCase();
+function shipModel(r){ const m=String(r.n||'').match(/·\s*(\d{4})\s*([A-Z]{0,2})\s*(Inner|Outer)\b/i); return m?(m[1]+m[2]).toUpperCase():pnBase(r.pn); }
+/* 기종 코드가 앱 품번과 끝 글자만 다른 '변형'인가 (1159C ↔ 1159B) — 품번 표기를 따로 보여줄 때 */
+function isVariant(code,pn){ const b=pnBase(pn), c=String(code||'').replace(/\s+/g,'').toUpperCase();
+  return /[A-Z]$/.test(b)&&/^\d{4}[A-Z]$/.test(c)&&c!==b&&c.slice(0,4)===b.slice(0,4); }
+/* ═══ SBC 뒷공정 기종별 — 프레스(생산중·PRESS)는 기종 구분 전이라 공통, 열처리·표면처리·검사대기·검사완료·출하는
+   전공정이동표 기종 줄(1106 CB 표면처리 O / 1106 CA 표면처리 X …)로 나눈다 ═══ */
+const mkey=m=>String(m||'').replace(/\(.*?\)/g,'').replace(/\s+/g,'').toUpperCase();
+/* 출하·계획의 기종 코드 → 같은 앱 품번 안의 이동표 기종 줄 키 (1113D → 1113AA/D, 1165A → 1165, 1179T → 1179, 1124 → 1124BA) */
+function rowKeyOf(code,keys){ const c=mkey(code); if(!c||!keys.length) return '';
+  if(keys.includes(c)) return c;
+  const k1=keys.find(k=>k.split('/').some(q=>q===c)); if(k1) return k1;
+  const dg=c.slice(0,4), suf=c.slice(4);
+  const k2=suf&&keys.find(k=>k.slice(0,4)===dg&&k.slice(4).split('/').includes(suf)); if(k2) return k2;
+  if(ATC_ALIAS[c]&&keys.includes(ATC_ALIAS[c])) return ATC_ALIAS[c];
+  const k3=keys.filter(k=>k.slice(0,4)===dg&&(!suf||!k.slice(4)||k.slice(4)===suf)); return k3.length===1?k3[0]:'';
+}
+function sbcRowKeys(pn,s){ s=s||(EXT&&EXT.last); return s?[...new Set(s.rows.filter(o=>extPn(o.m,o.side)===pn).map(o=>mkey(o.m)))]:[]; }
+const homeKey=(pn,keys)=>keys.includes(pnBase(pn))?pnBase(pn):(keys[0]||'');
+/* 출하 전표 → 기종 줄 키 (기종 표기가 없거나 못 찾으면 기본 기종 줄) */
+const shipKey=(r,keys)=>rowKeyOf(shipModel(r),keys)||homeKey(r.pn,keys);
+/* 품번·기간의 출하를 기종 줄 키별로 {1106CB:…, 1106CA:…} */
+function shipByModel(pn,a,b){ const keys=sbcRowKeys(pn), o={};
+  S.led.forEach(r=>{ if(r.k!=='출하'||r.pn!==pn||r.d<a||r.d>b) return; const k=keys.length?shipKey(r,keys):shipModel(r); o[k]=(o[k]||0)+r.q; }); return o; }
+/* 뒷공정 기종별 재고 — {press(공통), keys, cur:{기종: 뒷공정 − 기준 이후 출하}} */
+function sbcSplit(pn){ const s=EXT&&EXT.last, it=S.items.find(i=>i.pn===pn); if(!s||!it) return null;
+  const R=s.rows.filter(o=>extPn(o.m,o.side)===pn); if(!R.length) return null;
+  const keys=[...new Set(R.map(o=>mkey(o.m)))], sD=String((ATC&&ATC.at)||s.d||'').slice(0,10), mB=CUT||mEnd();
+  let press=mesWip(it,String(s.d||'').slice(0,10)); const down={}, after={};
+  R.forEach(o=>{ const ac=atcRow(o), k=mkey(o.m); press+=o.press+o.wip; down[k]=(down[k]||0)+o.heat+o.surf+(ac?ac.wait:o.wait)+(ac?ac.done:o.done); });
+  S.led.forEach(r=>{ if(r.k!=='출하'||r.pn!==pn||!(sD&&r.d>sD&&r.d<=mB)) return; const k=shipKey(r,keys); after[k]=(after[k]||0)+r.q; });
+  const cur={}; keys.forEach(k=>cur[k]=(down[k]||0)-(after[k]||0));
+  return {press,keys,down,after,cur,sD};
+}
+const isSbc=it=>(it&&(it.cu||'').trim()==='SBC');
+/* SBC 기종별 당월 납품 — 앱 품번(IW/OW)별, 1159B 는 1159B / 1159C 를 따로 (레이스웨이 원본 표기) */
+function sbcShipRows(y){
+  const [Y,M]=y.split('-').map(Number), a=y+'-01', b=y+'-'+p2(new Date(Y,M,0).getDate());
+  const iws=S.items.filter(i=>isSbc(i)&&!i.hide&&/^IW-/i.test(i.pn)).sort((x,z)=>x.pn.localeCompare(z.pn,'en',{numeric:true}));
+  const out=[];
+  iws.forEach(it=>{ const ow=it.pn.replace(/^IW-/i,'OW-'), base=pnBase(it.pn);
+    const I=shipByModel(it.pn,a,b), O=shipByModel(ow,a,b);
+    const keys=sbcRowKeys(it.pn), ks=[...new Set(keys.concat(Object.keys(I),Object.keys(O)))];
+    ks.forEach(k=>{ if(I[k]||O[k]) out.push({m:k,iw:I[k]||0,ow:O[k]||0,pn:it.pn,v:isVariant(k,it.pn)}); });
+  });
+  return out;
+}
 function sbcTblHtml(s){
   const C=['wip','press','heat','surf','wait','done'], T={}; C.forEach(c=>T[c]=0); let tt=0, tx=0;
   const LMs={}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
   const wFrom=String(s.d||'').slice(0,10), wDone=new Set();          /* 생산중은 그 품번의 첫 기종 줄에 한 번만 */
+  /* 출하 — 출하 전표는 기종 구분 없이 앱 품번(IW/OW)으로 들어오므로 품번 첫 줄에 한 번만 표시
+     · 출하(당월): 이번 달 출하 합계 (참고)
+     · 현재고 = 합계 − 기준 이후 출하. 검사 시트·이동표는 읽은 시점의 실물이라 그 전 출하는 이미 빠져 있다.
+       기준일(검사 시트를 읽은 날, 없으면 이동표 날짜) 다음 날부터의 출하만 더 뺀다 */
+  const sD=String((ATC&&ATC.at)||s.d||'').slice(0,10), mA=mStart(), mB=CUT||mEnd(), sDone=new Set();
+  /* 기종 줄별 출하 — 1159 C 처럼 따로 셀 수 있는 기종은 그 줄에, 나머지는 품번 기본 기종 줄(없으면 첫 줄)에 */
+  /* 기종 줄별 출하 — 출하 전표의 원본 기종 표기로 그 줄에. 표기가 없으면 품번 기본 기종 줄(없으면 첫 줄) */
+  const SH={};
+  const shipOf=(pn,key)=>{ if(!SH[pn]){ const keys=sbcRowKeys(pn,s), o={};
+      S.led.forEach(r=>{ if(r.k!=='출하'||r.pn!==pn) return; const k=shipKey(r,keys), x=o[k]=o[k]||{m:0,a:0};
+        if(r.d>=mA&&r.d<=mB) x.m+=r.q; if(sD&&r.d>sD&&r.d<=mB) x.a+=r.q; });
+      SH[pn]=o; }
+    return SH[pn][key]||{m:0,a:0}; };
+  const seenK=new Set();
+  let tm=0, ta=0, tc=0;
   const body=s.rows.map(o=>{
     const pn=extPn(o.m,o.side), it=pn&&S.items.find(i=>i.pn===pn);
     if(it&&!(pn in LMs)) LMs[pn]=extLedM(it);
     const mw=(it&&!wDone.has(pn))?(wDone.add(pn),mesWip(it,wFrom)):0;
     const LM=it?LMs[pn]:null, la=LM?(LM[extMKey(o.m)]||{heat:0,surf:0}):null, ac=atcRow(o);
-    const v={wip:o.wip+mw,press:o.press,heat:la?la.heat:o.heat,surf:la?la.surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
+    /* 열처리·표면처리는 전공정이동표 값을 쓴다. 외주입고(돌아옴)를 전표로 등록하지 않아 전표 잔량을 쓰면
+       이미 돌아와 검사대기·완료(검사 시트)에 있는 물량이 외주에도 남아 두 번 잡힌다 — 전표 잔량은 보라 숫자로 대조만 */
+    const v={wip:o.wip+mw,press:o.press,heat:o.heat,surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
+    const lv=la?{heat:la.heat,surf:la.surf}:null;
     const tot=C.reduce((a,c)=>a+v[c],0), x=v.heat+v.surf;
     C.forEach(c=>T[c]+=v[c]); tt+=tot; tx+=x;
-    return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td>'
-      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+'>'+(pn?esc(pn):'품목 없음')+'</td>'
-      +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')+'</td>').join('')
-      +'<td><b>'+nf(tot)+'</b>'+(tot!==o.tot?gray(o.tot):'')+'</td><td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
-  /* 외주 전표 중 이동표에 없는 기종·기종 미지정분 — 빠지지 않게 줄로 */
-  const extra=Object.keys(LMs).map(pn=>{ const LM=LMs[pn]; if(!LM) return '';
-    return Object.keys(LM).filter(k=>!s.rows.some(o=>extPn(o.m,o.side)===pn&&extMKey(o.m)===k)).map(k=>{ const a=LM[k], x=a.heat+a.surf;
-      T.heat+=a.heat; T.surf+=a.surf; tt+=x; tx+=x;
-      return '<tr><td class="l wn">'+esc(a.m)+'</td><td class="c"></td><td class="l">'+esc(pn)+'</td><td>-</td><td>-</td><td>'+(a.heat?nf(a.heat):'-')+'</td><td>'+(a.surf?nf(a.surf):'-')+'</td><td>-</td><td>-</td><td><b>'+nf(x)+'</b></td><td><b>'+nf(x)+'</b></td></tr>'; }).join(''); }).join('');
+    const mk=String(o.m).replace(/\s+/g,'').toUpperCase(), ri=s.rows.indexOf(o);
+    const sh=(!it||seenK.has(pn+'|'+mk))?{m:0,a:0}:(seenK.add(pn+'|'+mk),shipOf(pn,mk)), cur=tot-sh.a;
+    tm+=sh.m; ta+=sh.a; tc+=cur;
+    return '<tr><td class="l">'+esc(o.m)+'</td><td class="c"><span class="sdL">'+o.side+'</span><span class="sdS">'+(o.side==='INNER'?'IN':'OUT')+'</span></td>'
+      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(pn)+' 품목에 B·C 합산"':'')+'>'
+        +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk)):esc(pn))
+          +(sfTxt(mk)?'<div class="sx" style="color:'+(EXT_SF[mk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(mk)+'</div>':''):'품목 없음')+'</td>'
+      +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
+        +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
+      +'<td><b>'+nf(tot)+'</b>'+(tot!==o.tot?gray(o.tot):'')+'</td>'
+      +'<td style="color:#B3261E"'+(sh.m?' title="'+esc(pn)+' 이번 달 출하 '+nf(sh.m)+(sh.a?' · 기준('+esc(sD)+') 이후 '+nf(sh.a)+' → 현재고에서 차감':' · 모두 기준('+esc(sD)+') 이전이라 검사 시트·이동표에 이미 반영')+'"':'')+'>'
+        +(sh.m?nf(sh.m):'-')+(sh.a?'<div class="sx" style="color:#B3261E">−'+nf(sh.a)+' 차감</div>':'')+'</td>'
+      +'<td style="background:#EEF4FF" class="'+(cur<0?'neg':'')+'"><b>'+nf(cur)+'</b></td>'
+      +'<td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
+  const extra='';   /* 외주는 이동표 기준 — 전표에만 있는 외주 잔량 줄은 더하지 않는다(이중 계상 방지) */
   const hd=n=>n+(n==='생산중'?'<br><span style="font-size:10px">(MES)</span>':'')+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
   /* 칸 너비 고정 — 글자칸은 좁게, 숫자칸 6개는 같은 폭 */
-  const cg='<colgroup><col style="width:9%"><col style="width:6%"><col style="width:11%">'+'<col style="width:8.5%">'.repeat(6)+'<col style="width:10%"><col style="width:13%"></colgroup>';
-  return cg+'<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+hd(n)+'</th>').join('')+'<th>합계</th><th>외주(열처리+표면)</th></tr></thead><tbody>'
+  const cg='<colgroup><col style="width:8%"><col style="width:5%"><col style="width:10%">'+'<col style="width:7.3%">'.repeat(6)+'<col style="width:8%"><col style="width:7.5%"><col style="width:8.5%"><col style="width:9.2%"></colgroup>';
+  return cg+'<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+hd(n)+'</th>').join('')+'<th>합계</th>'
+    +'<th style="color:#B3261E">출하<br><span style="font-size:10px">(당월)</span></th>'
+    +'<th style="background:#DCE8FB">현재고<br><span style="font-size:10px">(합계 − '+esc(sD?sD.slice(5).replace('-','/'):'기준')+' 이후 출하)</span></th>'
+    +'<th>외주(열처리+표면)</th></tr></thead><tbody>'
     +body+extra+'</tbody><tfoot><tr><td colspan="3" class="c">합　계 ('+s.rows.length+'행)</td>'
-    +C.map(c=>'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')+'<td style="font-weight:800">'+nf(tt)+'</td><td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
+    +C.map(c=>'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')+'<td style="font-weight:800">'+nf(tt)+'</td>'
+    +'<td style="font-weight:800;color:#B3261E">'+(tm?nf(tm):'-')+(ta?'<div class="sx">−'+nf(ta)+' 차감</div>':'')+'</td>'
+    +'<td style="font-weight:800;background:#EEF4FF">'+nf(tc)+'</td><td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
-const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1124BA':'X','1124':'X','1165':'X',
-  '1179':'O','1179C':'X','1159C':'O','1159B':'X','1156':'O','1156A':'X'};
+/* 영업 확정출하 List(주별출하요약) 색 구분 기준 — 진한 초록 = 표면처리 O, 연두 = 표면처리 X */
+const EXT_SF={'1106CB':'O','1106CA':'X','1113AA/D':'O','1113AA':'O','1113D':'O','1113E':'X','1113AD':'X','1124BA':'X','1124':'X','1165':'X','1165A':'X',
+  '1179':'O','1179T':'O','1179C':'X','1159C':'O','1159B':'X','1156':'O','1156A':'X'};
 function extSf(o){ const v=String(o.sf||'').trim();
   if(/^(유|O)$/i.test(v)) return 'O'; if(/^(무|X)$/i.test(v)) return 'X';
   return EXT_SF[String(o.m).replace(/\s+/g,'').toUpperCase()]||''; }
@@ -13817,11 +14098,12 @@ function sbcPaint(){
      생산일보로 잡힌 생산 중 아직 이동표에 안 올라간 수량이 + 로 나온다. − 는 출하 반영 차이 등 확인 필요 */
   const uD=ex?dayBefore(String(ex.d||'').slice(0,10)):'';
   if(uD) $('sbcInfo').innerHTML+='<br>· <b>미반영 생산분</b> = 장부('+esc(uD)+'까지, 외주 포함) − 전공정이동표 합계 &nbsp;<span style="color:#1D4ED8">+ 생산했지만 이동표에 아직 안 올라감</span> · <span style="color:#C2410C">− 출하 반영 차이 등 확인 필요</span>';
-  let uSum=0, uN=0;
+  let uSum=0, uN=0, shipSum=0, bookSum=0;
   const C=['press','heat','surf','wait','done'], Sum={}, SumX={};
   const cell=(v,x,l)=>`<td>${v==null?'<span class="dim">-</span>':nf(v)}${x!=null?`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(x)}</div>`:''}${l!=null?`<div class="sx" style="color:#7C3AED" title="전표 계산값">${nf(l)}</div>`:''}</td>`;
   const rows=its.map((it,i)=>{
-    const g=sbcStage(it), x=extStageQ(it.pn), cur=calc(it).cur, l=extLed(it)||0;
+    const g=sbcStage(it), x=extStageQ(it.pn), v=calc(it), cur=v.cur, l=extLed(it)||0;
+    const book=cur+l, sq=v.sq||0; shipSum+=sq; bookSum+=book;     /* 총재고 = 장부(생산 − 불량 − 출하, 외주 포함) — 기준값 */
     const ac0=g?null:atcOf(it.pn);
     C.forEach(c=>{ if(g) Sum[c]=(Sum[c]||0)+g[c]; else if(ac0&&(c==='wait'||c==='done')) Sum[c]=(Sum[c]||0)+ac0[c]; if(x) SumX[c]=(SumX[c]||0)+x[c]; });
     const xt=x?C.reduce((a,c)=>a+x[c],0):null;
@@ -13829,14 +14111,16 @@ function sbcPaint(){
     return `<tr><td class="c">${i+1}</td><td class="l" style="font-weight:700;cursor:pointer" onclick="closeAll();goBin('${esc(it.pn)}')">${esc(it.pn)}</td>
       ${C.map(c=>{ const wd=c==='wait'||c==='done', ac=wd&&!g?atcOf(it.pn):null;
         return cell(g?g[c]:(ac?ac[c]:null),x?x[c]:null,(g&&g.atc&&wd)?g[c+'L']:null); }).join('')}
-      <td style="font-weight:800">${g?nf(g.tot):'<span class="dim">-</span>'}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
-      <td>${nf(cur+l)}${g&&Math.round(cur+l-g.tot)?`<div class="sx" style="color:#C2410C">차이 ${nf(cur+l-g.tot)}</div>`:''}</td>
+      <td style="color:#B3261E">${sq?nf(sq):'<span class="dim">-</span>'}</td>
+      <td style="font-weight:800;background:#EEF4FF">${nf(book)}</td>
+      <td>${g?nf(g.tot):'<span class="dim">-</span>'}${g&&Math.round(book-g.tot)?`<div class="sx" style="color:#C2410C" title="총재고(장부) − 공정 합계. − 면 공정 칸에 같은 물량이 두 번 잡힌 것(공정 이동 미등록), + 면 공정 칸에 빠진 물량">차이 ${(book-g.tot>0?'+':'')+nf(book-g.tot)}</div>`:''}${xt!=null?`<div class="sx" style="color:#93A0AB">${nf(xt)}</div>`:''}</td>
       <td>${g&&g.etc?nf(g.etc):'<span class="dim">-</span>'}</td>
       <td style="font-weight:800;color:${un==null||!un?'inherit':un>0?'#1D4ED8':'#C2410C'}" title="${un==null?'이동표에 없는 품번':'장부 '+nf(ledAt(it,uD))+' − 이동표 '+nf(xt)}">${un==null?'<span class="dim">-</span>':(un>0?'+':'')+nf(un)}</td></tr>`; }).join('');
-  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th>공정 합계</th><th>장부<br>(현재고+외주)</th><th>기타조정</th><th>미반영<br>생산분</th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="11" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
+  T.innerHTML=`<thead><tr><th>No</th><th>품번</th><th>PRESS</th><th>열처리<br>(한성)</th><th>표면처리<br>(동진)</th><th>검사대기</th><th>검사완료</th><th style="color:#B3261E">출하<br>(당월)</th><th style="background:#DCE8FB">총재고<br>(장부 기준)</th><th>공정 합계<br>(참고)</th><th>기타조정</th><th>미반영<br>생산분</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="12" class="c" style="padding:20px;color:#93A0AB">SBC 품목이 없습니다</td></tr>'}</tbody>
     <tfoot><tr><td colspan="2" class="c">합 계</td>${C.map(c=>cell(Sum[c]==null?null:Sum[c],SumX[c]==null?null:SumX[c])).join('')}
-      <td style="font-weight:800">${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td colspan="2"></td>
+      <td style="color:#B3261E;font-weight:800">${nf(shipSum)}</td><td style="font-weight:800;background:#EEF4FF">${nf(bookSum)}</td>
+      <td>${nf(C.reduce((a,c)=>a+(Sum[c]||0),0))}</td><td></td>
       <td style="font-weight:800">${uN?(uSum>0?'+':'')+nf(uSum):'-'}</td></tr></tfoot>`;
 }
 /* PRESS 재고 = 기초(전공정이동표 PRESS, EXT.press[pn]={d,q}) + 그 뒤 생산일보 생산수량(MES 생산입고 + 생산마감 보정)
@@ -13961,7 +14245,206 @@ function atcOf(pn){
   ATC.rows.forEach(a=>{ if(extPn(a.m,a.side)!==pn) return; o=o||{wait:0,done:0}; o.wait+=a.wait; o.done+=a.done; });
   return o;
 }
-async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker) extLoad(false,true); atcDaily().then(()=>render()); }
+/* ═══ SBC 출하계획 — 영업 확정출하 List (3.예상수량(확정출하list)_YYYY_Rev○.xlsx 「주별출하요약」) ═══
+   달마다 '○○ 기준 주간예상수량(N월)' 표가 아래로 쌓인다. 달마다 가장 늦은 기준일 표를 쓴다.
+   표: 차수 / 출하일 / 납기일 줄 → 기종 줄(수량 = Inner·Outer 각각) → 주간출하합계 */
+const FC_KEY='tj_sbc_fc_v1';
+let FC=null, FC_YM='';
+const xlDate=v=>{ const n=+v; if(!(n>20000&&n<80000)) return ''; const d=new Date(Date.UTC(1899,11,30)+Math.round(n)*864e5);
+  return d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()); };
+function fcCellDate(v,y){                 /* 엑셀 날짜(숫자) 또는 '12/1~12/4' · '10/08' 글자 */
+  const d=xlDate(v); if(d) return d;
+  const m=String(v||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/); return m?y+'-'+p2(+m[1])+'-'+p2(+m[2]):''; }
+function fcParse(book){
+  const nm=Object.keys(book).find(n=>/주별출하요약/.test(n)); if(!nm) throw new Error('「주별출하요약」 시트가 없습니다 (시트: '+Object.keys(book).join(', ')+')');
+  const g=book[nm], months={}, txt=r=>(r||[]).map(x=>String(x||'')).join(' ');
+  for(let i=0;i<g.length;i++){
+    const t=txt(g[i]); const mh=t.match(/기준\s*주간\s*예상수량\s*\(\s*(\d{1,2})\s*월\s*\)/); if(!mh) continue;
+    const base=xlDate((g[i]||[]).find(x=>xlDate(x)))||''; if(!base) continue;
+    const mo=+mh[1], by=+base.slice(0,4), bm=+base.slice(5,7);
+    const y=mo<bm-6?by+1:(mo>bm+6?by-1:by), ym=y+'-'+p2(mo);
+    const rev=(t.match(/(\d+)\s*$/)||['',''])[1];
+    let cols=null; const rows=[];
+    for(let j=i+1;j<g.length&&j<i+60;j++){
+      const r=g[j]||[], c2=String(r[2]||'').trim();
+      if(/기준\s*주간\s*예상수량/.test(txt(r))) break;
+      if(c2==='차수'){ continue; }
+      if(c2==='출하일'){ cols=[]; for(let k=3;k<12;k++){ const d=fcCellDate(r[k],y); if(d) cols.push({k,ship:d}); } continue; }
+      if(c2==='납기일'&&cols){ cols.forEach(o=>o.due=fcCellDate(r[o.k],y)); continue; }
+      if(/주간출하합계/.test(c2)){ continue; }
+      if(!cols||!c2||/합계|Pallet|^\*|표면처리|작성자/.test(c2)||/\//.test(c2)||xlDate(c2)) continue;   /* '03/24' 같은 날짜 메모 줄은 건너뛴다 (기종 1179·1156 은 숫자라도 기종) */
+      const q=cols.map(o=>Math.round(+String(r[o.k]||'').replace(/,/g,'')||0));
+      rows.push({m:c2.replace(/\s+/g,' '),q,cols:cols.map(o=>o.ship)});
+    }
+    if(!rows.length) continue;
+    const old=months[ym]; if(old&&old.base>base) continue;
+    /* 섹션이 둘이면(예전 ATC/KOREA) 차수 날짜가 다를 수 있어 줄마다 날짜를 가진다 */
+    const ships=[...new Set(rows.flatMap(r=>r.cols))].sort();
+    months[ym]={base,rev,ships,rows};
+  }
+  if(!Object.keys(months).length) throw new Error('「기준 주간예상수량(N월)」 표를 찾지 못했습니다');
+  return months;
+}
+async function fcPickFile(dh){
+  const fs=[];
+  for await (const e of dh.values()){
+    if(e.kind!=='file'||/^~\$/.test(e.name)||!/\.xls[xm]$/i.test(e.name)) continue;
+    if(!/예상수량|확정출하/.test(e.name)) continue;
+    const y=(e.name.match(/(20\d{2})/)||['','0000'])[1], rv=+((e.name.match(/Rev\s*(\d+)/i)||['','0'])[1]);
+    const f=await e.getFile(); fs.push({f,k:y+p2(rv),t:f.lastModified});
+  }
+  if(!fs.length) throw new Error('폴더에 「3.예상수량(확정출하list)」 엑셀이 없습니다');
+  fs.sort((a,b)=>b.k.localeCompare(a.k)||b.t-a.t);
+  return fs[0].f;
+}
+async function fcPull(){ try{ const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+FC_KEY+'&select=value',{headers:itHeaders()});
+  if(!r.ok) return; const j=await r.json(), v=j&&j[0]&&j[0].value; if(v&&v.months) FC=v; }catch(e){} }
+async function fcLoad(silent,one){
+  let f=null;
+  try{
+    if(one) f=await extPickInput();
+    else if(window.showDirectoryPicker){
+      let dh=await extIdb('dir').catch(()=>null);
+      if(dh){ let ps=await dh.queryPermission({mode:'read'});
+        if(ps!=='granted'){ if(silent) return; ps=await dh.requestPermission({mode:'read'}); }
+        if(ps!=='granted') dh=null; }
+      if(!dh){ if(silent) return; dh=await window.showDirectoryPicker({id:'sbcext',mode:'read'}); await extIdb('dir',dh).catch(()=>{}); }
+      f=await fcPickFile(dh);
+    } else { if(silent) return; f=await extPickInput(); }
+    if(!f) return;
+    { const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); }
+    if(silent&&FC&&FC.file===f.name&&FC.mod>=f.lastModified) return;      /* 바뀐 게 없으면 그대로 */
+    let book;
+    try{ book=await readXlsx(f); }
+    catch(e2){ throw new Error(String(e2.message)==='ZIP'?'보안(DRM)·암호 파일이거나 .xls 형식이라 읽을 수 없습니다':'엑셀 해석 실패 ('+(e2.message||e2)+')'); }
+    const months=fcParse(book), d0=new Date(f.lastModified);
+    await fcPull();
+    const keep=Object.assign({},(FC&&FC.months)||{}), chg=[];
+    /* 같은 달 표가 바뀌었으면(새 기준일 또는 수량 수정) 직전 표를 prev 로 남겨 ▲▼ 변경을 보여준다 */
+    Object.keys(months).forEach(k=>{ const o=keep[k], n=months[k];
+      const sig=x=>JSON.stringify(x.rows.map(r=>[r.m,r.q,r.cols]));
+      if(o&&sig(o)!==sig(n)){ n.prev={base:o.base,rev:o.rev,rows:o.rows,at:FC&&FC.fileAt||''}; chg.push(+k.slice(5)+'월'); }
+      else if(o&&o.prev) n.prev=o.prev;
+      keep[k]=n; });
+    Object.keys(keep).sort().slice(0,-14).forEach(k=>delete keep[k]);   /* 약 1년치 */
+    FC={file:f.name,mod:f.lastModified,at:today()+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),
+      fileAt:d0.getFullYear()+'-'+p2(d0.getMonth()+1)+'-'+p2(d0.getDate())+' '+p2(d0.getHours())+':'+p2(d0.getMinutes()),by:S.user||'',months:keep};
+    try{ await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',{method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+      body:JSON.stringify([{key:FC_KEY,value:FC,updated_at:nowIso()}])}); }catch(e){}
+    if(!silent||chg.length) toast('출하계획 '+(chg.length?'변경 반영 — '+chg.join('·')+' 수량이 바뀌었습니다':'읽음 — '+f.name+' · '+Object.keys(months).length+'개월'));
+  }catch(e){
+    if(e&&e.name==='AbortError') return;
+    if(!silent){ alert('출하계획 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
+    console.warn('출하계획:',e);
+  }
+  if($('mFc')&&$('mFc').classList.contains('on')) fcPaint();
+}
+/* 앱을 켜 둔 채로도 20분마다 폴더의 파일이 바뀌었는지 확인 — 바뀌었을 때만 다시 읽는다 (폴더 읽기 허용된 PC) */
+let FC_CHK='';
+setInterval(()=>{ if(window.showDirectoryPicker&&document.visibilityState!=='hidden') fcLoad(true).then(()=>{ const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); }); },20*60*1000);
+async function fcOpen(){ $('mFc').classList.add('on'); if(!FC) await fcPull(); fcPaint(); fcLoad(true); }
+/* 기종 이름 → 앱 품번 {iw,ow,key} — '1113 AD (신규)' 처럼 괄호는 뺀다 */
+function fcPn(m){ const b=String(m).replace(/\(.*?\)/g,'').trim();
+  const iw=extPn(b,'INNER'), ow=extPn(b,'OUTER'); return {iw,ow,key:iw?iw.replace(/^IW-BDA-/,''):''}; }
+function fcPaint(){
+  const T=$('fcTbl'); if(!T) return;
+  if(!FC||!FC.months){ T.innerHTML='<tbody><tr><td class="c" style="padding:24px;color:#93A0AB">아직 읽은 출하계획이 없습니다 — [🔄 다시 읽기]로 폴더의 파일을 읽거나 [📂 파일 직접 선택]</td></tr></tbody>'; $('fcTabs').innerHTML=''; return; }
+  const yms=Object.keys(FC.months).sort(), cur=today().slice(0,7);
+  if(!FC_YM||!FC.months[FC_YM]) FC_YM=FC.months[cur]?cur:yms[yms.length-1];
+  $('fcTabs').innerHTML=yms.slice(-4).map(k=>'<button class="btn'+(k===FC_YM?' k':'')+'" style="padding:4px 10px" onclick="FC_YM=\''+k+'\';fcPaint()">'+(+k.slice(5))+'월</button>').join(' ');
+  const M=FC.months[FC_YM], td=today();
+  $('fcInfo').innerHTML='· '+esc(FC.file)+' (저장 '+esc(FC.fileAt||'')+') · <b>'+(+FC_YM.slice(5))+'월 표 기준일 '+esc(M.base.slice(5).replace('-','/'))+'</b>'+(M.rev!==''?' · 수정 '+esc(M.rev)+'회':'')
+    +(M.prev?' · <span style="color:#1D4ED8">▲▼ = 직전 표('+esc(M.prev.base.slice(5).replace('-','/'))+' 기준) 대비 변경</span>':'')
+    +' · 마지막 확인 '+esc(FC_CHK||'-');
+  /* 남은 계획 = 오늘 이후 출하일 (이 달 + 다음 달) */
+  const nx=yms.filter(k=>k>=FC_YM).slice(0,2), remain={};
+  /* 묶음 = 앱 품번 + 전공정이동표 기종 줄(뒷공정 기종) — 1106 CB(표면처리 O) / 1106 CA(X), 1113 AA·D / E, 1179 / 1179 C, 1159C / 1159B … 따로.
+     프레스(생산중·PRESS)는 기종 구분 전이라 품번 첫 줄에 '프레스 ○○'로만 보여준다 */
+  /* 이동표 기종 줄이 없으면(이동표 미등록 기종) 계획 기종 이름으로 나눈다 — 재고는 그 품번 첫 줄에 장부로 */
+  const gk=r=>{ const p=fcPn(r.m); if(!p.iw) return mkey(r.m); const rk=rowKeyOf(r.m,sbcRowKeys(p.iw)); return rk?p.key+':'+rk:p.key+'~'+mkey(r.m); };
+  nx.forEach(k=>FC.months[k].rows.forEach(r=>{ const pk=gk(r); r.q.forEach((q,i)=>{ if(r.cols[i]>=td) remain[pk]=(remain[pk]||0)+q; }); }));
+  const G={}, order=[];
+  M.rows.forEach(r=>{ const p=fcPn(r.m), k=gk(r); if(!G[k]){ G[k]={k,p,rk:k.indexOf(':')>0?k.split(':')[1]:'',rows:[]}; order.push(k); } G[k].rows.push(r); });
+  const pord=[]; order.forEach(k=>{ const pk=G[k].p.key||k; if(!pord.includes(pk)) pord.push(pk); });
+  order.sort((x,y)=>pord.indexOf(G[x].p.key||x)-pord.indexOf(G[y].p.key||y));
+  const ships=M.ships, a=FC_YM+'-01', b=mEnd&&FC_YM===ym?mEnd():FC_YM+'-'+p2(new Date(+FC_YM.slice(0,4),+FC_YM.slice(5),0).getDate());
+  /* 실출하 — 출하 전표의 원본 기종 표기로 그 기종 줄에 */
+  const shipQ=(pn,g)=>{ const keys=sbcRowKeys(pn); return S.led.reduce((s2,r)=>{ if(!(r.k==='출하'&&r.pn===pn&&r.d>=a&&r.d<=b)) return s2;
+    return s2+((!g.rk||shipKey(r,keys)===g.rk)?r.q:0); },0); };
+  const itOf=pn=>S.items.find(i=>i.pn===pn);
+  const book=pn=>{ const it=itOf(pn); if(!it) return null; const bk=ym, bc=CUT; try{ ym=td.slice(0,7); CUT=''; return Math.round(calc(it).cur+(extLed(it)||0)); }finally{ ym=bk; CUT=bc; } };
+  const SP={}, spl=pn=>pn?((pn in SP)?SP[pn]:(SP[pn]=sbcSplit(pn))):null, firstP={};
+  const Tt={plan:Array(ships.length).fill(0),sum:0,act:0,rem:0};
+  /* 직전 표 대비 변경 (묶음·출하일별) */
+  const PV={}; if(M.prev) M.prev.rows.forEach(r=>{ const k2=gk(r); r.q.forEach((q,i)=>{ const kk=k2+'|'+r.cols[i]; PV[kk]=(PV[kk]||0)+q; }); });
+  const dv=(k2,d,v)=>{ if(!M.prev) return ''; const o=PV[k2+'|'+d]||0, x=v-o; return x?'<div class="sx" style="color:'+(x>0?'#1D4ED8':'#B3261E')+';font-weight:800" title="직전 표('+esc(M.prev.base.slice(5).replace('-','/'))+' 기준) '+nf(o)+' → '+nf(v)+'">'+(x>0?'▲+':'▼')+nf(x)+'</div>':''; };
+  let body='';
+  order.forEach(k=>{ const g=G[k], pk=g.p.key||k;
+    const plan=ships.map(d=>g.rows.reduce((s2,r)=>s2+r.cols.reduce((s3,c,i)=>s3+(c===d?r.q[i]:0),0),0));
+    const sum=plan.reduce((x,y)=>x+y,0); if(!sum&&!remain[k]) return;
+    const ai=g.p.iw?shipQ(g.p.iw,g):0, ao=g.p.ow?shipQ(g.p.ow,g):0, act=Math.min(ai,ao);
+    /* 재고 — 기종 줄이 있으면 뒷공정 기종별(이동표·검사 시트 − 그 뒤 출하), 없으면 장부 */
+    const si=spl(g.p.iw), so=spl(g.p.ow), byM=!!(g.rk&&si&&so);
+    const bi=byM?Math.round(si.cur[g.rk]||0):(g.p.iw?book(g.p.iw):null), bo=byM?Math.round(so.cur[g.rk]||0):(g.p.ow?book(g.p.ow):null);
+    const first=!firstP[pk]; firstP[pk]=1;
+    /* 장부(기종 구분 없음)는 품번 첫 줄에만 — 과부족도 그 품번의 장부 묶음 남은 계획을 합쳐 본다 */
+    const sib=byM?[]:order.filter(x=>x!==k&&(G[x].p.key||x)===pk&&!G[x].rk);
+    const bk0=(bi==null||bo==null)?null:Math.min(bi,bo), bk=(!byM&&!first)?null:bk0;
+    const rem=remain[k]||0, remS=sib.reduce((x,y)=>x+(remain[y]||0),0), gap=bk==null?null:bk-rem-(first&&!byM?remS:0);
+    const pr=(first&&byM)?Math.min(si.press,so.press):null;
+    plan.forEach((v,i)=>Tt.plan[i]+=v); Tt.sum+=sum; Tt.act+=act; Tt.rem+=rem;
+    body+='<tr'+(first?'':' style="background:#FAFAFF"')+'><td class="l" style="font-weight:800">'+(first?esc(pk):'')+'</td>'
+      +'<td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+((sk=>sfTxt(sk)?'<div class="sx" style="color:'+(EXT_SF[sk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(sk)+'</div>':'')(g.rk||mkey(g.rows[0].m)))+'</td>'
+      +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+dv(k,ships[i],v)+'</td>').join('')
+      +'<td style="font-weight:800">'+nf(sum)+'</td>'
+      +'<td title="Inner '+nf(ai)+' / Outer '+nf(ao)+'">'+(act?nf(act):'-')+(ai!==ao?'<div class="sx">IW '+nf(ai)+' · OW '+nf(ao)+'</div>':'')+'</td>'
+      +'<td style="font-weight:800">'+(rem?nf(rem):'-')+'</td>'
+      +'<td style="background:#EEF4FF"'+(byM?' title="뒷공정(열처리·표면처리·검사대기·검사완료) '+esc(g.rk)+' − 검사 시트 이후 출하"':' title="장부 총재고"')+'>'+(bk==null?'<span class="dim">'+((!byM&&!first&&bk0!=null)?'↑ 장부 합산':'품목 없음')+'</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':''))
+        +(pr!=null?'<div class="sx" style="color:#64748B" title="생산중+PRESS — 기종(표면처리 O/X) 구분 전">+ 프레스 '+nf(pr)+' (기종 구분 전)</div>':'')+(!byM&&bk!=null?'<div class="sx" style="color:#93A0AB">장부'+(sib.length?' (기종 합산)':'')+'</div>':'')+'</td>'
+      +'<td style="font-weight:800" class="'+(gap==null?'':gap<0?'neg':'pos')+'">'+(gap==null?'-':(gap>0?'+':'')+nf(gap))+'</td></tr>';
+  });
+  const hd=ships.map((d,i)=>'<th'+(d<td?' style="color:#93A0AB"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">출하 '+d.slice(5).replace('-','/')+'</span></th>').join('');
+  T.innerHTML='<thead><tr><th>품번</th><th>기종</th>'+hd+'<th>월 계획</th><th>실출하<br><span style="font-size:10px">('+(+FC_YM.slice(5))+'월, 적은 쪽)</span></th>'
+    +'<th>남은 계획<br><span style="font-size:10px">(오늘 이후)</span></th><th style="background:#DCE8FB">재고<br><span style="font-size:10px">(뒷공정 기종별, 적은 쪽)</span></th><th>과부족</th></tr></thead>'
+    +'<tbody>'+(body||'<tr><td colspan="'+(ships.length+7)+'" class="c" style="padding:20px;color:#93A0AB">계획 수량이 없습니다</td></tr>')+'</tbody>'
+    +'<tfoot><tr><td colspan="2" class="c">합　계</td>'+Tt.plan.map(v=>'<td>'+(v?nf(v):'-')+'</td>').join('')
+    +'<td style="font-weight:800">'+nf(Tt.sum)+'</td><td>'+nf(Tt.act)+'</td><td style="font-weight:800">'+nf(Tt.rem)+'</td><td colspan="2"></td></tr></tfoot>';
+}
+/* ═══ 앱을 열면 SBC 공유 폴더 자료(전공정이동표 · 확정출하 List) 자동 갱신 ═══
+   브라우저는 폴더 읽기 권한을 다시 물을 때 사람의 클릭이 있어야 한다.
+   권한이 살아 있으면 바로 읽고, 아니면 화면을 처음 한 번 누를 때 권한을 확인한 뒤 읽는다. */
+async function sbcAutoAll(){
+  const e0=EXT&&EXT.last&&EXT.last.at, f0=FC&&FC.mod;
+  await extLoad(false,true); await fcLoad(true);
+  const e1=EXT&&EXT.last&&EXT.last.at, f1=FC&&FC.mod, m=[];
+  if(e1&&e1!==e0) m.push('전공정이동표 '+e1); if(f1&&f1!==f0) m.push('출하계획');
+  if(m.length) toast('SBC 자료 자동 갱신 — '+m.join(' · '));
+  sbcAutoStat();
+}
+function sbcAutoStat(){
+  const b=$('sbcAutoBtn'); if(!b) return;
+  const e=EXT&&EXT.last?String(EXT.last.at||'').slice(5,16):'-', f=FC&&FC.fileAt?String(FC.fileAt).slice(5,16):'-';
+  b.title='SBC 공유 폴더 자료 — 전공정이동표 '+e+' · 출하계획 '+f+' (누르면 지금 다시 읽기)';
+}
+async function sbcAutoNow(){ const dh=await extIdb('dir').catch(()=>null);
+  if(!dh){ extLoad(true); return; }                            /* 폴더 미지정 — 지정 창 */
+  try{ const r=await dh.requestPermission({mode:'read'}); if(r!=='granted') return; }catch(e){ return; }
+  const e0=EXT&&EXT.last&&EXT.last.at, f0=FC&&FC.mod; await sbcAutoAll();
+  if((EXT&&EXT.last&&EXT.last.at)===e0&&(FC&&FC.mod)===f0) toast('SBC 자료 — 바뀐 파일이 없습니다 (전공정이동표 '+(e0||'-')+')');
+}
+async function sbcAutoInit(){
+  if(!window.showDirectoryPicker) return;
+  const dh=await extIdb('dir').catch(()=>null);
+  if(!dh) return;                                              /* 폴더를 한 번도 지정하지 않음 — [SBC 외주재고]에서 지정 */
+  let ps='prompt'; try{ ps=await dh.queryPermission({mode:'read'}); }catch(e){}
+  if(ps==='granted'){ sbcAutoAll(); return; }
+  /* 첫 클릭(사용자 동작) 때 권한 확인 → 읽기. 한 번만 */
+  const go=async()=>{ document.removeEventListener('pointerdown',go,true);
+    try{ const r=await dh.requestPermission({mode:'read'}); if(r==='granted') sbcAutoAll(); }catch(e){} };
+  document.addEventListener('pointerdown',go,true);
+  toast('SBC 공유 폴더 자료는 화면을 한 번 누르면 자동으로 갱신됩니다');
+}
+async function extInit(){ await extPull(); await atcPull(); await fcPull(); if(EXT) render(); sbcAutoInit(); atcDaily().then(()=>render()); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
@@ -14141,6 +14624,13 @@ function _printMonthReport(D){
       <td class="r b">${nf(st.amt+st.ramt)}</td><td></td></tr></tfoot></table>
       <div class="nt">· 재고 합계 = PRESS + 검사대기·완제품 (외주업체 재고는 별도) · 전공정이동표 ${esc(D.ext.s.at)} 기준 · 단가는 기종·INNER/OUTER 별</div>`;
   };
+  /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
+  const shipHtml=()=>{ const R=sbcShipRows(y); if(!R.length) return '';
+    const ti=R.reduce((x,r)=>x+r.iw,0), to=R.reduce((x,r)=>x+r.ow,0);
+    return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 기종(표면처리 O/X)별</div>
+      <table class="inv" style="width:60%"><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
+      +R.map(r=>`<tr><td class="c">${esc(r.m)}</td><td class="pn">${esc(r.v?r.pn.replace(new RegExp(pnBase(r.pn)+'$','i'),r.m):r.pn)}${sfTxt(r.m)?' <span class="s">('+sfTxt(r.m)+')</span>':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
+      +`</tbody><tfoot><tr><td colspan="2" class="c b">합 계</td><td class="r b">${nf(ti)}</td><td class="r b">${nf(to)}</td><td class="r b">${nf(ti+to)}</td></tr></tfoot></table>`; };
   const matHtml=g=>{
     const T=g.mat; if(!T||!T.length) return '';
     const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월', c=v=>`<td class="r">${v?nf(v):'-'}</td>`;
@@ -14174,7 +14664,7 @@ function _printMonthReport(D){
     chunks.push(`<section class="pg"><div class="hd"><div class="ttl">재 고 조 사 서 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>${meta(cu)}</div>
       ${g.doc?docHtml(g):`<table class="inv">${colg}${thead(!!(g.ext&&g.ext.length))}<tbody>${lines.join('')}</tbody>
       <tfoot><tr><td colspan="6" class="c b">재고합계</td><td class="r b bl">${nf(q)}</td><td></td><td class="r b">${nf(amt)}</td>
-        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>`}${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
+        <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>`}${cu==='SBC'?shipHtml():''}${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
   });
 
   /* 2) 마지막 페이지: 업체별 분석표 */
@@ -14417,6 +14907,18 @@ function mrXlsx(D){
     }
     const g=groups.find(x=>x.cu===cu), XL=(g&&g.ext)||[], XM=(g&&g.extM)||[], XF=(g&&g.flow)||[];
     let r2=rt+2;
+    /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
+    const SR=cu==='SBC'?sbcShipRows(D.y):[];
+    if(SR.length){ let r=r2;
+      sh.set(r++,0,'■SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 기종(표면처리 O/X)별',XS.meta);
+      sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
+      ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      const a0=r;
+      SR.forEach(x=>{ sh.set(r,0,x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,(x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m):x.pn)+(sfTxt(x.m)?' ('+sfTxt(x.m)+')':''),XS.pn); sh.merge(r,2,r,3,XS.pn);
+        sh.set(r,4,x.iw,XS.n); sh.set(r,5,x.ow,XS.n); sh.set(r,6,x.iw+x.ow,XS.tN,`E${r+1}+F${r+1}`); r++; });
+      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
+      [4,5,6].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===4?x.iw:ci===5?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
+      r2=r+2; }
     /* 원자재재고 (규격별) — SKF씰 등 */
     const XT=(g&&g.mat)||[];
     if(XT.length){ let r=r2; const mm=(+String(D.y).slice(5))+'월', pm2=(+String(D.pm).slice(5))+'월';
@@ -14926,6 +15428,34 @@ function render(){
   const d=new Date();
   $('i3').textContent=today()+' '+p2(d.getHours())+':'+p2(d.getMinutes());
 }
+/* ═══ 월말 재고실사 안내 ═══
+   말일 2일 전 ~ 다음 달 2일(재고조사서 마감일)에 앱을 열면 실사표를 받아 실사하라고 띄운다.
+   [오늘 하루 보지 않기] / [이번 달 실사 완료] 는 이 기기에만 기억한다. */
+const CR_KEY='tj_cnt_remind_v1';
+function cntRemindYm(){
+  const t=today(), y=+t.slice(0,4), m=+t.slice(5,7), d=+t.slice(8,10);
+  const last=new Date(y,m,0).getDate();
+  if(d>=last-2) return t.slice(0,7);           /* 말일 2일 전부터 — 이번 달 마감 */
+  if(d<=2) return prevYm(t.slice(0,7));        /* 다음 달 1~2일 — 지난달 마감 */
+  return '';
+}
+function crGet(){ try{ return JSON.parse(localStorage.getItem(CR_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function crSet(o){ try{ localStorage.setItem(CR_KEY,JSON.stringify(Object.assign(crGet(),o))); }catch(e){} }
+function cntRemind(force){
+  const y2=cntRemindYm()||(force?today().slice(0,7):''); if(!y2) return;
+  const g=crGet();
+  if(!force&&(g.done===y2||g.day===today())) return;
+  const [yy,mm]=y2.split('-').map(Number);
+  $('crYm').textContent=yy+'년 '+mm+'월';
+  const nx=new Date(yy,mm,2);
+  $('crCut').textContent=nx.getFullYear()+'-'+p2(nx.getMonth()+1)+'-'+p2(nx.getDate());
+  $('mCntRemind').dataset.ym=y2;
+  $('mCntRemind').classList.add('on');
+}
+function cntRemindClose(){ $('mCntRemind').classList.remove('on'); }
+function cntRemindSnooze(){ crSet({day:today()}); cntRemindClose(); toast('오늘은 다시 띄우지 않습니다'); }
+function cntRemindDone(){ const y2=$('mCntRemind').dataset.ym||cntRemindYm(); crSet({done:y2}); cntRemindClose(); toast(y2.replace('-','년 ')+'월 실사 완료로 기록했습니다 (이 기기)'); }
+function cntHelp(){ setTab('help'); setTimeout(()=>{ const e=$('helpCnt'); if(e)e.scrollIntoView({behavior:'smooth',block:'start'}); },150); }
 function init(){
   ym=ym||today().slice(0,7);
   try{ fxSync(); }catch(e){}
@@ -14946,6 +15476,7 @@ function init(){
   pullRaw(true).then(g=>{ if(g&&(g.c||g.b||g.m)){autoBom(false);render();} });
   $('dlP').innerHTML=S.party.concat(['한성','동진','대영']).map(p=>`<option value="${esc(p)}">`).join('');
   rDTabs(); render(); mcPaint(); mcPull(); extInit();
+  setTimeout(()=>{ try{ cntRemind(false); }catch(e){ console.warn('실사 안내:',e.message); } },2500);   /* 월말 재고실사 안내 */
 }
 load();
 unblockSBC();
