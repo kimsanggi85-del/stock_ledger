@@ -1121,7 +1121,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.72 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.73 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13908,7 +13908,8 @@ function sbcTblHtml(s){
     const sh=!it?{m:0,a:0}:isVariant(mk,pn)?shipOf(pn,mk):(homeRow[pn]===ri?shipOf(pn,'*'):{m:0,a:0}), cur=tot-sh.a;
     tm+=sh.m; ta+=sh.a; tc+=cur;
     return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td>'
-      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+'>'+(pn?esc(pn):'품목 없음')+'</td>'
+      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="재고는 '+esc(pn)+' 에 합쳐 관리 (같은 프레스 생산)"':'')+'>'
+        +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk))+'<div class="sx" style="color:#93A0AB">'+esc(pnBase(pn))+' 재고 공용</div>':esc(pn)):'품목 없음')+'</td>'
       +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
         +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
       +'<td><b>'+nf(tot)+'</b>'+(tot!==o.tot?gray(o.tot):'')+'</td>'
@@ -14558,7 +14559,7 @@ function _printMonthReport(D){
     const ti=R.reduce((x,r)=>x+r.iw,0), to=R.reduce((x,r)=>x+r.ow,0);
     return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159C 는 1159B 와 따로</div>
       <table class="inv" style="width:60%"><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
-      +R.map(r=>`<tr><td class="c">${r.v?'└ ':''}${esc(r.m)}</td><td class="pn">${esc(r.pn)}${r.v?' 중':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
+      +R.map(r=>`<tr><td class="c">${r.v?'└ ':''}${esc(r.m)}</td><td class="pn">${esc(r.v?r.pn.replace(new RegExp(pnBase(r.pn)+'$','i'),r.m):r.pn)}${r.v?' <span class="s">('+esc(pnBase(r.pn))+' 재고 공용)</span>':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
       +`</tbody><tfoot><tr><td colspan="2" class="c b">합 계</td><td class="r b">${nf(ti)}</td><td class="r b">${nf(to)}</td><td class="r b">${nf(ti+to)}</td></tr></tfoot></table>`; };
   const matHtml=g=>{
     const T=g.mat; if(!T||!T.length) return '';
@@ -14843,7 +14844,7 @@ function mrXlsx(D){
       sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
       ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
       const a0=r;
-      SR.forEach(x=>{ sh.set(r,0,(x.v?'└ ':'')+x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,x.pn+(x.v?' 중':''),XS.pn); sh.merge(r,2,r,3,XS.pn);
+      SR.forEach(x=>{ sh.set(r,0,(x.v?'└ ':'')+x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m)+' ('+pnBase(x.pn)+' 재고 공용)':x.pn,XS.pn); sh.merge(r,2,r,3,XS.pn);
         sh.set(r,4,x.iw,XS.n); sh.set(r,5,x.ow,XS.n); sh.set(r,6,x.iw+x.ow,XS.tN,`E${r+1}+F${r+1}`); r++; });
       sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
       [4,5,6].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===4?x.iw:ci===5?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
