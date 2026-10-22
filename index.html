@@ -1109,7 +1109,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.68 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.69 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1188,6 +1188,7 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
     <button class="btn pc-only" onclick="sbcOpen()" title="SBC 공정별 재고 — PRESS · 열처리(한성) · 표면처리(동진) · 검사대기 · 검사완료" style="background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800">🏭 SBC 공정재고</button>
     <button class="btn pc-only" onclick="fcOpen()" title="영업 확정출하 List(3.예상수량) — 차수별 출하계획 대비 실출하·재고 과부족" style="background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800">📅 SBC 출하계획</button>
+    <button class="btn pc-only" id="sbcAutoBtn" onclick="sbcAutoNow()" title="SBC 공유 폴더 자료 지금 다시 읽기" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800;padding:4px 8px">🔄</button>
     <button class="btn pc-only" id="mcBtn" onclick="monthClose()" title="월마감 확정 — 확정 시점 재고를 고정해 재고조사서가 다시 바뀌지 않게 합니다" style="background:#C2410C;color:#fff;border-color:#C2410C;font-weight:800">🔓 월마감 확정</button>
     <span id="mcInfo" class="pc-only" style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;border:2px solid #C2410C;color:#C2410C;background:#FFF7ED;white-space:nowrap"></span>
     <select id="fSort" class="pc-only" title="정렬" onchange="(function(v){const[k,d]=v.split('|');SORT={k,d:+d};mSortPaint(v);rSum();})(this.value)">
@@ -14285,7 +14286,41 @@ function fcPaint(){
     +'<tfoot><tr><td colspan="2" class="c">합　계</td>'+Tt.plan.map(v=>'<td>'+(v?nf(v):'-')+'</td>').join('')
     +'<td style="font-weight:800">'+nf(Tt.sum)+'</td><td>'+nf(Tt.act)+'</td><td style="font-weight:800">'+nf(Tt.rem)+'</td><td colspan="2"></td></tr></tfoot>';
 }
-async function extInit(){ await extPull(); await atcPull(); if(EXT) render(); if(window.showDirectoryPicker){ extLoad(false,true); fcPull().then(()=>fcLoad(true)); } atcDaily().then(()=>render()); }
+/* ═══ 앱을 열면 SBC 공유 폴더 자료(전공정이동표 · 확정출하 List) 자동 갱신 ═══
+   브라우저는 폴더 읽기 권한을 다시 물을 때 사람의 클릭이 있어야 한다.
+   권한이 살아 있으면 바로 읽고, 아니면 화면을 처음 한 번 누를 때 권한을 확인한 뒤 읽는다. */
+async function sbcAutoAll(){
+  const e0=EXT&&EXT.last&&EXT.last.at, f0=FC&&FC.mod;
+  await extLoad(false,true); await fcLoad(true);
+  const e1=EXT&&EXT.last&&EXT.last.at, f1=FC&&FC.mod, m=[];
+  if(e1&&e1!==e0) m.push('전공정이동표 '+e1); if(f1&&f1!==f0) m.push('출하계획');
+  if(m.length) toast('SBC 자료 자동 갱신 — '+m.join(' · '));
+  sbcAutoStat();
+}
+function sbcAutoStat(){
+  const b=$('sbcAutoBtn'); if(!b) return;
+  const e=EXT&&EXT.last?String(EXT.last.at||'').slice(5,16):'-', f=FC&&FC.fileAt?String(FC.fileAt).slice(5,16):'-';
+  b.title='SBC 공유 폴더 자료 — 전공정이동표 '+e+' · 출하계획 '+f+' (누르면 지금 다시 읽기)';
+}
+async function sbcAutoNow(){ const dh=await extIdb('dir').catch(()=>null);
+  if(!dh){ extLoad(true); return; }                            /* 폴더 미지정 — 지정 창 */
+  try{ const r=await dh.requestPermission({mode:'read'}); if(r!=='granted') return; }catch(e){ return; }
+  const e0=EXT&&EXT.last&&EXT.last.at, f0=FC&&FC.mod; await sbcAutoAll();
+  if((EXT&&EXT.last&&EXT.last.at)===e0&&(FC&&FC.mod)===f0) toast('SBC 자료 — 바뀐 파일이 없습니다 (전공정이동표 '+(e0||'-')+')');
+}
+async function sbcAutoInit(){
+  if(!window.showDirectoryPicker) return;
+  const dh=await extIdb('dir').catch(()=>null);
+  if(!dh) return;                                              /* 폴더를 한 번도 지정하지 않음 — [SBC 외주재고]에서 지정 */
+  let ps='prompt'; try{ ps=await dh.queryPermission({mode:'read'}); }catch(e){}
+  if(ps==='granted'){ sbcAutoAll(); return; }
+  /* 첫 클릭(사용자 동작) 때 권한 확인 → 읽기. 한 번만 */
+  const go=async()=>{ document.removeEventListener('pointerdown',go,true);
+    try{ const r=await dh.requestPermission({mode:'read'}); if(r==='granted') sbcAutoAll(); }catch(e){} };
+  document.addEventListener('pointerdown',go,true);
+  toast('SBC 공유 폴더 자료는 화면을 한 번 누르면 자동으로 갱신됩니다');
+}
+async function extInit(){ await extPull(); await atcPull(); await fcPull(); if(EXT) render(); sbcAutoInit(); atcDaily().then(()=>render()); }
 function printMonthReport(){ monthReport('print'); }
 function xlsxMonthReport(){ monthReport('xlsx'); }
 function monthReport(kind){
