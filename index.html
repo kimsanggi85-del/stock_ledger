@@ -1121,7 +1121,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.73 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.74 · 원소재 v11.34</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -13852,7 +13852,11 @@ function mesWip(it,from){
   return q;
 }
 /* ═══ SBC 출하 기종 구분 — 1159C 처럼 앱 품번(1159B)과 끝 글자가 다른 기종은 레이스웨이 원본 표기가
-   전표 비고(「· 1159C Inner」)에 남는다. 그 표기로 기종을 나눠 본다 (재고는 같은 프레스 생산이라 공용) ═══ */
+   전표 비고(「· 1159C Inner」)에 남는다. 그 표기로 기종을 나눠 본다.
+   1159B = 표면처리 삭제(X), 1159C = 표면처리(O) — 다른 제품이지만 프레스 생산 실적이 1159 하나로 들어와
+   앱 재고(장부)는 1159B 품목에 B·C 합산으로 잡힌다 ═══ */
+/* 기종 코드 → 표면처리 표기 (전공정이동표 기종 기본값 EXT_SF) */
+const sfTxt=code=>{ const v=EXT_SF[String(code||'').replace(/\s+/g,'').toUpperCase()]; return v==='O'?'표면처리 O':v==='X'?'표면처리 X(삭제)':''; };
 const pnBase=pn=>String(pn||'').replace(/^(IW|OW)-BDA-/i,'').toUpperCase();
 function shipModel(r){ const m=String(r.n||'').match(/·\s*(\d{4}[A-Z]{0,2})\s*(Inner|Outer)\b/i); return m?m[1].toUpperCase():pnBase(r.pn); }
 /* 기종 코드가 앱 품번과 끝 글자만 다른 '변형'인가 (1159C ↔ 1159B) — 출하를 따로 셀 수 있는 경우 */
@@ -13908,8 +13912,9 @@ function sbcTblHtml(s){
     const sh=!it?{m:0,a:0}:isVariant(mk,pn)?shipOf(pn,mk):(homeRow[pn]===ri?shipOf(pn,'*'):{m:0,a:0}), cur=tot-sh.a;
     tm+=sh.m; ta+=sh.a; tc+=cur;
     return '<tr><td class="l">'+esc(o.m)+'</td><td class="c">'+o.side+'</td>'
-      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="재고는 '+esc(pn)+' 에 합쳐 관리 (같은 프레스 생산)"':'')+'>'
-        +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk))+'<div class="sx" style="color:#93A0AB">'+esc(pnBase(pn))+' 재고 공용</div>':esc(pn)):'품목 없음')+'</td>'
+      +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(pn)+' 품목에 B·C 합산"':'')+'>'
+        +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk)):esc(pn))
+          +(SHIP_SPLIT.includes(pnBase(pn))&&sfTxt(mk)?'<div class="sx" style="color:'+(isVariant(mk,pn)?'#7C3AED':'#64748B')+'">'+sfTxt(mk)+'</div>':''):'품목 없음')+'</td>'
       +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
         +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
       +'<td><b>'+nf(tot)+'</b>'+(tot!==o.tot?gray(o.tot):'')+'</td>'
@@ -14320,17 +14325,18 @@ function fcPaint(){
     const plan=ships.map(d=>g.rows.reduce((s2,r)=>s2+r.cols.reduce((s3,c,i)=>s3+(c===d?r.q[i]:0),0),0));
     const sum=plan.reduce((x,y)=>x+y,0); if(!sum&&!remain[k]) return;
     const ai=g.p.iw?shipQ(g.p.iw,g):0, ao=g.p.ow?shipQ(g.p.ow,g):0, act=Math.min(ai,ao);
-    /* 재고는 같은 프레스 생산이라 기본 품번 하나 — 변형 기종 줄은 '공용', 과부족은 기본 줄에서 변형 기종 남은 계획까지 합쳐 본다 */
+    /* 1159B(표면처리 X)·1159C(표면처리 O)는 다른 제품이지만 앱 재고(장부)는 프레스 생산이 하나라 1159B 품목에 B·C 합산
+       — 1159C 줄은 '합산 ↑', 과부족은 1159B 줄에서 1159C 남은 계획까지 합쳐 본다 */
     const bi=(!g.v&&g.p.iw)?book(g.p.iw):null, bo=(!g.v&&g.p.ow)?book(g.p.ow):null, bk=(bi==null||bo==null)?null:Math.min(bi,bo);
     const vs=g.v?[]:varOf(g.p.key), remV=vs.reduce((x,v2)=>x+(remain[v2]||0),0);
     const rem=remain[k]||0, gap=(g.v||bk==null)?null:bk-rem-remV;
     plan.forEach((v,i)=>Tt.plan[i]+=v); Tt.sum+=sum; Tt.act+=act; Tt.rem+=rem;
-    body+='<tr'+(g.v?' style="background:#FAFAFF"':'')+'><td class="l" style="font-weight:800">'+(g.v?'└ ':'')+esc(k)+'</td><td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+'</td>'
+    body+='<tr'+(g.v?' style="background:#FAFAFF"':'')+'><td class="l" style="font-weight:800">'+(g.v?'└ ':'')+esc(k)+'</td><td class="l" style="font-family:var(--sans);font-size:11px">'+g.rows.map(r=>esc(r.m)).join(' · ')+((g.v||varOf(g.p.key).length)&&sfTxt(g.k)?'<div class="sx" style="color:'+(g.v?'#7C3AED':'#64748B')+'">'+sfTxt(g.k)+'</div>':'')+'</td>'
       +plan.map((v,i)=>'<td'+(ships[i]<td?' style="color:#93A0AB"':'')+'>'+(v?nf(v):'-')+dv(k,ships[i],v)+'</td>').join('')
       +'<td style="font-weight:800">'+nf(sum)+'</td>'
       +'<td title="Inner '+nf(ai)+' / Outer '+nf(ao)+'">'+(act?nf(act):'-')+(ai!==ao?'<div class="sx">IW '+nf(ai)+' · OW '+nf(ao)+'</div>':'')+'</td>'
       +'<td style="font-weight:800">'+(rem?nf(rem):'-')+'</td>'
-      +'<td style="background:#EEF4FF">'+(g.v?'<span class="dim" title="같은 프레스 생산 — '+esc(g.p.key)+' 재고에 포함">↑ '+esc(g.p.key)+' 공용</span>':bk==null?'<span class="dim">품목 없음</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':''))+'</td>'
+      +'<td style="background:#EEF4FF">'+(g.v?'<span class="dim" title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(g.p.key)+' 줄에 B·C 합산">↑ B·C 합산</span>':bk==null?'<span class="dim">품목 없음</span>':nf(bk)+(bi!==bo?'<div class="sx">IW '+nf(bi)+' · OW '+nf(bo)+'</div>':'')+(vs.length?'<div class="sx" style="color:#64748B">'+esc(k)+'·'+esc(vs.join('·'))+' 합산</div>':''))+'</td>'
       +'<td style="font-weight:800" class="'+(gap==null?'':gap<0?'neg':'pos')+'"'+(remV?' title="'+esc(vs.join('·'))+' 남은 계획 '+nf(remV)+' 포함"':'')+'>'+(gap==null?'-':(gap>0?'+':'')+nf(gap))+(remV?'<div class="sx" style="color:#64748B">'+esc(vs.join('·'))+' 포함</div>':'')+'</td></tr>';
   });
   const hd=ships.map((d,i)=>'<th'+(d<td?' style="color:#93A0AB"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">출하 '+d.slice(5).replace('-','/')+'</span></th>').join('');
@@ -14557,9 +14563,9 @@ function _printMonthReport(D){
   /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
   const shipHtml=()=>{ const R=sbcShipRows(y); if(!R.length) return '';
     const ti=R.reduce((x,r)=>x+r.iw,0), to=R.reduce((x,r)=>x+r.ow,0);
-    return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159C 는 1159B 와 따로</div>
+    return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159B(표면처리 X) / 1159C(표면처리 O) 따로</div>
       <table class="inv" style="width:60%"><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
-      +R.map(r=>`<tr><td class="c">${r.v?'└ ':''}${esc(r.m)}</td><td class="pn">${esc(r.v?r.pn.replace(new RegExp(pnBase(r.pn)+'$','i'),r.m):r.pn)}${r.v?' <span class="s">('+esc(pnBase(r.pn))+' 재고 공용)</span>':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
+      +R.map(r=>`<tr><td class="c">${r.v?'└ ':''}${esc(r.m)}</td><td class="pn">${esc(r.v?r.pn.replace(new RegExp(pnBase(r.pn)+'$','i'),r.m):r.pn)}${SHIP_SPLIT.includes(pnBase(r.pn))&&sfTxt(r.m)?' <span class="s">('+sfTxt(r.m)+')</span>':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
       +`</tbody><tfoot><tr><td colspan="2" class="c b">합 계</td><td class="r b">${nf(ti)}</td><td class="r b">${nf(to)}</td><td class="r b">${nf(ti+to)}</td></tr></tfoot></table>`; };
   const matHtml=g=>{
     const T=g.mat; if(!T||!T.length) return '';
@@ -14840,11 +14846,11 @@ function mrXlsx(D){
     /* SBC 기종별 당월 납품 (1159B / 1159C 따로) */
     const SR=cu==='SBC'?sbcShipRows(D.y):[];
     if(SR.length){ let r=r2;
-      sh.set(r++,0,'■SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159C 는 1159B 와 따로',XS.meta);
+      sh.set(r++,0,'■SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 1159B(표면처리 X) / 1159C(표면처리 O) 따로',XS.meta);
       sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
       ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
       const a0=r;
-      SR.forEach(x=>{ sh.set(r,0,(x.v?'└ ':'')+x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m)+' ('+pnBase(x.pn)+' 재고 공용)':x.pn,XS.pn); sh.merge(r,2,r,3,XS.pn);
+      SR.forEach(x=>{ sh.set(r,0,(x.v?'└ ':'')+x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,(x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m):x.pn)+(SHIP_SPLIT.includes(pnBase(x.pn))&&sfTxt(x.m)?' ('+sfTxt(x.m)+')':''),XS.pn); sh.merge(r,2,r,3,XS.pn);
         sh.set(r,4,x.iw,XS.n); sh.set(r,5,x.ow,XS.n); sh.set(r,6,x.iw+x.ow,XS.tN,`E${r+1}+F${r+1}`); r++; });
       sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
       [4,5,6].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===4?x.iw:ci===5?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
