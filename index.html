@@ -1154,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.81 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.82 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14891,7 +14891,8 @@ function xBook(sheets){
   const fonts=[`<font><sz val="10"/><name val="${F}"/></font>`,`<font><b/><sz val="18"/><color rgb="FF0B3A1F"/><name val="${F}"/></font>`,
     `<font><b/><sz val="10"/><name val="${F}"/></font>`,`<font><b/><sz val="11"/><name val="Consolas"/></font>`,
     `<font><b/><sz val="10"/><color rgb="FFE0442E"/><name val="${F}"/></font>`,`<font><sz val="10"/><color rgb="FFC0392B"/><name val="${F}"/></font>`,
-    `<font><b/><sz val="12"/><name val="${F}"/></font>`,`<font><sz val="9"/><name val="${F}"/></font>`,`<font><b/><sz val="9.5"/><name val="${F}"/></font>`];
+    `<font><b/><sz val="12"/><name val="${F}"/></font>`,`<font><sz val="9"/><name val="${F}"/></font>`,`<font><b/><sz val="9.5"/><name val="${F}"/></font>`,
+    `<font><b/><sz val="10"/><name val="Consolas"/></font>`];
   const fill=c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
   /* 채우기 2 제목 · 3 머리글 · 4 머리글(파랑) · 5 제품재고(파랑) · 6 합계 · 7 총괄 */
   const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>',
@@ -14902,7 +14903,8 @@ function xBook(sheets){
   const xfs=[X(0,0,0),X(1,2,1,0,'center'),X(0,0,0,0,'left'),X(8,3,1,0,'center','center',1),X(8,4,1,0,'center','center',1),
     X(0,0,1,0,'center'),X(3,0,1,0,'left'),X(0,0,1,164,'right'),X(0,5,1,164,'right'),X(4,5,1,164,'right'),X(5,5,1,164,'right'),
     X(7,0,1,0,'left'),X(2,6,1,0,'center'),X(2,6,1,164,'right'),X(2,6,1,0,'center'),X(2,3,1,0,'center','center',1),
-    X(6,0,1,164,'right'),X(6,0,1,0,'center'),X(6,7,1,0,'left'),X(2,0,0,0,'right'),X(6,0,1,0,'right'),X(7,0,1,0,'center'),X(2,5,1,164,'right')];
+    X(6,0,1,164,'right'),X(6,0,1,0,'center'),X(6,7,1,0,'left'),X(2,0,0,0,'right'),X(6,0,1,0,'right'),X(7,0,1,0,'center'),X(2,5,1,164,'right'),
+    X(9,0,1,0,'left','center',1),X(7,0,1,0,'center','center',1),X(7,0,1,0,'left','center',1)];
   const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
     +'<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0;-#,##0;&quot;-&quot;"/></numFmts>'
     +`<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>`
@@ -14928,10 +14930,10 @@ function xBook(sheets){
   return zipStore(files);
 }
 /* 셀 스타일 번호 (xBook 의 xfs 순서) */
-const XS={tt:1,meta:2,th:3,thB:4,c:5,pn:6,n:7,nB:8,nLg:9,nNg:10,s:11,tL:12,tN:13,tE:14,ah:15,aN:16,aC:17,tot:18,rt:19,aT:20,cS:21,tNB:22};
+const XS={tt:1,meta:2,th:3,thB:4,c:5,pn:6,n:7,nB:8,nLg:9,nNg:10,s:11,tL:12,tN:13,tE:14,ah:15,aN:16,aC:17,tot:18,rt:19,aT:20,cS:21,tNB:22,pnW:23,cW:24,sW:25};  /* W: 줄바꿈 */
 /* SBC 문서 양식 시트 — 기종 순서, INNER/OUTER 2줄 병합, PRESS·외주업체·검사대기+완제품 분리 */
 function xSbcDoc(sh,R,st){
-  sh.cols=[5,7,11,18,7,8,10,10,11,11,7,12,10,7,12,13,16];
+  sh.cols=[5,7,11,17,7,9,10,10,11,11,7,13,10,7,13,14,20];
   const H=3;
   [['NO',0],['고객사',1],['금형 재번',2],['품명 / 품번',3],['기종',4],['구분',5],['PRESS\n재고',6],['외주업체\n재고',7],['검사대기+\n완제품 재고',8],['③합계\n(①+②)',15],['비 고',16]]
     .forEach(([s,c])=>{ sh.set(H,c,s,XS.th); sh.merge(H,c,H+1,c,XS.th); });
@@ -14948,12 +14950,13 @@ function xSbcDoc(sh,R,st){
       sh.set(rr,9,x.tot,XS.nB,`G${X}+I${X}`); sh.set(rr,10,x.pr||'',XS.n); sh.set(rr,11,x.sub,XS.n,`J${X}*K${X}`); };
     put(a,r); if(pair) put(b,r+1);
     const mg=(c,v,s)=>{ sh.set(r,c,v,s); if(pair) sh.merge(r,c,r1,c,s); };
-    mg(0,no,XS.c); mg(1,'SBC',XS.cS); mg(2,a.mold,XS.cS); mg(3,'Raceway Ring  '+a.dpn,XS.pn);
-    mg(5,a.sf==='O'?'표면처리 O':a.sf==='X'?'표면처리 X':'',XS.cS);
+    if(!pair) sh.ht[r]=30;                    /* 한 줄짜리 기종도 품번 2줄이 들어가게 */
+    mg(0,no,XS.c); mg(1,'SBC',XS.cS); mg(2,a.mold,XS.cW); mg(3,'Raceway Ring\n'+a.dpn,XS.pnW);
+    mg(5,a.sf==='O'?'표면처리\nO':a.sf==='X'?'표면처리\nX':'',XS.cW);
     mg(12,raw?raw.kg:'',XS.n); mg(13,raw?raw.p:'',XS.n);
     sh.set(r,14,raw?raw.amt:0,XS.n,`M${r+1}*N${r+1}`); if(pair) sh.merge(r,14,r1,14,XS.n);
     sh.set(r,15,a.sub+(pair?b.sub:0)+(raw?raw.amt:0),XS.n,`L${r+1}+${pair?`L${r1+1}+`:''}O${r+1}`); if(pair) sh.merge(r,15,r1,15,XS.n);
-    mg(16,raw&&raw.note?raw.note:'',XS.s);
+    mg(16,raw&&raw.note?raw.note:'',XS.sW);
     r=r1+1; if(pair) i++;
   }
   const S2=c=>`SUM(${c}${r0+1}:${c}${r})`, sm=k=>R.reduce((s,x)=>s+x[k],0);
@@ -15010,13 +15013,14 @@ function mrXlsx(D){
     const SR=cu==='SBC'?sbcShipRows(D.y):[];
     if(SR.length){ let r=r2;
       sh.set(r++,0,'■SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 기종(표면처리 O/X)별',XS.meta);
-      sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,3,XS.th);
-      ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,4+i,h,XS.th)); sh.ht[r]=20; r++;
+      /* 앱 품번은 C~F 4칸 병합 — 「(표면처리 X(삭제))」까지 숫자 칸을 침범하지 않게 */
+      sh.set(r,0,'기 종',XS.th); sh.merge(r,0,r,1,XS.th); sh.set(r,2,'앱 품번',XS.th); sh.merge(r,2,r,5,XS.th);
+      ['Inner','Outer','합계'].forEach((h,i)=>sh.set(r,6+i,h,XS.th)); sh.ht[r]=20; r++;
       const a0=r;
-      SR.forEach(x=>{ sh.set(r,0,x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,(x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m):x.pn)+(sfTxt(x.m)?' ('+sfTxt(x.m)+')':''),XS.pn); sh.merge(r,2,r,3,XS.pn);
-        sh.set(r,4,x.iw,XS.n); sh.set(r,5,x.ow,XS.n); sh.set(r,6,x.iw+x.ow,XS.tN,`E${r+1}+F${r+1}`); r++; });
-      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,3,XS.tL);
-      [4,5,6].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===4?x.iw:ci===5?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
+      SR.forEach(x=>{ sh.set(r,0,x.m,XS.c); sh.merge(r,0,r,1,XS.c); sh.set(r,2,(x.v?x.pn.replace(new RegExp(pnBase(x.pn)+'$','i'),x.m):x.pn)+(sfTxt(x.m)?' ('+sfTxt(x.m)+')':''),XS.pnW); sh.merge(r,2,r,5,XS.pnW);
+        sh.set(r,6,x.iw,XS.n); sh.set(r,7,x.ow,XS.n); sh.set(r,8,x.iw+x.ow,XS.tN,`G${r+1}+H${r+1}`); r++; });
+      sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,5,XS.tL);
+      [6,7,8].forEach(ci=>sh.set(r,ci,SR.reduce((s2,x)=>s2+(ci===6?x.iw:ci===7?x.ow:x.iw+x.ow),0),XS.tN,`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`));
       r2=r+2; }
     /* 원자재재고 (규격별) — SKF씰 등 */
     const XT=(g&&g.mat)||[];
