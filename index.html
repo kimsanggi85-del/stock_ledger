@@ -1154,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.80 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.81 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14692,9 +14692,9 @@ function _printMonthReport(D){
   /* SBC 문서 양식 표 */
   const docHtml=g=>{
     const R=g.doc, n=v=>v?nf(v):'-', st=stat[g.cu];
-    const head=`<colgroup><col style="width:2.6%"><col style="width:4%"><col style="width:6.4%"><col style="width:10%"><col style="width:5%"><col style="width:4.2%">
-      <col style="width:5.6%"><col style="width:5.6%"><col style="width:6.4%"><col style="width:6.4%"><col style="width:3.8%"><col style="width:7.4%">
-      <col style="width:5.4%"><col style="width:4.2%"><col style="width:7.2%"><col style="width:7.6%"><col style="width:8.2%"></colgroup>
+    const head=`<colgroup><col style="width:2.4%"><col style="width:3.8%"><col style="width:6.6%"><col style="width:11.5%"><col style="width:4.6%"><col style="width:5%">
+      <col style="width:5.2%"><col style="width:5.2%"><col style="width:6%"><col style="width:6.2%"><col style="width:3.4%"><col style="width:7.2%">
+      <col style="width:4.6%"><col style="width:3.6%"><col style="width:7%"><col style="width:7.6%"><col style="width:10.1%"></colgroup>
       <thead><tr><th rowspan="2">NO</th><th rowspan="2">고객사</th><th rowspan="2">금형 재번</th><th rowspan="2">품명 / 품번</th><th rowspan="2">기종</th><th rowspan="2">구분</th>
       <th rowspan="2">PRESS<br>재고</th><th rowspan="2">외주업체<br>재고</th><th rowspan="2">검사대기+<br>완제품 재고</th>
       <th colspan="3">①제품재고 금액산출(EA)</th><th colspan="3">②원자재재고 금액산출</th><th rowspan="2">③합계<br>(①+②)</th><th rowspan="2">비 고</th></tr>
@@ -14703,13 +14703,13 @@ function _printMonthReport(D){
     for(let i=0;i<R.length;i++){
       const a=R[i], b=R[i+1], pair=b&&b.m===a.m, rs=pair?' rowspan="2"':'', raw=a.raw||(pair&&b.raw)||null;
       const tot3=a.sub+(pair?b.sub:0)+(raw?raw.amt:0);
-      const row=(r,first)=>`<td class="c">${r.side}</td>${first?`<td class="c s"${rs}>표면처리<br>${r.sf==='O'?'O':r.sf==='X'?'X':''}</td>`:''}
+      const row=(r,first)=>`<td class="c">${r.side}</td>${first?`<td class="c sf"${rs}>표면처리<br><b>${r.sf==='O'?'O':r.sf==='X'?'X':''}</b></td>`:''}
         <td class="r">${n(r.press)}</td><td class="r">${n(r.out)}</td><td class="r">${n(r.wd)}</td>
         <td class="r bl">${n(r.tot)}</td><td class="r">${n(r.pr)}</td><td class="r">${n(r.sub)}</td>`;
       no++;
-      body+=`<tr><td class="c"${rs}>${no}</td><td class="c cu"${rs}>SBC</td><td class="c s"${rs}>${esc(a.mold)}</td><td class="pn"${rs}><span class="s">Raceway Ring</span><br>${esc(a.dpn)}</td>${row(a,true)}
+      body+=`<tr><td class="c"${rs}>${no}</td><td class="c cu"${rs}>SBC</td><td class="c s mold"${rs}>${esc(a.mold)}</td><td class="pn"${rs}><span class="s">Raceway Ring</span><br>${esc(a.dpn)}</td>${row(a,true)}
         <td class="r"${rs}>${raw?nf(raw.kg):'-'}</td><td class="r"${rs}>${raw?nf(raw.p):''}</td><td class="r"${rs}>${raw?nf(raw.amt):'-'}</td>
-        <td class="r b"${rs}>${n(tot3)}</td><td class="s"${rs}>${raw&&raw.note?esc(raw.note):''}</td></tr>`;
+        <td class="r b"${rs}>${n(tot3)}</td><td class="s nt2"${rs}>${raw&&raw.note?esc(raw.note):''}</td></tr>`;
       if(pair){ body+=`<tr>${row(b,false)}</tr>`; i++; }
     }
     const S2=k=>R.reduce((s,r)=>s+r[k],0);
@@ -14723,7 +14723,7 @@ function _printMonthReport(D){
   const shipHtml=()=>{ const R=sbcShipRows(y); if(!R.length) return '';
     const ti=R.reduce((x,r)=>x+r.iw,0), to=R.reduce((x,r)=>x+r.ow,0);
     return `<div class="nt" style="margin-top:8px;font-weight:700">■ SBC 기종별 당월 납품 (EA) — 레이스웨이 출하 · 기종(표면처리 O/X)별</div>
-      <table class="inv" style="width:60%"><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
+      <table class="inv shp" style="width:72%"><colgroup><col style="width:13%"><col style="width:39%"><col style="width:15%"><col style="width:15%"><col style="width:18%"></colgroup><thead><tr><th>기종</th><th>앱 품번</th><th>Inner</th><th>Outer</th><th>합계</th></tr></thead><tbody>`
       +R.map(r=>`<tr><td class="c">${esc(r.m)}</td><td class="pn">${esc(r.v?r.pn.replace(new RegExp(pnBase(r.pn)+'$','i'),r.m):r.pn)}${sfTxt(r.m)?' <span class="s">('+sfTxt(r.m)+')</span>':''}</td><td class="r">${nf(r.iw)}</td><td class="r">${nf(r.ow)}</td><td class="r b">${nf(r.iw+r.ow)}</td></tr>`).join('')
       +`</tbody><tfoot><tr><td colspan="2" class="c b">합 계</td><td class="r b">${nf(ti)}</td><td class="r b">${nf(to)}</td><td class="r b">${nf(ti+to)}</td></tr></tfoot></table>`; };
   const matHtml=g=>{
@@ -14805,7 +14805,11 @@ function _printMonthReport(D){
    +'.tot{margin-top:18px;padding:8px 12px;border:1.5px solid #444;background:#F6FAF7;font-size:15px;break-inside:avoid;page-break-inside:avoid}'
    +'.nt{margin-top:8px;font-size:9.5px;color:#444}'
    +'.ext{margin-top:8px;break-inside:avoid;page-break-inside:avoid}.ext .et{font-size:13px;font-weight:700;margin-bottom:3px}'
-   +'table.doc td.pn{font-size:12px;line-height:1.15;white-space:normal}table.doc td.pn .s{font-weight:400;font-family:inherit}table.doc th{font-size:11.5px}table.doc td{font-size:12.5px}'
+   +'table.doc td.pn{font-size:11px;line-height:1.15;white-space:normal;overflow-wrap:anywhere;letter-spacing:-.4px}table.doc td.pn .s{font-weight:400;font-family:inherit}table.doc th{font-size:11px}table.doc td{font-size:11.5px}'
+   +'table.doc td{overflow:hidden}table.doc td.mold{font-size:10.5px;white-space:normal;overflow-wrap:anywhere;letter-spacing:-.3px;line-height:1.1}'
+   +'table.doc td.sf{font-size:10px;white-space:normal;line-height:1.15;letter-spacing:-.5px}table.doc td.sf b{font-size:12px}'
+   +'table.doc td.nt2{font-size:10px;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.2}'
+   +'table.shp td.pn{white-space:normal;overflow:hidden;font-size:12.5px;line-height:1.2}table.shp td.pn .s{font-family:inherit;font-weight:400;font-size:11px;white-space:nowrap}'
    +'.xt.rf th{background:#FDF1D8}.xt.rf tfoot td{background:#FEF8EC}.ext .es{font-size:12px;margin-bottom:3px;color:#5B21B6}.xt tr.sh td{background:#F3EEFD;font-weight:700;text-align:left;padding-left:6px}.xt tr.st td{background:#FAF7FE;font-weight:700}.xt{width:85%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
