@@ -983,6 +983,7 @@ body.qp-on{overflow:hidden}
 .trc-more[open]>summary::before{content:"▾ "}
 @media print{ .trc-more{display:block} .trc-more>summary{display:none} }
 
+.chkTag{display:inline-block;margin-left:4px;padding:0 4px;border-radius:3px;background:#FDECEA;color:#B3261E;font-size:10px;font-weight:800;font-family:var(--sans);white-space:nowrap;vertical-align:middle}
 /* 재고 실사표 — 품번·품명·보관위치는 내용 길이에 맞춰 줄어든다 */
 #tCnt{table-layout:auto}
 #tCnt col.cFit{width:auto}
@@ -1135,7 +1136,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.79 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7068,7 +7069,7 @@ function rSum(){
       return `<tr>
        <td class="c">${i+1}</td>
        <td class="c" style="font-family:var(--sans)">${esc(whNm(it.wh))}</td>
-       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}</td>
+       <td class="l" style="cursor:pointer;font-weight:700" onclick="goBin('${pn}')">${pn}${chkTag(it.pn)}</td>
        <td style="font-weight:800" class="${v.cur<0?'neg':''}">${nf(v.cur)}${isSbc(it)?(sp=>sp&&sp.keys.length>1?'<div class="sx" style="color:#7C3AED;font-weight:600" title="뒷공정(열처리·표면처리·검사) 기종별 − 검사 시트 이후 출하 · 프레스(생산중+PRESS)는 기종 구분 전">'+sp.keys.map(k=>k+' '+nf(sp.cur[k])).join(' · ')+' · 프레스 '+nf(sp.press)+'</div>':'')(sbcSplit(it.pn)):''}${(()=>{ const l=extLed(it), x=extOut(it.pn);
          const pr=pressOf(it); if(pr!=null) xp+=pr;
          const sg=pr!=null?sbcStage(it):null;
@@ -7374,7 +7375,7 @@ function rCnt(){
    +R.map(({it,v,real,df},i)=>{
      const idx=S.items.indexOf(it);
      return `<tr>
-      <td class="c">${i+1}</td><td class="l fit pnc">${esc(it.pn)}</td>
+      <td class="c">${i+1}</td><td class="l fit pnc">${esc(it.pn)}${chkTag(it.pn)}</td>
       <td class="l fit nmc">${esc(it.nm)}</td>
       <td class="c fit lcc">${esc(it.lc)}</td>
       <td>${nf(it.bx)}</td><td>${nf(v.cur)}</td><td>${v.box}</td>
@@ -7648,6 +7649,7 @@ async function pushItems(silent){
 async function pullItems(silent,strict){
   try{
     await itPullDel();                                 /* 삭제기록 먼저 */
+    await chkPull();                                   /* 실물확인 표시 */
     let rows=await fetchAll(SB_URL+'/rest/v1/'+IT_TABLE+'?select=*&order=pn.asc',
       {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
     await itPurgeServerDel(rows);                      /* 서버에 되살아난 삭제 품번 제거 */
@@ -7700,6 +7702,21 @@ async function delItemRemote(pn){
 }
 /* ═══ 품목 삭제기록 — 지운 품목이 다른 기기 업로드로 되살아나는 것을 막는다
    (애드온 v2.6과 같은 kv_store 키 `tj_item_del_v1` 를 써서 두 빌드가 같이 동작) ═══ */
+/* ═══ 실물확인 표시 — 장부와 실물이 다를 수 있어 실사 때 꼭 세어 볼 품목 (kv `tj_item_chk_v1` {pns:{품번:사유}}) ═══ */
+const CHK_KEY='tj_item_chk_v1';
+let CHK={};
+async function chkPull(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+CHK_KEY+'&select=value',{headers:itHeaders(),cache:'no-store'});
+    if(!r.ok)return;
+    const j=await r.json(); const v=j&&j[0]&&j[0].value;
+    CHK=(v&&v.pns&&typeof v.pns==='object')?v.pns:{};
+  }catch(e){}
+}
+function chkTag(pn){
+  const w=CHK[pn]; if(w==null)return '';
+  return '<span class="chkTag" title="'+esc(w||'실사 때 실물 수량 확인 필요')+'">🔍실물확인</span>';
+}
 const ITEM_DEL_KEY='tj_item_del_v1';
 let DEL_PNS=new Set();
 async function itPullDel(){
@@ -12020,10 +12037,10 @@ function exportXls(){
 /* 실사표 내려받기 — 현장에서 [실사박스] 칸만 채워 다시 불러오면 됨 */
 function exportCnt(){
   const R=S.items.filter(inWh).filter(i=>!isExcl(i.pn));
-  const head=['품번','실사박스','품명','보관위치','박스단위','전산(박스)','전산재고(EA)'];
+  const head=['품번','실사박스','품명','보관위치','박스단위','전산(박스)','전산재고(EA)','확인사항'];
   const rows=R.map(it=>{const v=calc(it);
     return [it.pn, (it.cnt==null?'':it.cnt), it.nm||'', it.lc||'', it.bx||0,
-            it.bx?Math.floor(v.cur/it.bx):0, v.cur];});
+            it.bx?Math.floor(v.cur/it.bx):0, v.cur, CHK[it.pn]!=null?'실물확인 '+(CHK[it.pn]||''):''];});
   const c=[head,...rows].map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   dl(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}),
      '재고 실사_'+(WH?whNm(WH):'전체')+'_'+($('cntD').value||today()).replace(/-/g,'')+'.csv');
@@ -13121,7 +13138,7 @@ function mcSum(it,v){
   const sfB=bx?Math.round(sf/bx):0;
   const dt=v.last?v.last.slice(5).replace('-','/'):'-';
   return `<div class="mx-r ${cls}" data-pn="${pn}">
-    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}${v.sq&&isSbc(it)?(o2=>{ const ks=Object.keys(o2).sort(); return ks.length>1?'<i style="display:block;font-style:normal;font-size:10px;color:#B3261E">출하 '+ks.map(k=>k+' '+nf(o2[k])).join(' · ')+'</i>':''; })(shipByModel(it.pn,mStart(),CUT||mEnd())):''}</div>
+    <div class="mx-pn" onclick="goBin('${pn}')"><b>${pn}</b>${chkTag(it.pn)}${it.wh&&it.wh!=='현장'?'<u>'+esc(whNm(it.wh))+'</u>':''}${v.sq&&isSbc(it)?(o2=>{ const ks=Object.keys(o2).sort(); return ks.length>1?'<i style="display:block;font-style:normal;font-size:10px;color:#B3261E">출하 '+ks.map(k=>k+' '+nf(o2[k])).join(' · ')+'</i>':''; })(shipByModel(it.pn,mStart(),CUT||mEnd())):''}</div>
     <button type="button" class="mx-c cur" onclick="event.stopPropagation();openQty('${pn}','cur')"><b class="${v.cur<0?'neg':''}">${nf(v.cur)}</b><i>${v.box}박스</i></button>
     <button type="button" class="mx-c sf" onclick="event.stopPropagation();openQty('${pn}','sf')"><b>${nf(sf)}</b><i>${sfB}박스</i></button>
     <div class="mx-c gap ${gc}"><b>${v.gap>0?'+':''}${nf(v.gap)}</b><i>${bx?((v.gap/bx).toFixed(1)+'박스'):''}</i></div>
@@ -13133,7 +13150,7 @@ function mcCnt(o,idx){
   const {it,v,real,df}=o;
   const cls=df===null?'':(df===0?'ok':'neg');
   return `<div class="mc ${cls}" data-i="${idx}">
-    <div class="mc-h"><span class="mc-pn">${esc(it.pn)}</span>
+    <div class="mc-h"><span class="mc-pn">${esc(it.pn)}${chkTag(it.pn)}</span>
       <span class="mc-tag ${it.wh&&it.wh!=='현장'?'w':''}">${esc(whNm(it.wh))}</span></div>
     <div class="mc-sub">${nf(it.bx)} ea/박스${it.lc?' · '+esc(it.lc):''} · 전산 <b>${v.box}</b>박스 (${nf(v.cur)} EA)</div>
     <div class="mc-step">
