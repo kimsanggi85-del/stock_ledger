@@ -1154,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.82 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.83 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14653,7 +14653,46 @@ function mrData(){
   groups.forEach(g=>{ g.flow=g.rows.map(r=>rawFlow(r.it.pn,y)).filter(f=>f&&(f.prev||f.open||f.inq||f.used||f.close))
     .map(f=>Object.assign(f,{fix:MC&&MC.raw?((MC.raw[f.pn]||[0])[0]):null})); });
   const totalOut=groups.reduce((s,g)=>s+(g.doc?g.docOut:g.rows.reduce((a,r)=>a+r.out,0)),0);
-  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext,totalOut,totalRkg,totalRamt};
+  /* 보고 요약용 — 그 달 실사 조정 전표, 전월 마감확정 값(있을 때만 같은 기준으로 다시 계산) */
+  const adj=mrAdj(y,MC?MC.cut:(CUT||y+'-'+p2(lastD)));
+  let prev=null;
+  if(!mrData._in&&mcGet(pm)){ const bk=[ym,CUT]; mrData._in=1;
+    try{ ym=pm; CUT=mcGet(pm).cut; const P=mrData(); prev={q:P.totalQ,amt:P.totalAmt,rkg:P.totalRkg,ramt:P.totalRamt,stat:P.stat}; }
+    catch(e){ console.warn('전월 비교:',e.message); }
+    finally{ ym=bk[0]; CUT=bk[1]; mrData._in=0; } }
+  return {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong,ext,totalOut,totalRkg,totalRamt,adj,prev};
+}
+/* 그 달 실사 조정 — 재고 직접수정·실사 차이조정 전표만 (생산마감 보정 등은 제외). 금액은 품목 단가 기준 */
+function mrAdj(y,cut){
+  const isCnt=r=>(r.k==='재고조정(+)'||r.k==='재고조정(-)')&&/^(재고 직접수정|재고실사 차이조정|실사조정)/.test(String(r.n||''));
+  const rows=[];
+  (S.led||[]).forEach(r=>{ if(!r.d||r.d<y+'-01'||r.d>cut||!isCnt(r)) return;
+    const pn=canonPn(r.pn), it=S.items.find(i=>i.pn===pn), q=(r.k==='재고조정(+)'?1:-1)*(+r.q||0);
+    rows.push({d:r.d,pn,cu:it&&(it.cu||'').trim()||'(미지정)',nm:it?it.nm||'':'',q,amt:q*(it?(+it.price||0):0),
+      n:String(r.n||'').replace(/^재고 직접수정 · /,'')}); });
+  rows.sort((a,b)=>Math.abs(b.amt)-Math.abs(a.amt)||Math.abs(b.q)-Math.abs(a.q));
+  const by={}, all={n:0,up:0,dn:0,amt:0};
+  rows.forEach(o=>[by[o.cu]=by[o.cu]||{n:0,up:0,dn:0,amt:0},all].forEach(b=>{ b.n++; if(o.q>0)b.up+=o.q; else b.dn+=o.q; b.amt+=o.amt; }));
+  return {rows,by,all};
+}
+/* 보고 요약 공통 — 인쇄·엑셀이 같은 문구를 쓴다 */
+function mrSum(D){
+  const {stat,prev,adj,totalQ,totalAmt,totalRamt,totalLong,totalOut,cus}=D;
+  const pct=(a,b)=>b?((a-b)/b*100>0?'+':'')+((a-b)/b*100).toFixed(1)+'%':'';
+  const dd=(a,b)=>b==null?'전월 마감 없음':((a>b?'▲ ':a<b?'▼ ':'— ')+nf(Math.abs(a-b))+(b?' ('+pct(a,b)+')':''));
+  const pm=+String(D.pm).slice(5);
+  const tot=totalAmt+totalRamt, ptot=prev?prev.amt+prev.ramt:null;
+  const lines=[
+    `재고금액 합계 ₩${nf(tot)} — 전월(${pm}월) 대비 ${dd(tot,ptot)}  ·  제품 ₩${nf(totalAmt)}${prev?' (전월 ₩'+nf(prev.amt)+')':''} · 원자재 ₩${nf(totalRamt)}${prev?' (전월 ₩'+nf(prev.ramt)+')':''}`,
+    `제품재고 수량 ${nf(totalQ)} EA${totalOut?' (사내)':''} — 전월 대비 ${dd(totalQ,prev?prev.q:null)}${totalOut?'  ·  외주가공 '+nf(totalOut)+' EA 별도':''}`,
+    adj.all.n?`실사 조정 ${adj.all.n}건 — 증가 +${nf(adj.all.up)} EA / 감소 −${nf(-adj.all.dn)} EA · 조정금액 ${adj.all.amt>0?'+':adj.all.amt<0?'−':''}₩${nf(Math.abs(adj.all.amt))}`
+      :'실사 조정 없음 (장부 = 실물)',
+    `장기보관품(3개월 이상) ${nf(totalLong)} EA`];
+  const cuL=cus.concat(Object.keys(adj.by).filter(c=>!cus.includes(c)));
+  const rows=cuL.map(cu=>{ const s=stat[cu]||{q:0,amt:0,ramt:0}, ps=prev&&prev.stat[cu], a=adj.by[cu]||{n:0,up:0,dn:0,amt:0},
+      cur=s.amt+s.ramt, pv=ps?ps.amt+ps.ramt:null;
+    return {cu,q:s.q,cur,pv,diff:pv==null?null:cur-pv,an:a.n,aq:a.up+a.dn,aamt:a.amt}; });
+  return {lines,rows,pct};
 }
 function _printMonthReport(D){
   const {y,Y,M,lastD,MC,cutTxt,cus,groups,stat,pm,totalQ,totalAmt,totalLong}=D;
@@ -14762,6 +14801,29 @@ function _printMonthReport(D){
         <td class="r b">${rkg?nf(rkg):'-'}</td><td></td><td class="r b">${ramt?nf(ramt):'-'}</td><td class="r b">${nf(amt+ramt)}</td><td></td></tr></tfoot></table>`}${cu==='SBC'?shipHtml():''}${matHtml(g)}${flowHtml(g)}${extHtml(g)}</section>`);
   });
 
+  /* 0) 첫 장: 보고 요약 + 결재란 + 실사 조정 내역 (원인·대책은 손으로 기입) */
+  { const SM=mrSum(D), A=D.adj, sg=v=>v>0?'+'+nf(v):v<0?'−'+nf(-v):'-', LIM=25;
+    chunks.unshift(`<section class="pg"><div class="hd">
+      <table class="sgn"><tr><th rowspan="2" class="v">결<br>재</th><th>작 성</th><th>검 토</th><th>승 인</th></tr><tr><td></td><td></td><td></td></tr></table>
+      <div class="ttl">재 고 조 사 보 고 <span>(${Y}年 ${p2(M)}月 · ${M}월분 마감)</span></div>
+      <div class="meta"><div>■조사일자 : ${Y}년 ${M}월 ${lastD}일 (${mcTxt}${cutTxt}오후14:00 기준)</div><div>■담당부서 : 생산팀　　■대상 : ${cus.map(c=>esc(CU_FULL[c]||c)).join(' · ')}</div></div></div>
+      <div class="smb"><div class="et">■ 보고 요약</div><ol>${SM.lines.map(t=>'<li>'+esc(t)+'</li>').join('')}</ol></div>
+      <div class="et" style="margin-top:8px">■ 고객사별 재고금액 · 실사 조정</div>
+      <table class="smt"><colgroup><col style="width:13%"><col style="width:9%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:5%"><col style="width:9%"><col style="width:9%"><col style="width:22%"></colgroup>
+      <thead><tr><th>고객사</th><th>제품재고<br>(EA)</th><th>재고금액<br>(①+②)</th><th>전월 금액</th><th>증 감</th><th>실사<br>조정</th><th>조정 수량<br>(EA)</th><th>조정 금액</th><th>차이 원인 · 대책 (기입)</th></tr></thead><tbody>
+      ${SM.rows.map(o=>`<tr><td class="c">${esc(CU_FULL[o.cu]||o.cu)}</td><td class="r">${nf(o.q)}</td><td class="r b">${nf(o.cur)}</td><td class="r">${o.pv==null?'-':nf(o.pv)}</td>
+        <td class="r${o.diff<0?' ng':''}">${o.diff==null?'-':sg(o.diff)}</td><td class="c">${o.an?o.an+'건':'-'}</td><td class="r${o.aq<0?' ng':''}">${o.an?sg(o.aq):'-'}</td><td class="r${o.aamt<0?' ng':''}">${o.an?sg(o.aamt):'-'}</td><td class="hand"></td></tr>`).join('')}</tbody>
+      <tfoot><tr><td class="c b">합 계</td><td class="r b">${nf(totalQ)}</td><td class="r b">${nf(totalAmt+D.totalRamt)}</td><td class="r b">${D.prev?nf(D.prev.amt+D.prev.ramt):'-'}</td>
+        <td class="r b">${D.prev?sg(totalAmt+D.totalRamt-D.prev.amt-D.prev.ramt):'-'}</td><td class="c b">${A.all.n?A.all.n+'건':'-'}</td><td class="r b">${A.all.n?sg(A.all.up+A.all.dn):'-'}</td><td class="r b">${A.all.n?sg(A.all.amt):'-'}</td><td></td></tr></tfoot></table>
+      ${A.rows.length?`<div class="et" style="margin-top:8px">■ 실사 조정 내역 (${M}월 · 재고 직접수정·실사 차이조정 전표${A.rows.length>LIM?' · 금액·수량 큰 순 '+LIM+'건':''})</div>
+      <table class="smt"><colgroup><col style="width:4%"><col style="width:8%"><col style="width:12%"><col style="width:16%"><col style="width:15%"><col style="width:9%"><col style="width:10%"><col style="width:26%"></colgroup>
+      <thead><tr><th>No</th><th>일자</th><th>고객사</th><th>품 번</th><th>품 명</th><th>조정(EA)</th><th>조정 금액</th><th>내 용</th></tr></thead><tbody>
+      ${A.rows.slice(0,LIM).map((o,i)=>`<tr><td class="c">${i+1}</td><td class="c">${o.d.slice(5).replace('-','/')}</td><td class="c">${esc(CU_FULL[o.cu]||o.cu)}</td><td class="pn">${esc(o.pn)}</td><td class="s">${esc(o.nm)}</td>
+        <td class="r${o.q<0?' ng':''}">${sg(o.q)}</td><td class="r${o.amt<0?' ng':''}">${o.amt?sg(o.amt):'-'}</td><td class="s">${esc(o.n)}</td></tr>`).join('')}
+      ${A.rows.length>LIM?`<tr><td colspan="8" class="c s">외 ${A.rows.length-LIM}건 — 입출고 내역(재고조정)에서 확인</td></tr>`:''}</tbody></table>`:''}
+      <div class="nt">· 재고금액 = ①제품재고 + ②원자재재고 · 전월 금액은 ${+String(pm).slice(5)}월 마감확정 값을 같은 기준으로 다시 계산${D.prev?'':' (전월 마감확정 없음 — 비교 생략)'} · 조정 금액은 품목 단가 기준(단가 미등록 품목은 0)</div>
+    </section>`); }
+
   /* 2) 마지막 페이지: 업체별 분석표 */
   const rate=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';
   const trend=(a,b)=>a>b?'증가':(a<b?'감소':'동일');
@@ -14811,6 +14873,11 @@ function _printMonthReport(D){
    +'table.doc td.nt2{font-size:10px;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.2}'
    +'table.shp td.pn{white-space:normal;overflow:hidden;font-size:12.5px;line-height:1.2}table.shp td.pn .s{font-family:inherit;font-weight:400;font-size:11px;white-space:nowrap}'
    +'.xt.rf th{background:#FDF1D8}.xt.rf tfoot td{background:#FEF8EC}.ext .es{font-size:12px;margin-bottom:3px;color:#5B21B6}.xt tr.sh td{background:#F3EEFD;font-weight:700;text-align:left;padding-left:6px}.xt tr.st td{background:#FAF7FE;font-weight:700}.xt{width:85%}.xt th{background:#EDE4FB}.xt tfoot td{background:#F4EFFC;font-weight:700}'
+   +'table.sgn{float:right;width:auto;table-layout:auto;margin-left:10px}table.sgn th{width:68px;height:20px;font-size:12px}table.sgn th.v{width:22px;line-height:1.1}table.sgn td{height:52px}'
+   +'.smb{border:1.5px solid #444;background:#F6FAF7;padding:6px 12px;margin-top:6px;clear:both}.smb ol{margin:4px 0 2px 18px;padding:0}.smb li{font-size:13.5px;line-height:1.7}'
+   +'.et{font-size:13px;font-weight:700;margin-bottom:3px}'
+   +'table.smt{margin-top:2px}table.smt td{font-size:12.5px;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}table.smt td.r{white-space:nowrap}table.smt td.pn{font-size:12px}table.smt td.hand{height:28px}'
+   +'.pg:first-child{break-after:page;page-break-after:always}'
    +'@media print{thead{display:table-header-group}tfoot{display:table-row-group}tr{page-break-inside:avoid;break-inside:avoid}'
    +'.ttl{margin-bottom:6px}}'
    +'</style></head><body>'+pages+'</body></html>';
@@ -14904,7 +14971,7 @@ function xBook(sheets){
     X(0,0,1,0,'center'),X(3,0,1,0,'left'),X(0,0,1,164,'right'),X(0,5,1,164,'right'),X(4,5,1,164,'right'),X(5,5,1,164,'right'),
     X(7,0,1,0,'left'),X(2,6,1,0,'center'),X(2,6,1,164,'right'),X(2,6,1,0,'center'),X(2,3,1,0,'center','center',1),
     X(6,0,1,164,'right'),X(6,0,1,0,'center'),X(6,7,1,0,'left'),X(2,0,0,0,'right'),X(6,0,1,0,'right'),X(7,0,1,0,'center'),X(2,5,1,164,'right'),
-    X(9,0,1,0,'left','center',1),X(7,0,1,0,'center','center',1),X(7,0,1,0,'left','center',1)];
+    X(9,0,1,0,'left','center',1),X(7,0,1,0,'center','center',1),X(7,0,1,0,'left','center',1),X(5,0,1,164,'right')];
   const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
     +'<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0;-#,##0;&quot;-&quot;"/></numFmts>'
     +`<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>`
@@ -14930,7 +14997,7 @@ function xBook(sheets){
   return zipStore(files);
 }
 /* 셀 스타일 번호 (xBook 의 xfs 순서) */
-const XS={tt:1,meta:2,th:3,thB:4,c:5,pn:6,n:7,nB:8,nLg:9,nNg:10,s:11,tL:12,tN:13,tE:14,ah:15,aN:16,aC:17,tot:18,rt:19,aT:20,cS:21,tNB:22,pnW:23,cW:24,sW:25};  /* W: 줄바꿈 */
+const XS={tt:1,meta:2,th:3,thB:4,c:5,pn:6,n:7,nB:8,nLg:9,nNg:10,s:11,tL:12,tN:13,tE:14,ah:15,aN:16,aC:17,tot:18,rt:19,aT:20,cS:21,tNB:22,pnW:23,cW:24,sW:25,nR:26};  /* W: 줄바꿈 */
 /* SBC 문서 양식 시트 — 기종 순서, INNER/OUTER 2줄 병합, PRESS·외주업체·검사대기+완제품 분리 */
 function xSbcDoc(sh,R,st){
   sh.cols=[5,7,11,17,7,9,10,10,11,11,7,13,10,7,13,14,20];
@@ -15099,6 +15166,32 @@ function mrXlsx(D){
   an.set(r,0,`재고 총괄　제품재고 ${nf(totalQ)} EA${D.totalOut?`(사내)　·　외주가공 ${nf(D.totalOut)} EA 별도`:''}　·　금액 ₩${nf(totalAmt)}${D.totalRkg?`　·　원자재 ${nf(D.totalRkg)} kg ₩${nf(D.totalRamt)}　·　합계 ₩${nf(totalAmt+D.totalRamt)}`:''}　·　장기보관품 ${nf(totalLong)} EA　(${groups.map(g=>CU_FULL[g.cu]||g.cu).join(' · ')})`,XS.tot);
   an.merge(r,0,r,5,XS.tot); an.ht[r]=28;
   sheets.push(an);
+  /* 0) 보고 요약 시트 — 맨 앞 (결재란 · 요약 · 고객사별 · 실사 조정 내역) */
+  { const SM=mrSum(D), A=D.adj, sm=xSheet('보고 요약'); sm.cols=[18,13,16,16,16,8,13,14,40];
+    let r=0;
+    sm.set(0,0,`재 고 조 사 보 고  (${Y}年 ${p2(M)}月 · ${M}월분 마감)`,XS.tt); sm.merge(0,0,0,4,XS.tt); sm.ht[0]=32;
+    sm.set(0,5,'결재',XS.th); sm.merge(0,5,1,5,XS.th); ['작 성','검 토','승 인'].forEach((t,i)=>{ sm.set(0,6+i,t,XS.th); sm.set(1,6+i,'',XS.c); }); sm.ht[1]=40;
+    sm.set(2,0,metaTxt,XS.meta); sm.set(3,0,'■담당부서 : 생산팀　　■대상 : '+D.cus.map(c=>CU_FULL[c]||c).join(' · '),XS.meta);
+    r=5; sm.set(r++,0,'■ 보고 요약',XS.meta);
+    SM.lines.forEach((t,i)=>{ sm.set(r,0,(i+1)+'. '+t,XS.sW); sm.merge(r,0,r,8,XS.sW); sm.ht[r]=20; r++; });
+    r++; sm.set(r++,0,'■ 고객사별 재고금액 · 실사 조정',XS.meta);
+    ['고객사','제품재고\n(EA)','재고금액\n(①+②)','전월 금액','증 감','실사\n조정','조정 수량\n(EA)','조정 금액','차이 원인 · 대책 (기입)'].forEach((t,i)=>sm.set(r,i,t,XS.th)); sm.ht[r]=30; r++;
+    const a0=r;
+    SM.rows.forEach(o=>{ sm.set(r,0,CU_FULL[o.cu]||o.cu,XS.c); sm.set(r,1,Math.round(o.q),XS.n); sm.set(r,2,o.cur,XS.n);
+      sm.set(r,3,o.pv==null?'':o.pv,XS.n); sm.set(r,4,o.diff==null?'':o.diff,o.diff<0?XS.nR:XS.n,o.pv==null?undefined:`C${r+1}-D${r+1}`);
+      sm.set(r,5,o.an||'',XS.c); sm.set(r,6,o.an?o.aq:'',o.aq<0?XS.nR:XS.n); sm.set(r,7,o.an?o.aamt:'',o.aamt<0?XS.nR:XS.n); sm.set(r,8,'',XS.sW); sm.ht[r]=26; r++; });
+    sm.set(r,0,'합 계',XS.tL); const tv={1:SM.rows.reduce((x,o)=>x+Math.round(o.q),0),2:SM.rows.reduce((x,o)=>x+o.cur,0),3:D.prev?SM.rows.reduce((x,o)=>x+(o.pv||0),0):'',
+      4:D.prev?SM.rows.reduce((x,o)=>x+(o.diff||0),0):'',6:A.all.up+A.all.dn,7:A.all.amt};
+    [1,2,3,4,6,7].forEach(ci=>sm.set(r,ci,tv[ci],XS.tN,tv[ci]===''?undefined:`SUM(${xCol(ci)}${a0+1}:${xCol(ci)}${r})`)); sm.set(r,5,A.all.n||'',XS.tL); sm.set(r,8,'',XS.tE); r+=2;
+    if(A.rows.length){
+      sm.set(r++,0,`■ 실사 조정 내역 (${M}월 · 재고 직접수정·실사 차이조정 전표 ${A.rows.length}건)`,XS.meta);
+      ['일자','고객사','품 번','품 명','조정(EA)','','조정 금액','','내 용'].forEach((t,i)=>{ if(t) sm.set(r,i,t,XS.th); });
+      sm.merge(r,4,r,5,XS.th); sm.merge(r,6,r,7,XS.th); r++;
+      A.rows.forEach(o=>{ sm.set(r,0,o.d,XS.c); sm.set(r,1,CU_FULL[o.cu]||o.cu,XS.c); sm.set(r,2,o.pn,XS.pnW); sm.set(r,3,o.nm,XS.sW);
+        sm.set(r,4,o.q,o.q<0?XS.nR:XS.n); sm.merge(r,4,r,5,XS.n); sm.set(r,6,o.amt||'',o.amt<0?XS.nR:XS.n); sm.merge(r,6,r,7,XS.n); sm.set(r,8,o.n,XS.sW); r++; });
+      r++; }
+    sm.set(r,0,'· 재고금액 = ①제품재고 + ②원자재재고 · 전월 금액은 '+(+String(pm).slice(5))+'월 마감확정 값을 같은 기준으로 다시 계산'+(D.prev?'':' (전월 마감확정 없음 — 비교 생략)')+' · 조정 금액은 품목 단가 기준',XS.meta);
+    sheets.unshift(sm); }
   return xBook(sheets);
 }
 /* ═══════ 재고조사표 출력 ═══════
