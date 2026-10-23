@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.42</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.43</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10673,6 +10673,7 @@ async function refreshAll(){
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
         +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·삭제 코일 '+rm.cleared+'본 정리':'')+(rm.hid?' · 앱에서 지운 코일 '+rm.hid+'본 제외(MES 동기화 대기)':'')+(rm.blk?' · 삭제 지정 입고 '+rm.blk+'본 제외 (MES 에는 아직 남아 있음)':'')
+        +(rm.over&&rm.over.length?'\n   ⚠ MES 사용중량이 입고중량보다 큰 장착 코일 '+rm.over.length+'본 — 재고 0 으로 계산, MES 원단위·수량 확인: '+rm.over.slice(0,6).join(', '):'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -11262,6 +11263,7 @@ async function syncRawMes(silent){
         if(isLocked(c,'wt'))delete put.wt;
         Object.keys(put).forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(put[k])){c[k]=put[k];} });
         if(mes.st==='1')out.mount++; else if(mes.st==='2')out.done++; else out.wait++;
+        if(mes.st==='1'&&mes.usew>(+r.weight||0)+0.5){ (out.over=out.over||[]).push(lot+' ('+nf(+r.weight)+'kg 중 '+nf(mes.usew)+'kg 사용)'); }
       });
       /* MES 입고 업체칸이 비어 있으면 같은 HEAT(밀시트) 다른 입고건의 업체로 채운다 */
       const byHeat=new Map();
