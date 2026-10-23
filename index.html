@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.39</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.40</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10667,7 +10667,7 @@ async function refreshAll(){
       const last=(S.ru||[]).reduce((m2,x)=>x.d>m2?x.d:m2,'');
       const stale=last&&((new Date(today())-new Date(last))/864e5>2);
       L.push('· MES 소재 입고 '+nf(rm.rcv)+'본 ('+MES_FROM+' 이후) — 미투입 '+rm.wait+' · 장착중 '+rm.mount+' · 투입완료 '+rm.done
-        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·삭제 코일 '+rm.cleared+'본 정리':'')+(rm.hid?' · 앱에서 지운 코일 '+rm.hid+'본 제외(MES 동기화 대기)':'')
+        +(rm.rcvAdd?' · 새 코일 '+rm.rcvAdd+'본':'')+(rm.supFix?' · 공급업체 미상 '+rm.supFix+'본 보완':'')+(rm.cleared?' · MES 입고취소·삭제 코일 '+rm.cleared+'본 정리':'')+(rm.hid?' · 앱에서 지운 코일 '+rm.hid+'본 제외(MES 동기화 대기)':'')+(rm.blk?' · 삭제 지정 입고 '+rm.blk+'본 제외 (MES 에는 아직 남아 있음)':'')
         +' · 실사용 이력 '+nf(rm.use)+'건 / '+kg(rm.useKg)+' kg'+(last?' (최신 '+last+')':''));
       if(!rm.use||stale)L.push('   ⚠ MES 소재 이력이 '+(last?last+' 까지만':'없습니다')+' — PC 에서 MES소재동기화.bat 을 한 번 돌리세요. 그 뒤 입고·투입은 아직 반영되지 않았습니다.');
     }
@@ -11156,6 +11156,12 @@ async function syncRawMes(silent){
     /* ② 입고 = 코일 1본 (입고번호+항번). LOT 이름은 업체가 재사용하므로 코일의 정체는 입고번호다 */
     const rcv=await fetchAll(SB_URL+'/rest/v1/raw_receipt?select=receipt_no,seq,receipt_date,raw_item_code,item_spec,heat_no,weight,vendor_site_id,supplier,io_flag,updated_at,divide_flag,origin_net_weight'
       +'&receipt_date=gte.2025-01-01&order=receipt_date.asc,receipt_no.asc,seq.asc',H);   /* 2025년 입고 코일이 이듬해 생산에 투입되므로 참고 범위를 넓힌다 */
+    /* 삭제 지정 입고 — 업체 잘못 입력 등으로 '삭제'로 정한 입고. MES 에 남아 있어 동기화 때 다시 올라와도 코일로 만들지 않는다
+       (kv tj_raw_block_v1 = {keys:{'입고번호|항번':{at,by,why,lot}}}) */
+    let BLOCK={};
+    try{ const rb=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.tj_raw_block_v1&select=value',{headers:H,cache:'no-store'});
+      if(rb.ok){ const j=await rb.json(); BLOCK=(j[0]&&j[0].value&&j[0].value.keys)||{}; } }catch(e){}
+    S.rawBlock=BLOCK;
     /* 기준일 이전 입고분은 재고에 넣지 않고 추적 참고용으로만 보관 */
     RCV_REF=new Map();
     rcv.filter(r=>String(r.receipt_date||'')<MES_FROM&&String(r.io_flag||'1')==='1').forEach(r=>{
@@ -11219,6 +11225,7 @@ async function syncRawMes(silent){
         const key=rno+'|'+seq; const src='MESRCV|'+key;
         const lot=String(r.heat_no||'').trim()||rno;
         if(!(+r.weight>0))return;
+        if(BLOCK[key]){ out.blk=(out.blk||0)+1; return; }   /* 삭제 지정 — MES 에 남아 있어도 뺀다 */
         const hid=hidOf(src);
         if(hid){
           if(new Date(r.updated_at||0)<=new Date(hid)){ out.hid=(out.hid||0)+1; return; }
