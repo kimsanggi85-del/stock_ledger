@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.43</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9636,7 +9636,9 @@ function rRaw(){
   /* 입고일이 등록일로 대체된 코일 */
   {
     const LD=S.lotDate||{};
-    const wrong=S.coils.filter(c=>{ if(isLocked(c,'d'))return false;
+    /* MES 입고 코일(MESRCV)은 입고일이 MES 입고일 그대로라 대상이 아니다 — 업체가 LOT 이름을 다시 써서
+       수입검사의 옛 날짜와 겹쳐 보일 뿐 (예전 수입검사 연동 코일용 안내) */
+    const wrong=S.coils.filter(c=>{ if(isLocked(c,'d')||/^MESRCV\|/.test(c.src||''))return false;
       const d2=LD[c.cno]||LD[lotBase(c.cno)]||LD[c.ms||'']||''; return d2&&d2!==c.d; });
     if(wrong.length)msgs.push('⚠ <b>입고일이 실제와 다른 코일 '+wrong.length+'본</b> — 수입검사 성적서에 입고일이 비어 있어 '
       +'<b>등록한 날짜</b>가 들어갔습니다. 검사 발행분에 실제 입고일이 있으니 바로잡을 수 있습니다. &nbsp;'
@@ -11436,7 +11438,7 @@ function fixDates(){
   if(!Object.keys(LD).length){toast('먼저 [🔄 최신화]를 눌러 검사 자료를 가져오세요');return;}
   const cand=[];
   S.coils.forEach(c=>{
-    if(isLocked(c,'d'))return;
+    if(isLocked(c,'d')||/^MESRCV\|/.test(c.src||''))return;      /* MES 입고일은 바꾸지 않는다 */
     const d2=LD[c.cno]||LD[lotBase(c.cno)]||LD[c.ms||'']||'';
     if(d2&&d2!==c.d)cand.push([c,d2]);
   });
