@@ -992,6 +992,24 @@ body.qp-on{overflow:hidden}
 #tCnt td.nmc{font-family:var(--sans);width:1%;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 #tCnt td.lcc{font-family:var(--sans);width:1%}
 #tCnt tbody td input{width:100%;box-sizing:border-box}
+/* 재고 실사표 인쇄 — 스크롤 높이로 잘리지 않게 펼치고, 품명·보관위치는 줄바꿈해서 다 보이게 */
+@media print{
+  #syncBan,#pcNav{display:none!important}
+  #p-cnt .gw .scroll{max-height:none!important;overflow:visible!important}
+  #tCnt{width:100%;table-layout:auto;border-collapse:collapse}
+  #tCnt th,#tCnt td{vertical-align:middle;line-height:1.3;padding:3px 4px;height:auto}
+  #tCnt th{text-align:center;white-space:nowrap}
+  #tCnt td.pnc{white-space:nowrap}
+  #tCnt td.nmc{white-space:normal;max-width:none;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere;width:auto}
+  #tCnt td.lcc{white-space:nowrap;text-align:center}
+  #tCnt td:nth-child(n+5){text-align:right;white-space:nowrap}
+  #tCnt td:nth-child(n+11){text-align:center}
+  #tCnt tbody td input{border:none;background:transparent;text-align:center;font-weight:700;padding:0;height:auto;-moz-appearance:textfield;appearance:textfield}
+  #tCnt tbody td input::-webkit-outer-spin-button,#tCnt tbody td input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  #tCnt tbody td input::placeholder{color:transparent}
+  #tCnt tr{page-break-inside:avoid;break-inside:avoid}
+  #tCnt .chkTag{font-size:7pt;padding:0 2px;margin-left:2px}
+}
 
 /* 품목별 입출고 이력 — 품번 콤보 */
 .binHit{font-size:11.5px;color:#5A6875;font-family:var(--sans);margin-left:6px;white-space:nowrap}
@@ -1136,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.79 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.80 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
