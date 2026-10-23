@@ -1135,7 +1135,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.38</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.78 · 원소재 v11.39</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9592,6 +9592,19 @@ function rRaw(){
         +(over.length+soon.length>8?' 외 '+(over.length+soon.length-8)+'본':'')+'</b></div>');
     }
   }
+  /* MES 사용완료인데 덜 쓴 코일 — 최근 30일 안에 사용완료(설비에서 내림) 처리됐는데 사용중량이 입고의 절반도 안 되는 것.
+     앱은 사용완료를 전량 소진으로 보므로, 남은 소재가 창고에 돌아와 있으면 재고가 그만큼 적게 잡힌다.
+     설비 ETC(기타 출고)는 프레스 사용이 아니라 제외 */
+  {
+    const lim=(()=>{const d=new Date();d.setDate(d.getDate()-30);return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());})();
+    const UL=S.coils.filter(c=>c.mes&&c.mes.st==='2'&&!isOff(c)&&!RAW_SKIP.test(c.sup||'')&&String(c.mes.mc||'').toUpperCase()!=='ETC'
+      &&(+c.wt||0)>0&&(+c.mes.usew||0)<(+c.wt)*0.5&&String(c.mes.pout||c.mes.pon||'')>=lim)
+      .sort((x,y)=>(x.mes.usew/x.wt)-(y.mes.usew/y.wt));
+    if(UL.length) msgs.push('🔍 <b>사용완료인데 절반도 안 쓴 코일 '+UL.length+'본 / 남은 양 약 '+kg(UL.reduce((a2,c)=>a2+(+c.wt)-(+c.mes.usew||0),0))+' kg</b>'
+      +' (최근 30일 · MES 사용중량 50% 미만) — 앱은 사용완료를 전량 소진으로 봅니다. 남은 소재가 창고에 있으면 MES 에서 사용완료를 취소하거나 잔량 반납으로 처리하세요.'
+      +'<div style="margin-top:5px"><b>'+UL.slice(0,10).map(c=>esc(c.cno)+' ('+esc(eqName(c.mes.mc)||c.mes.mc||'')+' · '+esc(c.mes.pout||c.mes.pon||'')+' · 입고 '+kg(+c.wt)+' / 사용 '+kg(+c.mes.usew||0)+'kg · '+Math.round((+c.mes.usew||0)/(+c.wt)*100)+'%)').join(', ')
+      +(UL.length>10?' 외 '+(UL.length-10)+'본':'')+'</b></div>');
+  }
   /* 장기재고 — 60일 넘게 미투입 */
   {
     const LG=S.coils.filter(isDeadCoil).sort((x,y)=>String(x.d).localeCompare(String(y.d)));
@@ -11215,7 +11228,7 @@ async function syncRawMes(silent){
         const sp=parseMatCode(String(r.raw_item_code||r.item_spec||''));
         const iv=IV.get(key);
         const mes={st:iv?iv.st:'0',usew:iv?Math.round(iv.usew*100)/100:0,pon:iv?iv.pon:'',pout:iv?iv.pout:'',mc:iv?iv.mc:'',pn:iv?iv.pn:'',sq:iv?iv.sq:0};
-        if(mes.st==='1'&&!(mes.usew>0)&&estBy.get(rno)){ mes.usew=Math.round(estBy.get(rno)*100)/100; mes.est=1; }   /* MES 소요량 0 — 추정 사용중량 */
+        if(!(mes.usew>0)&&estBy.get(rno)){ mes.usew=Math.round(estBy.get(rno)*100)/100; mes.est=1; }   /* MES 소요량 0 — 추정 사용중량 (장착중 잔량·사용완료 점검에 씀) */
         let c=S.coils.find(x=>x.src===src);
         if(!c){
           /* 시트 기준으로 만든 코일(MESSTK)에 같은 입고번호가 있으면 그 코일을 그대로 승격 → 이력·전표 유지 */
