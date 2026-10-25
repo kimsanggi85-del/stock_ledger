@@ -1154,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.83 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.84 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -12686,20 +12686,37 @@ function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n);
    MES 전표는 stock_ledger_sync 가 계속 원값으로 덮어쓰므로 그걸 고치면 되돌아간다.
    그래서 차이분(-1,426)만 CLOSE| 키의 조정전표로 올려 재고를 맞춘다.
    → 이력에 'MES 4,926 / 마감보정 -1,426' 이 남아 추적이 된다. */
-async function syncProdClose(){
-  /* 최근 14일, 그리고 마감 중인 달(월초 1~10일은 전월)의 1일부터 — 그 달 생산이 모두 생산일보 기준이 되게 */
-  const m1=defYm()+'-01', d1=daysAgo(CLOSE_DAYS)<m1?daysAgo(CLOSE_DAYS):m1;
-  let rows;
+/* 최근 14일, 그리고 마감 중인 달(월초 1~10일은 전월)의 1일부터 — 그 달 생산이 모두 생산일보 기준이 되게 */
+function closeFrom(){ const m1=defYm()+'-01'; return daysAgo(CLOSE_DAYS)<m1?daysAgo(CLOSE_DAYS):m1; }
+async function fetchClose(d1,sel){
+  const q=IQC_URL+'/rest/v1/production_close?select='+(sel||'*')+'&ymd=gte.'+d1+'&order=ymd.asc&limit=2000';
+  let r=await fetch(q,{headers:{apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY},cache:'no-store'});
+  if(r.status===401||r.status===403) r=await fetch(q,{headers:{apikey:DF_KEY,Authorization:'Bearer '+DF_KEY},cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+/* ═══ 생산마감 수정 감시 — MES 생산마감 화면에서 실적(양품)을 고치면 앱이 열려 있는 동안
+   3분 안에 보정 전표를 다시 만들고 재고를 다시 받는다 (평소에는 가벼운 조회만) ═══ */
+const CLOSE_WATCH_MS=3*60*1000;
+let closeSig='';
+const closeSigOf=rows=>(rows||[]).map(x=>[x.ymd,x.item_code,x.machine_code,x.actual_qty].join(':')).join('|');
+async function closeWatch(){
+  if(document.visibilityState==='hidden'||mesBusy) return;
   try{
-    const h={apikey:IQC_KEY,Authorization:'Bearer '+IQC_KEY};
-    let r=await fetch(IQC_URL+'/rest/v1/production_close?select=*&ymd=gte.'+d1+'&order=ymd.asc&limit=2000',{headers:h});
-    if(r.status===401||r.status===403){
-      const h2={apikey:DF_KEY,Authorization:'Bearer '+DF_KEY};
-      r=await fetch(IQC_URL+'/rest/v1/production_close?select=*&ymd=gte.'+d1+'&order=ymd.asc&limit=2000',{headers:h2});
-    }
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    rows=await r.json();
-  }catch(e){ console.warn('생산마감:',e.message); return 0; }
+    const sig=closeSigOf(await fetchClose(closeFrom(),'ymd,item_code,machine_code,actual_qty'));
+    if(!closeSig){ closeSig=sig; return; }
+    if(sig===closeSig) return;
+    closeSig=sig;
+    toast('MES 생산마감 수량이 바뀌어 재고에 반영합니다…');
+    await syncMes(true);
+  }catch(e){ console.warn('생산마감 감시:',e.message); }
+}
+setInterval(closeWatch,CLOSE_WATCH_MS);
+async function syncProdClose(){
+  const d1=closeFrom();
+  let rows;
+  try{ rows=await fetchClose(d1); closeSig=closeSigOf(rows); }
+  catch(e){ console.warn('생산마감:',e.message); return 0; }
   if(!rows||!rows.length) return 0;
 
   /* 보정량 = 생산일보 실제수량 − 장부에 실제로 들어간 MES 생산입고 (같은 날·같은 품번 합계)
@@ -12713,9 +12730,13 @@ async function syncProdClose(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     led=await r.json();
   }catch(e){ console.warn('생산마감 — 장부 MES 전표 확인 실패:',e.message); return 0; }
-  const mesQ={};
-  led.forEach(l=>{ if(l.kind!=='생산입고'||String(l.src_key).indexOf('MES|')!==0) return;
-    const k=String(l.led_date).slice(0,10)+'|'+canonPn(l.pn); mesQ[k]=(mesQ[k]||0)+(+l.qty||0); });
+  /* 생산일보 실적 = 양품 — 그날 장부 순증(MES 생산입고 − MES 불량 + 보정)이 생산일보와 같아지게 MES 불량도 보정에 넣는다
+     (예전: 보정 = 생산일보 − MES 생산입고 → 불량이 한 번 더 빠져 10/23 1106 15,750 이 15,575 로 잡혔다) */
+  const mesQ={}, badQ={};
+  led.forEach(l=>{ if(String(l.src_key).indexOf('MES|')!==0) return;
+    const k=String(l.led_date).slice(0,10)+'|'+canonPn(l.pn);
+    if(l.kind==='생산입고') mesQ[k]=(mesQ[k]||0)+(+l.qty||0);
+    else if(l.kind==='불량폐기') badQ[k]=(badQ[k]||0)+(+l.qty||0); });
 
   const have=new Set(S.items.map(i=>i.pn));
   const miss=new Set();
@@ -12730,7 +12751,7 @@ async function syncProdClose(){
   const recs=[], keys=new Set();
   Object.keys(G).sort().forEach(k=>{
     const [d,pn]=k.split('|'), xs=G[k].sort((a,b)=>String(a.machine_code||'').localeCompare(String(b.machine_code||'')));
-    const act=xs.reduce((a,x)=>a+(+x.actual_qty||0),0), mes=mesQ[k]||0, df=Math.round(act-mes);
+    const act=xs.reduce((a,x)=>a+(+x.actual_qty||0),0), mes=mesQ[k]||0, bad=badQ[k]||0, df=Math.round(act-(mes-bad));
     xs.forEach((x,i)=>{
       const why=[x.reason,x.memo].filter(Boolean).join(' · ');
       const key='CLOSE|'+d+'|'+(x.machine_code||'')+'|'+pn; if(keys.has(key)) return; keys.add(key);
@@ -12742,7 +12763,7 @@ async function syncProdClose(){
         party: x.machine_code||'',
         lot: '',
         note: (i?'생산마감 보정 · 같은 날 '+xs[0].machine_code+' 설비 행에 합산'
-          :'생산마감 보정 · 장부 MES '+nf(mes)+' → 생산일보 '+nf(act)+(xs.length>1?' (설비 '+xs.length+'대)':'')+(why?' · '+why:'')).slice(0,200),
+          :'생산마감 보정 · 장부 MES '+nf(mes)+(bad?' − 불량 '+nf(bad):'')+' → 생산일보 '+nf(act)+' (양품)'+(xs.length>1?' (설비 '+xs.length+'대)':'')+(why?' · '+why:'')).slice(0,200),
         by_name: x.worker||'생산마감',
         updated_at: nowIso()
       });
