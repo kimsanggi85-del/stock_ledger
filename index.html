@@ -1154,7 +1154,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.86 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.87 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7052,7 +7052,7 @@ function rSum(){
       +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
       +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +'<br><span style="font-size:11.5px">· <b style="color:#B3261E">출하(당월)</b> = 레이스웨이 앱 출하(출하대기장 → SBC), 앱 품번 첫 줄에 표시 · <b style="color:#1D4ED8">현재고</b> = 공정 합계(생산중~검사완료) − 검사 시트를 읽은 뒤의 출하 (그 전 출하는 시트 값에 이미 빠져 있음 · 차감이 있을 때만 아래에 「시트 ○ − 출하 ○」 표시)</span>'
-      +'<br><span style="font-size:11.5px">· <b style="color:#0B6B3A">사내재고</b> = 현재고 − 외주(열처리·표면처리) — 공장 안에 실물이 있는 수량 · <b style="color:#B45309">출하가능</b> = 검사완료(포장) − 검사 시트를 읽은 뒤의 출하 — 바로 실을 수 있는 수량</span>'
+      +'<br><span style="font-size:11.5px">· <b style="color:#0B6B3A">사내재고</b> = 현재고 − 외주(열처리·표면처리) — 공장 안에 실물이 있는 수량 · <b style="color:#B45309">검사완료 = 출하가능</b> — 포장까지 끝나 바로 실을 수 있는 수량 (검사 시트를 읽은 뒤 출하가 있으면 그만큼 빼고 아래에 「시트 ○ − 출하 ○」 표시)</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="fcOpen()" style="color:#1D4ED8;font-weight:800">📅 출하계획 ▸</a>';
@@ -14090,30 +14090,30 @@ function sbcTblHtml(s){
       +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(pn)+' 품목에 B·C 합산"':'')+'>'
         +(pn?(isVariant(mk,pn)?esc(pn.replace(new RegExp(pnBase(pn)+'$','i'),mk)):esc(pn))
           +(sfTxt(mk)?'<div class="sx" style="color:'+(EXT_SF[mk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(mk)+'</div>':''):'품목 없음')+'</td>'
-      +C.map(c=>'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
+      +C.map(c=>c==='done'?'<td class="'+(rdy<0?'neg':'')+'" style="background:#FFF8E6" title="검사완료(포장) = 출하가능 수량'+(sh.a?' — 시트 '+nf(v.done)+' − 시트 이후 출하 '+nf(sh.a):'')+'"><b>'+(rdy?nf(rdy):'-')+'</b>'
+          +(sh.a?'<div class="sx" style="color:#64748B">시트 '+nf(v.done)+'<br>− 출하 '+nf(sh.a)+'</div>':(v.done!==o.done?gray(o.done):''))+'</td>'
+        :'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
         +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
       +'<td style="color:#B3261E"'+(sh.m?' title="'+esc(pn)+' 이번 달 출하 '+nf(sh.m)+(sh.a?' · 기준('+esc(sD)+') 이후 '+nf(sh.a)+' → 현재고에서 차감':' · 모두 기준('+esc(sD)+') 이전이라 검사 시트·이동표에 이미 반영')+'"':'')+'>'
         +(sh.m?nf(sh.m):'-')+(sh.a?'<div class="sx" style="color:#B3261E">−'+nf(sh.a)+' 차감</div>':'')+'</td>'
       +'<td style="background:#EEF4FF" class="'+(cur<0?'neg':'')+'"'+(tot!==o.tot?' title="전공정이동표 합계 '+nf(o.tot)+'"':'')+'><b>'+nf(cur)+'</b>'
         +(sh.a?'<div class="sx" style="color:#64748B">시트 '+nf(tot)+'<br>− 출하 '+nf(sh.a)+'</div>':'')+'</td>'
       +'<td style="background:#F1F8F3" class="'+(inh<0?'neg':'')+'" title="현재고 '+nf(cur)+' − 외주 '+nf(x)+'"><b>'+nf(inh)+'</b></td>'
-      +'<td style="background:#FFF8E6" class="'+(rdy<0?'neg':'')+'" title="검사완료(포장) '+nf(v.done)+(sh.a?' − 기준 이후 출하 '+nf(sh.a):'')+'"><b>'+(rdy?nf(rdy):'-')+'</b></td>'
       +'<td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
   const extra='';   /* 외주는 이동표 기준 — 전표에만 있는 외주 잔량 줄은 더하지 않는다(이중 계상 방지) */
-  const hd=n=>n+(n==='생산중'?'<br><span style="font-size:10px">(MES)</span>':'')+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
+  const hd=n=>n==='검사완료'?'검사완료<br><span style="font-size:10px;color:#B45309;font-weight:800">= 출하가능'+(ATC?' (검사 시트)':'')+'</span>':n+(n==='생산중'?'<br><span style="font-size:10px">(MES)</span>':'')+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
   /* 칸 너비 고정 — 글자칸은 좁게, 숫자칸 6개는 같은 폭 */
-  const cg='<colgroup><col style="width:7%"><col style="width:4.5%"><col style="width:11%">'+'<col style="width:6.2%">'.repeat(6)+'<col style="width:7%"><col style="width:8.6%"><col style="width:8.2%"><col style="width:8%"><col style="width:8.5%"></colgroup>';
-  return cg+'<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th>'+hd(n)+'</th>').join('')
+  const cg='<colgroup><col style="width:7.5%"><col style="width:5%"><col style="width:11.5%">'+'<col style="width:6.8%">'.repeat(5)+'<col style="width:8.4%"><col style="width:7.5%"><col style="width:9.6%"><col style="width:8.6%"><col style="width:8.4%"></colgroup>';
+  return cg+'<thead><tr><th>기종</th><th>구분</th><th>앱 품번</th>'+EXT_COLS.map(([,n])=>'<th'+(n==='검사완료'?' style="background:#FDEFC8"':'')+'>'+hd(n)+'</th>').join('')
     +'<th style="color:#B3261E">출하<br><span style="font-size:10px">(당월)</span></th>'
     +'<th style="background:#DCE8FB" title="공정 합계(생산중~검사완료) − '+esc(sD||'기준')+' 이후 출하">현재고<br><span style="font-size:10px">(공정 합계 − 이후출하)</span></th>'
     +'<th style="background:#DDF0E3">사내재고<br><span style="font-size:10px">(현재고 − 외주)</span></th>'
-    +'<th style="background:#FDEFC8">출하가능<br><span style="font-size:10px">(검사완료 − 이후출하)</span></th>'
     +'<th>외주<br><span style="font-size:10px">(열처리+표면)</span></th></tr></thead><tbody>'
     +body+extra+'</tbody><tfoot><tr><td colspan="3" class="c">합　계 ('+s.rows.length+'행)</td>'
-    +C.map(c=>'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')
+    +C.map(c=>c==='done'?'<td style="background:#FFF8E6">'+nf(tr)+(ta?'<div class="sx" style="color:#64748B">시트 '+nf(T.done)+'<br>− 출하 '+nf(ta)+'</div>':'')+'</td>':'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')
     +'<td style="font-weight:800;color:#B3261E">'+(tm?nf(tm):'-')+(ta?'<div class="sx">−'+nf(ta)+' 차감</div>':'')+'</td>'
     +'<td style="font-weight:800;background:#EEF4FF">'+nf(tc)+(ta?'<div class="sx" style="color:#64748B">시트 '+nf(tt)+'<br>− 출하 '+nf(ta)+'</div>':'')+'</td><td style="font-weight:800;background:#F1F8F3">'+nf(ti)+'</td>'
-    +'<td style="font-weight:800;background:#FFF8E6">'+nf(tr)+'</td><td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
+    +'<td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
 /* 영업 확정출하 List(주별출하요약) 색 구분 기준 — 진한 초록 = 표면처리 O, 연두 = 표면처리 X */
