@@ -1158,7 +1158,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.89 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.90 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7057,7 +7057,7 @@ function rSum(){
       +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
       +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +'<br><span style="font-size:11.5px">· <b style="color:#B3261E">출하(당월)</b> = 레이스웨이 앱 출하(출하대기장 → SBC), 앱 품번 첫 줄에 표시 · <b style="color:#1D4ED8">현재고</b> = 공정 합계(생산중~검사완료) − 검사 시트를 읽은 뒤의 출하 (그 전 출하는 시트 값에 이미 빠져 있음 · 차감이 있을 때만 아래에 「시트 ○ − 출하 ○」 표시)</span>'
-      +'<br><span style="font-size:11.5px">· <b style="color:#0B6B3A">사내재고</b> = 현재고 − 외주(열처리·표면처리) — 공장 안에 실물이 있는 수량 · <b style="color:#B45309">검사완료 = 출하가능</b> — 포장까지 끝나 바로 실을 수 있는 수량 (검사 시트를 읽은 뒤 출하가 있으면 그만큼 빼고 아래에 「시트 ○ − 출하 ○」 표시)</span>'
+      +'<br><span style="font-size:11.5px">· <b style="color:#0B6B3A">사내재고</b> = 현재고 − 외주(열처리·표면처리) — 공장 안에 실물이 있는 수량 · <b>현재고 칸을 누르면 공정별 내역</b> · <b style="color:#B45309">검사완료 = 출하가능</b> — 포장까지 끝나 바로 실을 수 있는 수량 (검사 시트를 읽은 뒤 출하가 있으면 그만큼 빼고 아래에 「시트 ○ − 출하 ○」 표시)</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="fcOpen()" style="color:#1D4ED8;font-weight:800">📅 출하계획 ▸</a>';
@@ -14056,8 +14056,19 @@ function sbcShipRows(y){
   });
   return out;
 }
+/* 현재고 칸을 누르면 공정별로 어디서 합쳐졌는지 보여준다 */
+let SBC_BD=[];
+const SBC_BDN={wip:'생산중(MES)',press:'PRESS',heat:'열처리(한성) — 외주',surf:'표면처리(동진·대영) — 외주',wait:'검사대기',done:'검사완료(=출하가능)'};
+function sbcBd(i){ const b=SBC_BD[i]; if(!b) return;
+  const L=['['+b.t+'] 현재고 '+nf(b.cur)+' 계산',''];
+  ['wip','press','heat','surf','wait','done'].forEach(c=>{ if(b.v[c]) L.push('  '+SBC_BDN[c]+' : '+nf(b.v[c])+(c==='done'&&b.a?'  (시트 '+nf(b.v.done+b.a)+' − 출하 '+nf(b.a)+')':'')); });
+  L.push('  ─────────────','  현재고 = '+nf(b.cur),'',
+    '사내재고 = 현재고 '+nf(b.cur)+' − 외주 '+nf(b.x)+' = '+nf(b.cur-b.x),
+    '외주 = 열처리 '+nf(b.v.heat)+' + 표면처리 '+nf(b.v.surf)+' = '+nf(b.x));
+  alert(L.join('\n')); }
 function sbcTblHtml(s){
   const C=['wip','press','heat','surf','wait','done'], T={}; C.forEach(c=>T[c]=0); let tt=0, tx=0;
+  SBC_BD=[];
   const LMs={}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
   const wFrom=String(s.d||'').slice(0,10), wDone=new Set();          /* 생산중은 그 품번의 첫 기종 줄에 한 번만 */
   /* 출하 — 출하 전표는 기종 구분 없이 앱 품번(IW/OW)으로 들어오므로 품번 첫 줄에 한 번만 표시
@@ -14101,10 +14112,12 @@ function sbcTblHtml(s){
         +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
       +'<td style="color:#B3261E"'+(sh.m?' title="'+esc(pn)+' 이번 달 출하 '+nf(sh.m)+(sh.a?' · 기준('+esc(sD)+') 이후 '+nf(sh.a)+' → 현재고에서 차감':' · 모두 기준('+esc(sD)+') 이전이라 검사 시트·이동표에 이미 반영')+'"':'')+'>'
         +(sh.m?nf(sh.m):'-')+(sh.a?'<div class="sx" style="color:#B3261E" title="검사 시트를 읽은 뒤 출하 — 검사완료·현재고에서 차감">−'+nf(sh.a)+'</div>':'')+'</td>'
-      +'<td style="background:#EEF4FF" class="'+(cur<0?'neg':'')+'"'+(tot!==o.tot?' title="전공정이동표 합계 '+nf(o.tot)+'"':'')+'><b>'+nf(cur)+'</b>'
+      +'<td style="background:#EEF4FF;cursor:pointer" onclick="sbcBd('+(SBC_BD.push({t:o.m+' '+o.side,cur,x,a:sh.a,v:Object.assign({},v,{done:rdy})})-1)+')" class="'+(cur<0?'neg':'')+'" title="눌러서 공정별 내역 보기'+(tot!==o.tot?' · 전공정이동표 합계 '+nf(o.tot):'')+'"><b>'+nf(cur)+'</b>'
         +(sh.a?'<div class="sx" style="color:#64748B">시트 '+nf(tot)+'<br>− 출하 '+nf(sh.a)+'</div>':'')+'</td>'
-      +'<td style="background:#F1F8F3" class="'+(inh<0?'neg':'')+'" title="현재고 '+nf(cur)+' − 외주 '+nf(x)+'"><b>'+nf(inh)+'</b></td>'
-      +'<td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b></td></tr>'; }).join('');
+      +'<td style="background:#F1F8F3" class="'+(inh<0?'neg':'')+'" title="현재고 '+nf(cur)+' − 외주 '+nf(x)+'"><b>'+nf(inh)+'</b>'
+        +(x?'<div class="sx" style="color:#64748B">'+nf(cur)+'<br>− 외주 '+nf(x)+'</div>':'')+'</td>'
+      +'<td class="'+(x<0?'neg':'')+'"><b>'+(x?nf(x):'-')+'</b>'
+        +(v.heat&&v.surf?'<div class="sx" style="color:#64748B">열 '+nf(v.heat)+'<br>+ 표 '+nf(v.surf)+'</div>':(x?'<div class="sx" style="color:#64748B">'+(v.heat?'열처리':'표면처리')+'</div>':''))+'</td></tr>'; }).join('');
   const extra='';   /* 외주는 이동표 기준 — 전표에만 있는 외주 잔량 줄은 더하지 않는다(이중 계상 방지) */
   const hd=n=>n==='검사완료'?'검사완료<br><span style="font-size:10px;color:#B45309;font-weight:800">= 출하가능'+(ATC?' (검사 시트)':'')+'</span>':n+(n==='생산중'?'<br><span style="font-size:10px">(MES)</span>':'')+(n==='검사대기'||n==='검사완료'?(ATC?'<br><span style="font-size:10px">(검사 시트)</span>':''):(n==='열처리'||n==='표면처리')?'<br><span style="font-size:10px">('+(n==='열처리'?'한성':'동진')+')</span>':'');
   /* 칸 너비 고정 — 글자칸은 좁게, 숫자칸 6개는 같은 폭 */
@@ -14117,8 +14130,8 @@ function sbcTblHtml(s){
     +body+extra+'</tbody><tfoot><tr><td colspan="3" class="c">합　계 ('+s.rows.length+'행)</td>'
     +C.map(c=>c==='done'?'<td style="background:#FFF8E6">'+nf(tr)+(ta?'<div class="sx" style="color:#64748B">시트 '+nf(T.done)+'<br>− 출하 '+nf(ta)+'</div>':'')+'</td>':'<td>'+(T[c]?nf(T[c]):'-')+'</td>').join('')
     +'<td style="font-weight:800;color:#B3261E">'+(tm?nf(tm):'-')+(ta?'<div class="sx">−'+nf(ta)+'</div>':'')+'</td>'
-    +'<td style="font-weight:800;background:#EEF4FF">'+nf(tc)+(ta?'<div class="sx" style="color:#64748B">시트 '+nf(tt)+'<br>− 출하 '+nf(ta)+'</div>':'')+'</td><td style="font-weight:800;background:#F1F8F3">'+nf(ti)+'</td>'
-    +'<td style="font-weight:800">'+nf(tx)+'</td></tr></tfoot>';
+    +'<td style="font-weight:800;background:#EEF4FF;cursor:pointer" title="눌러서 공정별 내역 보기" onclick="sbcBd('+(SBC_BD.push({t:'합계',cur:tc,x:tx,a:ta,v:Object.assign({},T,{done:tr})})-1)+')">'+nf(tc)+(ta?'<div class="sx" style="color:#64748B">시트 '+nf(tt)+'<br>− 출하 '+nf(ta)+'</div>':'')+'</td><td style="font-weight:800;background:#F1F8F3">'+nf(ti)+(tx?'<div class="sx" style="color:#64748B">'+nf(tc)+'<br>− 외주 '+nf(tx)+'</div>':'')+'</td>'
+    +'<td style="font-weight:800">'+nf(tx)+(T.heat&&T.surf?'<div class="sx" style="color:#64748B">열 '+nf(T.heat)+'<br>+ 표 '+nf(T.surf)+'</div>':'')+'</td></tr></tfoot>';
 }
 /* 표면처리 유(O) / 무(X·표면처리 삭제) — 파일의 「표면처리 유/무」 칸, 없으면(예전 기록) 기종 기본값 */
 /* 영업 확정출하 List(주별출하요약) 색 구분 기준 — 진한 초록 = 표면처리 O, 연두 = 표면처리 X */
