@@ -574,6 +574,9 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   .tabs{display:none!important}
   body{padding-bottom:12px}
   .fab{bottom:16px}
+  /* SBC 재고 표 — 아래 고정 합계 줄을 가리지 않게 ＋ 버튼을 위로 올리고, 페이지 끝에 여백 */
+  body.sbcOn .fab{bottom:132px;width:46px;height:46px;font-size:22px;opacity:.92}
+  body.sbcOn{padding-bottom:84px}
 }
 /* 모바일 카드 */
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -1155,7 +1158,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.88 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.89 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7046,6 +7049,7 @@ function rSum(){
     : '';
 
   if($('sbcMbar')) $('sbcMbar').style.display=scu==='SBC'?'flex':'none';   /* 휴대폰 — SBC 창 바로가기 */
+  document.body.classList.toggle('sbcOn',scu==='SBC'&&!SBC_LIST);          /* 휴대폰 — ＋ 버튼을 위로 (합계 줄 가림 방지) */
   /* SBC — 물류 흐름(외주 경유)이 달라 전공정이동표 양식(기종 · INNER/OUTER · 공정별)으로 보여준다 */
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
