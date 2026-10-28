@@ -1175,7 +1175,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.93 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.94 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14086,41 +14086,49 @@ function sbcShipPanel(){
   const td=today(), cm=td.slice(0,7), M=FC.months[cm]; if(!M||!M.ships||!M.ships.length) return '';
   const ships=M.ships, a=cm+'-01', mE=cm+'-'+p2(new Date(+cm.slice(0,4),+cm.slice(5),0).getDate());
   const gk=r=>{ const pp=fcPn(r.m); if(!pp.iw) return mkey(r.m); const rk=rowKeyOf(r.m,sbcRowKeys(pp.iw)); return rk?pp.key+':'+rk:pp.key+'~'+mkey(r.m); };
-  const plan=ships.map(()=>0), G={};
-  M.rows.forEach(r=>{ const k=gk(r), pp=fcPn(r.m); const g=G[k]=G[k]||{k,p:pp,rk:k.indexOf(':')>0?k.split(':')[1]:'',names:[],q:{}};
-    if(!g.names.includes(r.m)) g.names.push(r.m);
-    r.cols.forEach((c,i)=>{ const j=ships.indexOf(c); if(j>=0){ plan[j]+=r.q[i]; g.q[c]=(g.q[c]||0)+r.q[i]; } }); });
+  const grpOf=MM=>{ const G2={}; MM.rows.forEach(r=>{ const k=gk(r), pp=fcPn(r.m); const g=G2[k]=G2[k]||{k,p:pp,rk:k.indexOf(':')>0?k.split(':')[1]:'',names:[],q:{}};
+      if(!g.names.includes(r.m)) g.names.push(r.m); r.cols.forEach((c,i)=>{ if(MM.ships.includes(c)) g.q[c]=(g.q[c]||0)+r.q[i]; }); }); return G2; };
+  const G=grpOf(M), plan=ships.map(d=>Object.values(G).reduce((x,g)=>x+(g.q[d]||0),0));
   /* 실적 — 출하 차수 구간별 */
   const win=d=>{ for(let i=0;i<ships.length;i++) if(d<=ships[i]) return i; return ships.length-1; };
   const aI=ships.map(()=>0), aO=ships.map(()=>0);
   S.led.forEach(r=>{ if(r.k!=='출하'||r.d<a||r.d>mE||!/^(IW|OW)-BDA-/i.test(r.pn)) return; const i=win(r.d); if(/^IW/i.test(r.pn)) aI[i]+=r.q; else aO[i]+=r.q; });
   const act=ships.map((_,i)=>Math.min(aI[i],aO[i]));
-  const nd=ships.find(d=>d>=td), ni=ships.indexOf(nd);
-  const th=ships.map((d,i)=>'<th'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+d.slice(5).replace('-','/')+(i===ni?' (다음)':'')+'</span></th>').join('');
+  /* 다음 출하 — 오늘 이후 출하일 중 아직 남은 계획이 있는 첫 차수 (이번 달에 다 나갔으면 다음 달 1차) */
+  const nm=(()=>{ const [y,m]=cm.split('-').map(Number), d=new Date(y,m,1); return d.getFullYear()+'-'+p2(d.getMonth()+1); })();
+  const cand=[]; let pv=a.slice(0,8)+'00';
+  [cm,nm].forEach(k=>{ const MM=FC.months[k]; if(!MM||!MM.ships) return; MM.ships.forEach(d=>{ if(d>=td) cand.push({k,d,prev:pv}); pv=d; }); });
+  const nextOf=c=>{ const Gc=c.k===cm?G:grpOf(FC.months[c.k]);
+    const done=(pn,rk)=>{ if(!pn) return 0; const keys=sbcRowKeys(pn); return S.led.reduce((x,r)=>x+((r.k==='출하'&&r.pn===pn&&r.d>c.prev&&r.d<=c.d&&(!rk||shipKey(r,keys)===rk))?r.q:0),0); };
+    const L=Object.values(Gc).filter(g=>g.q[c.d]).map(g=>{ const ri=g.p.iw&&g.rk?SBC_RDY[g.p.iw+'|'+g.rk]:null, ro=g.p.ow&&g.rk?SBC_RDY[g.p.ow+'|'+g.rk]:null;
+      const rdy=(ri==null||ro==null)?null:Math.min(ri,ro), sh=Math.min(done(g.p.iw,g.rk),done(g.p.ow,g.rk)), rem=Math.max(0,g.q[c.d]-sh);
+      return {n:g.names.join(' · '),q:g.q[c.d],sh,rem,rdy,gap:rem===0?0:(rdy==null?null:rdy-rem)}; })
+      .sort((x,y)=>(x.gap==null?1e12:x.gap)-(y.gap==null?1e12:y.gap)||y.rem-x.rem);
+    return Object.assign({},c,{L,tq:L.reduce((x,o)=>x+o.q,0),tr:L.reduce((x,o)=>x+o.rem,0)}); };
+  const fin=[]; let NX=null;
+  for(const c of cand){ const o=nextOf(c); if(!o.L.length) continue; if(o.tr>0){ NX=o; break; } fin.push(o); }
+  const finD=new Set(fin.map(o=>o.d));
+  const nd=NX&&NX.k===cm?NX.d:null, ni=ships.indexOf(nd);
+  const th=ships.map((d,i)=>'<th'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+d.slice(5).replace('-','/')+(i===ni?' (다음)':finD.has(d)?' (완료)':'')+'</span></th>').join('');
   const cell=(v,i,cls)=>'<td'+(i===ni?' style="background:#FFF8E6"':'')+(cls?' class="'+cls+'"':'')+'>'+(v?nf(v):'-')+'</td>';
   const tP=plan.reduce((x,y)=>x+y,0), tA=act.reduce((x,y)=>x+y,0);
   let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+cm.slice(5))+'월</b> <span class="shp-src" style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽)</span>'
     +'<div class="shp-row"><div class="shp-a"><table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
     +'<tr><td class="l">계획</td>'+plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(tP)+'</b></td></tr>'
     +'<tr><td class="l">실적</td>'+act.map((v,i)=>cell(ships[i]>td&&!v?0:v,i)).join('')+'<td><b>'+nf(tA)+'</b></td></tr>'
-    +'<tr><td class="l">차이</td>'+ships.map((d,i)=>d>td?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(act[i]-plan[i],i,act[i]-plan[i]<0?'neg':'')).join('')+'<td class="'+(tA-tP<0?'neg':'')+'"><b>'+nf(tA-tP)+'</b></td></tr>'
+    +'<tr><td class="l">차이</td>'+ships.map((d,i)=>d>td&&!finD.has(d)?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(act[i]-plan[i],i,act[i]-plan[i]<0?'neg':'')).join('')+'<td class="'+(tA-tP<0?'neg':'')+'"><b>'+nf(tA-tP)+'</b></td></tr>'
     +'</tbody></table></div>';
   /* 다음 출하일 — 기종별 남은 계획(계획 − 이번 차수에 이미 나간 것) vs 출하가능 */
-  if(nd){
-    const w0=ni>0?ships[ni-1]:a.slice(0,8)+'00';                       /* 이번 차수 구간: 앞 출하일 다음 날 ~ 다음 출하일 */
-    const done=(pn,rk)=>{ if(!pn) return 0; const keys=sbcRowKeys(pn); return S.led.reduce((x,r)=>x+((r.k==='출하'&&r.pn===pn&&r.d>w0&&r.d<=nd&&(!rk||shipKey(r,keys)===rk))?r.q:0),0); };
-    const L=Object.values(G).filter(g=>g.q[nd]).map(g=>{ const ri=g.p.iw&&g.rk?SBC_RDY[g.p.iw+'|'+g.rk]:null, ro=g.p.ow&&g.rk?SBC_RDY[g.p.ow+'|'+g.rk]:null;
-      const rdy=(ri==null||ro==null)?null:Math.min(ri,ro), sh=Math.min(done(g.p.iw,g.rk),done(g.p.ow,g.rk)), rem=Math.max(0,g.q[nd]-sh);
-      return {n:g.names.join(' · '),q:g.q[nd],sh,rem,rdy,gap:rem===0?0:(rdy==null?null:rdy-rem)}; })
-      .sort((x,y)=>(x.gap==null?1e12:x.gap)-(y.gap==null?1e12:y.gap)||y.rem-x.rem);
-    if(L.length){ const sh=L.filter(o=>o.gap!=null&&o.gap<0).length, tq=L.reduce((x,o)=>x+o.q,0), tr=L.reduce((x,o)=>x+o.rem,0);
-      h+='<div class="shp-b"><div><b>다음 출하 '+nd.slice(5).replace('-','/')+'</b> · '+L.length+'기종 계획 '+nf(tq)
-        +(tr<tq?' · 이미 출하 '+nf(tq-tr)+' · <b>남은 '+nf(tr)+'</b>':'')
-        +(!tr?' · <span style="color:#0B6B3A;font-weight:800">출하 완료</span>':sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
-        +'<table class="t shp-t"><thead><tr><th>기종</th><th class="shp-hm">계획</th><th class="shp-hm">이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
-        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td class="shp-hm">'+nf(o.q)+'</td><td class="shp-hm">'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
-        +'</tbody></table></div>'; }
-  }
+  const dd=d=>d.slice(5).replace('-','/');
+  const finTxt=fin.length?'<div style="color:#0B6B3A;font-weight:800;margin-bottom:2px">✔ '+fin.map(o=>dd(o.d)+' 출하분 '+nf(o.tq)+' 출하 완료').join(' · ')+'</div>':'';
+  if(NX){ const L=NX.L, sh=L.filter(o=>o.gap!=null&&o.gap<0).length;
+    h+='<div class="shp-b">'+finTxt+'<div><b>다음 출하 '+dd(NX.d)+' ('+(NX.k!==cm?(+NX.k.slice(5))+'월 ':'')+(FC.months[NX.k].ships.indexOf(NX.d)+1)+'차)'+'</b> · '+L.length+'기종 계획 '+nf(NX.tq)
+      +(NX.tr<NX.tq?' · 이미 출하 '+nf(NX.tq-NX.tr)+' · <b>남은 '+nf(NX.tr)+'</b>':'')
+      +(sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
+      +'<table class="t shp-t"><thead><tr><th>기종</th><th class="shp-hm">계획</th><th class="shp-hm">이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
+      +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td class="shp-hm">'+nf(o.q)+'</td><td class="shp-hm">'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
+      +'</tbody></table></div>'; }
+  else if(fin.length) h+='<div class="shp-b">'+finTxt+'<div style="color:#64748B">다음 출하계획이 아직 없습니다 — 확정출하 List 갱신 후 표시</div></div>';
   return h+'</div></div>';
 }
 const SBC_BDN={wip:'생산중(MES)',press:'PRESS',heat:'열처리(한성) — 외주',surf:'표면처리(동진·대영) — 외주',wait:'검사대기',done:'검사완료(=출하가능)'};
