@@ -1122,6 +1122,7 @@ body.qp-on{overflow:hidden}
 .shp-p{margin:0 0 8px;padding:8px 10px;border:1px solid #C9D6E3;border-radius:6px;background:#fff;font-size:12px;white-space:normal}
 .shp-p .shp-row{display:flex;gap:16px;align-items:flex-start;margin-top:4px}
 .shp-p .shp-a{flex:1 1 44%;min-width:0}
+.shp-p .shp-one td.l{white-space:nowrap}
 .shp-p .shp-chg{margin-top:6px;padding:5px 8px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:5px;font-size:11.5px;line-height:1.6}.shp-p .shp-b{flex:1 1 56%;min-width:0}
 .shp-p .shp-t{width:100%;margin-top:4px;font-size:12.5px}
 .shp-p .shp-t th,.shp-p .shp-t td{padding:3px 10px;white-space:nowrap;text-align:right}
@@ -1176,7 +1177,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.98 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.99 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14134,28 +14135,43 @@ function sbcShipPanel(){
     return '<div class="shp-chg"><b>📝 계획 변경</b> <span style="color:#64748B">(직전 표 '+esc(String(MM.prev.base||'').slice(5).replace('-','/'))+' 기준 → '+esc(String(MM.base||'').slice(5).replace('-','/'))+' 기준)</span>'
       +ds.map(d=>'<div><b>'+cha(d)+'</b> : '+by[d].map(o=>esc(o.m)+' '+(!o.a0?'<b style="color:#1D4ED8">추가 '+nf(o.b0)+'</b>':!o.b0?'<b style="color:#B3261E">삭제 ('+nf(o.a0)+')</b>':nf(o.a0)+'→'+nf(o.b0)+' <b style="color:'+(o.b0>o.a0?'#1D4ED8':'#B3261E')+'">('+(o.b0>o.a0?'+':'')+nf(o.b0-o.a0)+')</b>')).join(' · ')+'</div>').join('')+'</div>'; };
   const sg=v=>(v>0?'+':'')+nf(v);
+  /* 기종별 한 표 — 차수별 계획(지난 차수는 실적), 월 계획, 다음 출하 남은 계획 · 출하가능 · 과부족 */
+  const G=grp(showK), dd=d=>d.slice(5).replace('-','/');
+  const shipQ=(pn,rk,d)=>{ if(!pn) return 0; const keys=sbcRowKeys(pn); return SB.reduce((x,r)=>x+((r.pn===pn&&chaOf(r.d)===d&&(!rk||shipKey(r,keys)===rk))?r.q:0),0); };
+  const past=d=>!(d>td&&!finD.has(d));
+  const NL={}; if(NX&&NX.k===showK) NX.L.forEach(o=>NL[o.n]=o);
+  const rowsH=Object.values(G).map(g=>{ const n=g.names.join(' · '), o=NL[n], mt=T.ships.reduce((x,d)=>x+(g.q[d]||0),0);
+      if(!mt&&!o) return '';
+      return '<tr><td class="l">'+esc(n)+'</td>'+T.ships.map((d,i)=>{ const q=g.q[d]||0, a2=past(d)?Math.min(shipQ(g.p.iw,g.rk,d),shipQ(g.p.ow,g.rk,d)):null;
+          return '<td class="'+(i===ni?'':'shp-hm')+'"'+(i===ni?' style="background:#FFF8E6"':'')+'>'+(q?nf(q):'-')
+            +(a2!=null&&(q||a2)?'<div class="sx" style="color:'+(a2<q?'#B3261E':'#64748B')+'">실 '+nf(a2)+'</div>':'')+'</td>'; }).join('')
+        +'<td class="shp-hm"><b>'+nf(mt)+'</b></td>'
+        +'<td style="background:#FFF8E6"><b>'+(!o?'-':o.rem?nf(o.rem):'완료')+'</b>'+(o&&o.sh?'<div class="sx" style="color:#64748B">이미 '+nf(o.sh)+'</div>':'')+'</td>'
+        +'<td>'+(!o||o.rdy==null?'-':nf(o.rdy))+'</td>'
+        +'<td class="'+(!o||o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(!o||o.rem===0||o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>'; }).join('');
+  const th2=T.ships.map((d,i)=>'<th class="'+(i===ni?'':'shp-hm')+'"'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+dd(d)+(i===ni?' (다음)':finD.has(d)?' (완료)':'')+'</span></th>').join('');
+  const ftd=(v,i,cls)=>'<td class="'+(i===ni?'':'shp-hm')+(cls?' '+cls:'')+'"'+(i===ni?' style="background:#FFF8E6"':'')+'>'+v+'</td>';
+  const dsum=T.ships.some(past)?T.ships.reduce((x,d,i)=>x+(past(d)?T.act[i]-T.plan[i]:0),0):null;
+  const NXs=NX&&NX.k===showK?NX:null, shN=NXs?NXs.L.filter(o=>o.gap!=null&&o.gap<0).length:0;
   let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+showK.slice(5))+'월</b> <span class="shp-src" style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽) — 실제 출하일은 가장 가까운 계획 출하일(차수)로 묶음 (주 2회 출하·조기 출하 포함)</span>'
-    +(C0?'<div style="margin:2px 0 4px;color:#0B6B3A;font-weight:800">✔ '+(+cm.slice(5))+'월 출하 완료'
-      +(fin.filter(o=>o.k===cm).map(o=>' (마지막 '+(C0.ships.indexOf(o.d)+1)+'차 '+o.d.slice(5).replace('-','/')+' '+nf(o.tq)+' 포함)').pop()||'')
+    +(C0?'<div style="margin:2px 0 2px;color:#0B6B3A;font-weight:800">✔ '+(+cm.slice(5))+'월 출하 완료'
+      +(fin.filter(o=>o.k===cm).map(o=>' (마지막 '+(C0.ships.indexOf(o.d)+1)+'차 '+dd(o.d)+' '+nf(o.tq)+' 포함)').pop()||'')
       +' · 계획 '+nf(C0.tP)+' · 실적 '+nf(C0.tA)+'<span class="'+(C0.tA-C0.tP<0?'neg':'')+'"> ('+sg(C0.tA-C0.tP)+')</span></div>':'')
-    +'<div class="shp-row"><div class="shp-a"><table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
-    +'<tr><td class="l">계획</td>'+T.plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(T.tP)+'</b></td></tr>'
-    +'<tr><td class="l">실적</td>'+T.act.map((v,i)=>cell(v,i,'',T.sdays[i].length?'<div class="sx" style="color:#64748B">'+T.sdays[i].join(' · ')+' 출하</div>':'')).join('')+'<td><b>'+nf(T.tA)+'</b></td></tr>'
-    +'<tr><td class="l">차이</td>'+T.ships.map((d,i)=>d>td&&!finD.has(d)?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(T.act[i]-T.plan[i],i,T.act[i]-T.plan[i]<0?'neg':'')).join('')+(dsum=>dsum==null?'<td style="color:#93A0AB">예정</td>':'<td class="'+(dsum<0?'neg':'')+'"><b>'+nf(dsum)+'</b></td>')(T.ships.some((d,i)=>!(d>td&&!finD.has(d)))?T.ships.reduce((x,d,i)=>x+((d>td&&!finD.has(d))?0:T.act[i]-T.plan[i]),0):null)+'</tr>'
-    +'</tbody></table>'+chgHtml(showK)+'</div>';
-  /* 다음 출하일 — 기종별 남은 계획(계획 − 이번 차수에 이미 나간 것) vs 출하가능 */
-  const dd=d=>d.slice(5).replace('-','/');
-  const finS=fin.filter(o=>!(C0&&o.k===cm));    /* 이번 달 완료는 위 「○월 출하 완료」 한 줄에 합쳐 보여준다 */
-  const finTxt=finS.length?'<div style="color:#0B6B3A;font-weight:800;margin-bottom:2px">✔ '+finS.map(o=>dd(o.d)+' 출하분 '+nf(o.tq)+' 출하 완료').join(' · ')+'</div>':'';
-  if(NX){ const L=NX.L, sh=L.filter(o=>o.gap!=null&&o.gap<0).length;
-    h+='<div class="shp-b">'+finTxt+'<div><b>다음 출하 '+dd(NX.d)+' ('+(NX.k!==cm?(+NX.k.slice(5))+'월 ':'')+(FC.months[NX.k].ships.indexOf(NX.d)+1)+'차)'+'</b> · '+L.length+'기종 계획 '+nf(NX.tq)
-      +(NX.tr<NX.tq?' · 이미 출하 '+nf(NX.tq-NX.tr)+' · <b>남은 '+nf(NX.tr)+'</b>':'')
-      +(sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
-      +'<table class="t shp-t"><thead><tr><th>기종</th><th class="shp-hm">계획</th><th class="shp-hm">이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
-      +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td class="shp-hm">'+nf(o.q)+'</td><td class="shp-hm">'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
-      +'</tbody></table></div>'; }
-  else if(fin.length) h+='<div class="shp-b">'+finTxt+'<div style="color:#64748B">다음 출하계획이 아직 없습니다 — 확정출하 List 갱신 후 표시</div></div>';
-  return h+'</div></div>';
+    +(NXs?'<div style="margin:2px 0 4px"><b>다음 출하 '+dd(NXs.d)+' ('+(T.ships.indexOf(NXs.d)+1)+'차)</b> · '+NXs.L.length+'기종 계획 '+nf(NXs.tq)
+      +(NXs.tr<NXs.tq?' · 이미 출하 '+nf(NXs.tq-NXs.tr)+' · <b>남은 '+nf(NXs.tr)+'</b>':'')
+      +(shN?' · <b style="color:#B3261E">출하가능 부족 '+shN+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
+      :(fin.length?'<div style="margin:2px 0 4px;color:#64748B">다음 출하계획이 아직 없습니다 — 확정출하 List 갱신 후 표시</div>':''))
+    +'<table class="t shp-t shp-one"><thead><tr><th>기종</th>'+th2+'<th class="shp-hm">월 계획</th>'
+    +'<th style="background:#FDEFC8">남은 계획<br><span style="font-size:10px">'+(NXs?dd(NXs.d)+' 출하':'다음 출하')+'</span></th>'
+    +'<th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead>'
+    +'<tbody>'+(rowsH||'<tr><td colspan="'+(T.ships.length+5)+'" class="c" style="color:#93A0AB">계획 수량이 없습니다</td></tr>')+'</tbody>'
+    +'<tfoot><tr><td class="l">계획</td>'+T.plan.map((v,i)=>ftd(v?nf(v):'-',i)).join('')+'<td class="shp-hm"><b>'+nf(T.tP)+'</b></td>'
+      +'<td style="background:#FFF8E6"><b>'+(NXs?nf(NXs.tr):'-')+'</b></td><td colspan="2"></td></tr>'
+    +'<tr><td class="l">실적</td>'+T.act.map((v,i)=>ftd(past(T.ships[i])?(v?nf(v):'-')+(T.sdays[i].length?'<div class="sx" style="color:#64748B">'+T.sdays[i].join(' · ')+'</div>':''):'<span style="color:#93A0AB">예정</span>',i)).join('')+'<td class="shp-hm"><b>'+nf(T.tA)+'</b></td><td colspan="3"></td></tr>'
+    +'<tr><td class="l">차이</td>'+T.ships.map((d,i)=>ftd(past(d)?nf(T.act[i]-T.plan[i]):'<span style="color:#93A0AB">예정</span>',i,past(d)&&T.act[i]-T.plan[i]<0?'neg':'')).join('')
+      +'<td class="shp-hm '+(dsum<0?'neg':'')+'"><b>'+(dsum==null?'예정':nf(dsum))+'</b></td><td colspan="3"></td></tr></tfoot></table>'
+    +chgHtml(showK);
+  return h+'</div>';
 }
 const SBC_BDN={wip:'생산중(MES)',press:'PRESS',heat:'열처리(한성) — 외주',surf:'표면처리(동진·대영) — 외주',wait:'검사대기',done:'검사완료(=출하가능)'};
 function sbcBd(i){ const b=SBC_BD[i]; if(!b) return;
