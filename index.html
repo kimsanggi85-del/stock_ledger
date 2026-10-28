@@ -1118,6 +1118,13 @@ body.qp-on{overflow:hidden}
 .gt.gtTall #gt-sum{flex:1;min-width:0;white-space:normal}
 /* 재고현황 — 고객사 SBC 공정표: 칸 너비 고정 */
 #tSum.sbcT{table-layout:fixed;width:100%;min-width:980px}
+/* SBC 메인 출하현황 패널 */
+.shp-p{margin:0 0 8px;padding:8px 10px;border:1px solid #C9D6E3;border-radius:6px;background:#fff;font-size:12px;white-space:normal}
+.shp-p .shp-t{width:auto;margin-top:4px;font-size:12px}
+.shp-p .shp-t th,.shp-p .shp-t td{padding:3px 10px;white-space:nowrap;text-align:right}
+.shp-p .shp-t th{text-align:center}
+.shp-p .shp-t td.l{text-align:left;font-weight:700}
+@media(max-width:760px){ .shp-p{overflow-x:auto} }
 #tSum.sbcT th,#tSum.sbcT td{padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tSum.sbcT th{text-align:center;line-height:1.25;white-space:normal;word-break:keep-all;text-overflow:clip}   /* 머리글은 줄바꿈 — 「현재고 (공정 합계 − …」 잘림 방지 */
 #tSum.sbcT td .sx{white-space:nowrap}
@@ -1158,7 +1165,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.90 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.91 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7049,7 +7056,8 @@ function rSum(){
     : '';
 
   if($('sbcMbar')) $('sbcMbar').style.display=scu==='SBC'?'flex':'none';   /* 휴대폰 — SBC 창 바로가기 */
-  document.body.classList.toggle('sbcOn',scu==='SBC'&&!SBC_LIST);          /* 휴대폰 — ＋ 버튼을 위로 (합계 줄 가림 방지) */
+  document.body.classList.toggle('sbcOn',scu==='SBC'&&!SBC_LIST);
+  if($('sbcShip')&&!(scu==='SBC'&&!SBC_LIST)) $('sbcShip').innerHTML='';   /* SBC 메인 출하현황은 SBC 재고 표에서만 */          /* 휴대폰 — ＋ 버튼을 위로 (합계 줄 가림 방지) */
   /* SBC — 물류 흐름(외주 경유)이 달라 전공정이동표 양식(기종 · INNER/OUTER · 공정별)으로 보여준다 */
   if(scu==='SBC'&&!SBC_LIST&&EXT&&EXT.last){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
@@ -7062,6 +7070,7 @@ function rSum(){
       +' &nbsp;<a href="javascript:void 0" onclick="sbcOpen()" style="color:#7C3AED;font-weight:800">공정재고(전표) ▸</a>'
       +' &nbsp;<a href="javascript:void 0" onclick="fcOpen()" style="color:#1D4ED8;font-weight:800">📅 출하계획 ▸</a>';
     $('tSum').classList.add('sbcT'); $('gt-sum').parentElement.classList.add('gtTall'); $('tSum').innerHTML=sbcTblHtml(EXT.last);
+    try{ sbcShipBox().innerHTML=sbcShipPanel(); }catch(e){ console.warn('SBC 출하현황:',e.message); }
     return;
   }
   if(isMob()&&CARD){
@@ -14057,7 +14066,49 @@ function sbcShipRows(y){
   return out;
 }
 /* 현재고 칸을 누르면 공정별로 어디서 합쳐졌는지 보여준다 */
-let SBC_BD=[];
+let SBC_BD=[], SBC_RDY={};        /* SBC_RDY: 앱 품번|기종 → 출하가능(검사완료 − 시트 이후 출하) — 메인 출하현황 패널용 */
+/* ═══ SBC 메인 출하현황 — 확정출하 List(FC)의 출하 차수별 계획 vs 실적 + 다음 출하일 대응 ═══
+   실적 = 레이스웨이 출하 전표를 앞 출하일 다음 날 ~ 그 출하일 사이로 묶음 (IW·OW 중 적은 쪽 = 세트) */
+/* 출하현황 상자 — 재고 표 묶음(.gw) 바로 위. 휴대폰은 표 머리말(.gt)이 숨겨져 그 안에 두면 안 보인다 */
+function sbcShipBox(){ let b=$('sbcShip'); if(!b){ b=document.createElement('div'); b.id='sbcShip'; const gw=$('tSum').closest('.gw'); gw.parentNode.insertBefore(b,gw); } return b; }
+function sbcShipPanel(){
+  if(!FC||!FC.months) return '<div class="shp-p">📅 출하계획(확정출하 List)을 아직 읽지 않았습니다 — <a href="javascript:void 0" onclick="fcOpen()">출하계획 ▸</a></div>';
+  const td=today(), cm=td.slice(0,7), M=FC.months[cm]; if(!M||!M.ships||!M.ships.length) return '';
+  const ships=M.ships, a=cm+'-01', mE=cm+'-'+p2(new Date(+cm.slice(0,4),+cm.slice(5),0).getDate());
+  const gk=r=>{ const pp=fcPn(r.m); if(!pp.iw) return mkey(r.m); const rk=rowKeyOf(r.m,sbcRowKeys(pp.iw)); return rk?pp.key+':'+rk:pp.key+'~'+mkey(r.m); };
+  const plan=ships.map(()=>0), G={};
+  M.rows.forEach(r=>{ const k=gk(r), pp=fcPn(r.m); const g=G[k]=G[k]||{k,p:pp,rk:k.indexOf(':')>0?k.split(':')[1]:'',names:[],q:{}};
+    if(!g.names.includes(r.m)) g.names.push(r.m);
+    r.cols.forEach((c,i)=>{ const j=ships.indexOf(c); if(j>=0){ plan[j]+=r.q[i]; g.q[c]=(g.q[c]||0)+r.q[i]; } }); });
+  /* 실적 — 출하 차수 구간별 */
+  const win=d=>{ for(let i=0;i<ships.length;i++) if(d<=ships[i]) return i; return ships.length-1; };
+  const aI=ships.map(()=>0), aO=ships.map(()=>0);
+  S.led.forEach(r=>{ if(r.k!=='출하'||r.d<a||r.d>mE||!/^(IW|OW)-BDA-/i.test(r.pn)) return; const i=win(r.d); if(/^IW/i.test(r.pn)) aI[i]+=r.q; else aO[i]+=r.q; });
+  const act=ships.map((_,i)=>Math.min(aI[i],aO[i]));
+  const nd=ships.find(d=>d>=td), ni=ships.indexOf(nd);
+  const th=ships.map((d,i)=>'<th'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+d.slice(5).replace('-','/')+(i===ni?' (다음)':'')+'</span></th>').join('');
+  const cell=(v,i,cls)=>'<td'+(i===ni?' style="background:#FFF8E6"':'')+(cls?' class="'+cls+'"':'')+'>'+(v?nf(v):'-')+'</td>';
+  const tP=plan.reduce((x,y)=>x+y,0), tA=act.reduce((x,y)=>x+y,0);
+  let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+cm.slice(5))+'월</b> <span style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽)</span>'
+    +'<table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
+    +'<tr><td class="l">계획</td>'+plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(tP)+'</b></td></tr>'
+    +'<tr><td class="l">실적</td>'+act.map((v,i)=>cell(ships[i]>td&&!v?0:v,i)).join('')+'<td><b>'+nf(tA)+'</b></td></tr>'
+    +'<tr><td class="l">차이</td>'+ships.map((d,i)=>d>td?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(act[i]-plan[i],i,act[i]-plan[i]<0?'neg':'')).join('')+'<td class="'+(tA-tP<0?'neg':'')+'"><b>'+nf(tA-tP)+'</b></td></tr>'
+    +'</tbody></table>';
+  /* 다음 출하일 — 기종별 계획 vs 출하가능 */
+  if(nd){
+    const L=Object.values(G).filter(g=>g.q[nd]).map(g=>{ const ri=g.p.iw&&g.rk?SBC_RDY[g.p.iw+'|'+g.rk]:null, ro=g.p.ow&&g.rk?SBC_RDY[g.p.ow+'|'+g.rk]:null;
+      const rdy=(ri==null||ro==null)?null:Math.min(ri,ro); return {n:g.names.join(' · '),q:g.q[nd],rdy,gap:rdy==null?null:rdy-g.q[nd]}; })
+      .sort((x,y)=>(x.gap==null?1e12:x.gap)-(y.gap==null?1e12:y.gap));
+    if(L.length){ const sh=L.filter(o=>o.gap!=null&&o.gap<0).length;
+      h+='<div style="margin-top:6px"><b>다음 출하 '+nd.slice(5).replace('-','/')+'</b> · '+L.length+'기종 계획 '+nf(L.reduce((x,o)=>x+o.q,0))
+        +(sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
+        +'<table class="t shp-t"><thead><tr><th>기종</th><th>계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족</th></tr></thead><tbody>'
+        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td>'+nf(o.q)+'</td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
+        +'</tbody></table>'; }
+  }
+  return h+'</div>';
+}
 const SBC_BDN={wip:'생산중(MES)',press:'PRESS',heat:'열처리(한성) — 외주',surf:'표면처리(동진·대영) — 외주',wait:'검사대기',done:'검사완료(=출하가능)'};
 function sbcBd(i){ const b=SBC_BD[i]; if(!b) return;
   const L=['['+b.t+'] 현재고 '+nf(b.cur)+' 계산',''];
@@ -14068,7 +14119,7 @@ function sbcBd(i){ const b=SBC_BD[i]; if(!b) return;
   alert(L.join('\n')); }
 function sbcTblHtml(s){
   const C=['wip','press','heat','surf','wait','done'], T={}; C.forEach(c=>T[c]=0); let tt=0, tx=0;
-  SBC_BD=[];
+  SBC_BD=[]; SBC_RDY={};
   const LMs={}, gray=v=>`<div class="sx" style="color:#93A0AB" title="전공정이동표">${nf(v)}</div>`;
   const wFrom=String(s.d||'').slice(0,10), wDone=new Set();          /* 생산중은 그 품번의 첫 기종 줄에 한 번만 */
   /* 출하 — 출하 전표는 기종 구분 없이 앱 품번(IW/OW)으로 들어오므로 품번 첫 줄에 한 번만 표시
@@ -14101,6 +14152,7 @@ function sbcTblHtml(s){
     const sh=(!it||seenK.has(pn+'|'+mk))?{m:0,a:0}:(seenK.add(pn+'|'+mk),shipOf(pn,mk)), cur=tot-sh.a;
     /* 사내재고 = 현재고 − 외주(열처리·표면처리) · 출하가능 = 검사완료(포장) − 기준 이후 출하 */
     const inh=cur-x, rdy=v.done-sh.a;
+    if(pn) SBC_RDY[pn+'|'+mkey(o.m)]=(SBC_RDY[pn+'|'+mkey(o.m)]||0)+rdy;
     tm+=sh.m; ta+=sh.a; tc+=cur; ti+=inh; tr+=rdy;
     return '<tr><td class="l">'+esc(o.m)+'</td><td class="c"><span class="sdL">'+o.side+'</span><span class="sdS">'+(o.side==='INNER'?'IN':'OUT')+'</span></td>'
       +'<td class="l'+(pn?'':' wn')+'"'+(it?' style="cursor:pointer" onclick="goBin(\''+esc(pn)+'\')"':'')+(pn&&isVariant(mk,pn)?' title="앱 재고(장부)는 프레스 생산이 1159 하나로 들어와 '+esc(pn)+' 품목에 B·C 합산"':'')+'>'
