@@ -1126,7 +1126,15 @@ body.qp-on{overflow:hidden}
 .shp-p .shp-t th,.shp-p .shp-t td{padding:3px 10px;white-space:nowrap;text-align:right}
 .shp-p .shp-t th{text-align:center}
 .shp-p .shp-t td.l{text-align:left;font-weight:700}
-@media(max-width:760px){ .shp-p{overflow-x:auto} .shp-p .shp-row{display:block} .shp-p .shp-b{margin-top:8px} .shp-p .shp-t{width:auto} }
+@media(max-width:760px){
+  .shp-p{overflow-x:auto;padding:8px 6px} .shp-p .shp-src{display:none}
+  .shp-p .shp-row{display:block} .shp-p .shp-b{margin-top:10px}
+  .shp-p .shp-t{width:100%;min-width:0!important;font-size:11px;table-layout:auto}   /* 휴대폰 공통 .t 최소폭 660px 해제 */
+  .shp-p .shp-t th{font-size:10.5px;height:auto}.shp-p .shp-t td{height:28px}
+  .shp-p .shp-t th,.shp-p .shp-t td{padding:4px 3px}
+  .shp-p .shp-t td.l{white-space:normal;word-break:keep-all}
+  .shp-p .shp-hm{display:none}   /* 휴대폰: 다음 출하 표는 기종 · 남은 계획 · 출하가능 · 과부족만 */
+}
 #tSum.sbcT th,#tSum.sbcT td{padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tSum.sbcT th{text-align:center;line-height:1.25;white-space:normal;word-break:keep-all;text-overflow:clip}   /* 머리글은 줄바꿈 — 「현재고 (공정 합계 − …」 잘림 방지 */
 #tSum.sbcT td .sx{white-space:nowrap}
@@ -1167,7 +1175,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.92 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.93 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14091,7 +14099,7 @@ function sbcShipPanel(){
   const th=ships.map((d,i)=>'<th'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+d.slice(5).replace('-','/')+(i===ni?' (다음)':'')+'</span></th>').join('');
   const cell=(v,i,cls)=>'<td'+(i===ni?' style="background:#FFF8E6"':'')+(cls?' class="'+cls+'"':'')+'>'+(v?nf(v):'-')+'</td>';
   const tP=plan.reduce((x,y)=>x+y,0), tA=act.reduce((x,y)=>x+y,0);
-  let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+cm.slice(5))+'월</b> <span style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽)</span>'
+  let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+cm.slice(5))+'월</b> <span class="shp-src" style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽)</span>'
     +'<div class="shp-row"><div class="shp-a"><table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
     +'<tr><td class="l">계획</td>'+plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(tP)+'</b></td></tr>'
     +'<tr><td class="l">실적</td>'+act.map((v,i)=>cell(ships[i]>td&&!v?0:v,i)).join('')+'<td><b>'+nf(tA)+'</b></td></tr>'
@@ -14109,8 +14117,8 @@ function sbcShipPanel(){
       h+='<div class="shp-b"><div><b>다음 출하 '+nd.slice(5).replace('-','/')+'</b> · '+L.length+'기종 계획 '+nf(tq)
         +(tr<tq?' · 이미 출하 '+nf(tq-tr)+' · <b>남은 '+nf(tr)+'</b>':'')
         +(!tr?' · <span style="color:#0B6B3A;font-weight:800">출하 완료</span>':sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
-        +'<table class="t shp-t"><thead><tr><th>기종</th><th>계획</th><th>이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
-        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td>'+nf(o.q)+'</td><td>'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
+        +'<table class="t shp-t"><thead><tr><th>기종</th><th class="shp-hm">계획</th><th class="shp-hm">이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
+        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td class="shp-hm">'+nf(o.q)+'</td><td class="shp-hm">'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
         +'</tbody></table></div>'; }
   }
   return h+'</div></div>';
