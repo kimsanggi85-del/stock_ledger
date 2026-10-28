@@ -1121,7 +1121,8 @@ body.qp-on{overflow:hidden}
 /* SBC 메인 출하현황 패널 */
 .shp-p{margin:0 0 8px;padding:8px 10px;border:1px solid #C9D6E3;border-radius:6px;background:#fff;font-size:12px;white-space:normal}
 .shp-p .shp-row{display:flex;gap:16px;align-items:flex-start;margin-top:4px}
-.shp-p .shp-a{flex:1 1 44%;min-width:0}.shp-p .shp-b{flex:1 1 56%;min-width:0}
+.shp-p .shp-a{flex:1 1 44%;min-width:0}
+.shp-p .shp-chg{margin-top:6px;padding:5px 8px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:5px;font-size:11.5px;line-height:1.6}.shp-p .shp-b{flex:1 1 56%;min-width:0}
 .shp-p .shp-t{width:100%;margin-top:4px;font-size:12.5px}
 .shp-p .shp-t th,.shp-p .shp-t td{padding:3px 10px;white-space:nowrap;text-align:right}
 .shp-p .shp-t th{text-align:center}
@@ -1175,7 +1176,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.96 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.97 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14123,6 +14124,15 @@ function sbcShipPanel(){
   const nd=NX&&NX.k===showK?NX.d:null, ni=T.ships.indexOf(nd);
   const th=T.ships.map((d,i)=>'<th'+(i===ni?' style="background:#FDEFC8"':'')+'>'+(i+1)+'차<br><span style="font-size:10px">'+d.slice(5).replace('-','/')+(i===ni?' (다음)':finD.has(d)?' (완료)':'')+'</span></th>').join('');
   const cell=(v,i,cls,sub)=>'<td'+(i===ni?' style="background:#FFF8E6"':'')+(cls?' class="'+cls+'"':'')+'>'+(v?nf(v):'-')+(sub||'')+'</td>';
+  /* 계획 변경 — 확정출하 List 가 바뀌면 직전 표 대비 차수별로 어느 기종이 추가·증감·삭제됐는지 */
+  const chgHtml=K=>{ const MM=FC.months[K]; if(!MM||!MM.prev) return '';
+    const map=rows=>{ const o={}; (rows||[]).forEach(r=>r.cols.forEach((c,i)=>{ const k=r.m+'|'+c; o[k]=(o[k]||0)+(+r.q[i]||0); })); return o; };
+    const A=map(MM.prev.rows), B=map(MM.rows), keys=[...new Set([...Object.keys(A),...Object.keys(B)])], by={};
+    keys.forEach(k=>{ const a0=A[k]||0, b0=B[k]||0; if(a0===b0) return; const [m,d]=k.split('|'); (by[d]=by[d]||[]).push({m,a0,b0}); });
+    const ds=Object.keys(by).sort(); if(!ds.length) return '';
+    const cha=d=>{ const i=MM.ships.indexOf(d); return (i>=0?(i+1)+'차 ':'')+d.slice(5).replace('-','/'); };
+    return '<div class="shp-chg"><b>📝 계획 변경</b> <span style="color:#64748B">(직전 표 '+esc(String(MM.prev.base||'').slice(5).replace('-','/'))+' 기준 → '+esc(String(MM.base||'').slice(5).replace('-','/'))+' 기준)</span>'
+      +ds.map(d=>'<div><b>'+cha(d)+'</b> : '+by[d].map(o=>esc(o.m)+' '+(!o.a0?'<b style="color:#1D4ED8">추가 '+nf(o.b0)+'</b>':!o.b0?'<b style="color:#B3261E">삭제 ('+nf(o.a0)+')</b>':nf(o.a0)+'→'+nf(o.b0)+' <b style="color:'+(o.b0>o.a0?'#1D4ED8':'#B3261E')+'">('+(o.b0>o.a0?'+':'')+nf(o.b0-o.a0)+')</b>')).join(' · ')+'</div>').join('')+'</div>'; };
   const sg=v=>(v>0?'+':'')+nf(v);
   let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+showK.slice(5))+'월</b> <span class="shp-src" style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽) — 실제 출하일은 가장 가까운 계획 출하일(차수)로 묶음 (주 2회 출하·조기 출하 포함)</span>'
     +(C0?'<div style="margin:2px 0 4px;color:#0B6B3A;font-weight:800">✔ '+(+cm.slice(5))+'월 출하 완료 · 계획 '+nf(C0.tP)+' · 실적 '+nf(C0.tA)+'<span class="'+(C0.tA-C0.tP<0?'neg':'')+'"> ('+sg(C0.tA-C0.tP)+')</span></div>':'')
@@ -14130,7 +14140,7 @@ function sbcShipPanel(){
     +'<tr><td class="l">계획</td>'+T.plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(T.tP)+'</b></td></tr>'
     +'<tr><td class="l">실적</td>'+T.act.map((v,i)=>cell(v,i,'',T.sdays[i].length?'<div class="sx" style="color:#64748B">'+T.sdays[i].join(' · ')+' 출하</div>':'')).join('')+'<td><b>'+nf(T.tA)+'</b></td></tr>'
     +'<tr><td class="l">차이</td>'+T.ships.map((d,i)=>d>td&&!finD.has(d)?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(T.act[i]-T.plan[i],i,T.act[i]-T.plan[i]<0?'neg':'')).join('')+(dsum=>dsum==null?'<td style="color:#93A0AB">예정</td>':'<td class="'+(dsum<0?'neg':'')+'"><b>'+nf(dsum)+'</b></td>')(T.ships.some((d,i)=>!(d>td&&!finD.has(d)))?T.ships.reduce((x,d,i)=>x+((d>td&&!finD.has(d))?0:T.act[i]-T.plan[i]),0):null)+'</tr>'
-    +'</tbody></table></div>';
+    +'</tbody></table>'+chgHtml(showK)+'</div>';
   /* 다음 출하일 — 기종별 남은 계획(계획 − 이번 차수에 이미 나간 것) vs 출하가능 */
   const dd=d=>d.slice(5).replace('-','/');
   const finTxt=fin.length?'<div style="color:#0B6B3A;font-weight:800;margin-bottom:2px">✔ '+fin.map(o=>dd(o.d)+' 출하분 '+nf(o.tq)+' 출하 완료').join(' · ')+'</div>':'';
@@ -14561,6 +14571,7 @@ async function fcLoad(silent,one){
     try{ await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',{method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
       body:JSON.stringify([{key:FC_KEY,value:FC,updated_at:nowIso()}])}); }catch(e){}
     if(!silent||chg.length) toast('출하계획 '+(chg.length?'변경 반영 — '+chg.join('·')+' 수량이 바뀌었습니다':'읽음 — '+f.name+' · '+Object.keys(months).length+'개월'));
+    if(tab==='sum') try{ render(); }catch(e3){}      /* 재고현황 SBC 출하현황 상자도 새 계획으로 */
   }catch(e){
     if(e&&e.name==='AbortError') return;
     if(!silent){ alert('출하계획 불러오기 실패\n\n'+(f?'파일: '+f.name+'\n\n':'')+(e.message||e)); }
@@ -14570,7 +14581,13 @@ async function fcLoad(silent,one){
 }
 /* 앱을 켜 둔 채로도 20분마다 폴더의 파일이 바뀌었는지 확인 — 바뀌었을 때만 다시 읽는다 (폴더 읽기 허용된 PC) */
 let FC_CHK='';
-setInterval(()=>{ if(window.showDirectoryPicker&&document.visibilityState!=='hidden') fcLoad(true).then(()=>{ const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); }); },20*60*1000);
+setInterval(()=>{ if(document.visibilityState==='hidden') return;
+  if(window.showDirectoryPicker) fcLoad(true).then(()=>{ const d=new Date(); FC_CHK=p2(d.getHours())+':'+p2(d.getMinutes()); });
+  else { const m0=FC&&FC.mod; fcPull().then(()=>{ if(FC&&FC.mod!==m0&&tab==='sum') render(); }); }   /* 휴대폰 — PC 가 올린 최신 계획을 받아 온다 */
+},20*60*1000);
+/* 휴대폰·다른 PC — 앱 화면으로 돌아올 때도 서버의 최신 출하계획 확인 */
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState!=='visible'||window.showDirectoryPicker) return;
+  const m0=FC&&FC.mod; fcPull().then(()=>{ if(FC&&FC.mod!==m0&&tab==='sum') render(); }); });
 async function fcOpen(){ $('mFc').classList.add('on'); if(!FC) await fcPull(); fcPaint(); fcLoad(true); }
 /* 기종 이름 → 앱 품번 {iw,ow,key} — '1113 AD (신규)' 처럼 괄호는 뺀다 */
 function fcPn(m){ const b=String(m).replace(/\(.*?\)/g,'').trim();
@@ -14647,7 +14664,7 @@ async function sbcAutoAll(){
   await extLoad(false,true); await fcLoad(true);
   const e1=EXT&&EXT.last&&EXT.last.at, f1=FC&&FC.mod, m=[];
   if(e1&&e1!==e0) m.push('전공정이동표 '+e1); if(f1&&f1!==f0) m.push('출하계획');
-  if(m.length) toast('SBC 자료 자동 갱신 — '+m.join(' · '));
+  if(m.length){ toast('SBC 자료 자동 갱신 — '+m.join(' · ')); if(tab==='sum') try{ render(); }catch(e){} }
   sbcAutoStat();
 }
 function sbcAutoStat(){
