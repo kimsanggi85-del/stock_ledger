@@ -1120,11 +1120,13 @@ body.qp-on{overflow:hidden}
 #tSum.sbcT{table-layout:fixed;width:100%;min-width:980px}
 /* SBC 메인 출하현황 패널 */
 .shp-p{margin:0 0 8px;padding:8px 10px;border:1px solid #C9D6E3;border-radius:6px;background:#fff;font-size:12px;white-space:normal}
-.shp-p .shp-t{width:auto;margin-top:4px;font-size:12px}
+.shp-p .shp-row{display:flex;gap:16px;align-items:flex-start;margin-top:4px}
+.shp-p .shp-a{flex:1 1 44%;min-width:0}.shp-p .shp-b{flex:1 1 56%;min-width:0}
+.shp-p .shp-t{width:100%;margin-top:4px;font-size:12.5px}
 .shp-p .shp-t th,.shp-p .shp-t td{padding:3px 10px;white-space:nowrap;text-align:right}
 .shp-p .shp-t th{text-align:center}
 .shp-p .shp-t td.l{text-align:left;font-weight:700}
-@media(max-width:760px){ .shp-p{overflow-x:auto} }
+@media(max-width:760px){ .shp-p{overflow-x:auto} .shp-p .shp-row{display:block} .shp-p .shp-b{margin-top:8px} .shp-p .shp-t{width:auto} }
 #tSum.sbcT th,#tSum.sbcT td{padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tSum.sbcT th{text-align:center;line-height:1.25;white-space:normal;word-break:keep-all;text-overflow:clip}   /* 머리글은 줄바꿈 — 「현재고 (공정 합계 − …」 잘림 방지 */
 #tSum.sbcT td .sx{white-space:nowrap}
@@ -1165,7 +1167,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.91 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v17.92 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14090,24 +14092,28 @@ function sbcShipPanel(){
   const cell=(v,i,cls)=>'<td'+(i===ni?' style="background:#FFF8E6"':'')+(cls?' class="'+cls+'"':'')+'>'+(v?nf(v):'-')+'</td>';
   const tP=plan.reduce((x,y)=>x+y,0), tA=act.reduce((x,y)=>x+y,0);
   let h='<div class="shp-p"><b>📦 SBC 출하현황 '+(+cm.slice(5))+'월</b> <span style="color:#64748B;font-size:11px">계획 = '+esc(FC.file||'확정출하 List')+' · 실적 = 레이스웨이 출하(세트, IW·OW 중 적은 쪽)</span>'
-    +'<table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
+    +'<div class="shp-row"><div class="shp-a"><table class="t shp-t"><thead><tr><th></th>'+th+'<th>합계</th></tr></thead><tbody>'
     +'<tr><td class="l">계획</td>'+plan.map((v,i)=>cell(v,i)).join('')+'<td><b>'+nf(tP)+'</b></td></tr>'
     +'<tr><td class="l">실적</td>'+act.map((v,i)=>cell(ships[i]>td&&!v?0:v,i)).join('')+'<td><b>'+nf(tA)+'</b></td></tr>'
     +'<tr><td class="l">차이</td>'+ships.map((d,i)=>d>td?'<td style="color:#93A0AB'+(i===ni?';background:#FFF8E6':'')+'">예정</td>':cell(act[i]-plan[i],i,act[i]-plan[i]<0?'neg':'')).join('')+'<td class="'+(tA-tP<0?'neg':'')+'"><b>'+nf(tA-tP)+'</b></td></tr>'
-    +'</tbody></table>';
-  /* 다음 출하일 — 기종별 계획 vs 출하가능 */
+    +'</tbody></table></div>';
+  /* 다음 출하일 — 기종별 남은 계획(계획 − 이번 차수에 이미 나간 것) vs 출하가능 */
   if(nd){
+    const w0=ni>0?ships[ni-1]:a.slice(0,8)+'00';                       /* 이번 차수 구간: 앞 출하일 다음 날 ~ 다음 출하일 */
+    const done=(pn,rk)=>{ if(!pn) return 0; const keys=sbcRowKeys(pn); return S.led.reduce((x,r)=>x+((r.k==='출하'&&r.pn===pn&&r.d>w0&&r.d<=nd&&(!rk||shipKey(r,keys)===rk))?r.q:0),0); };
     const L=Object.values(G).filter(g=>g.q[nd]).map(g=>{ const ri=g.p.iw&&g.rk?SBC_RDY[g.p.iw+'|'+g.rk]:null, ro=g.p.ow&&g.rk?SBC_RDY[g.p.ow+'|'+g.rk]:null;
-      const rdy=(ri==null||ro==null)?null:Math.min(ri,ro); return {n:g.names.join(' · '),q:g.q[nd],rdy,gap:rdy==null?null:rdy-g.q[nd]}; })
-      .sort((x,y)=>(x.gap==null?1e12:x.gap)-(y.gap==null?1e12:y.gap));
-    if(L.length){ const sh=L.filter(o=>o.gap!=null&&o.gap<0).length;
-      h+='<div style="margin-top:6px"><b>다음 출하 '+nd.slice(5).replace('-','/')+'</b> · '+L.length+'기종 계획 '+nf(L.reduce((x,o)=>x+o.q,0))
-        +(sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
-        +'<table class="t shp-t"><thead><tr><th>기종</th><th>계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족</th></tr></thead><tbody>'
-        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td>'+nf(o.q)+'</td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
-        +'</tbody></table>'; }
+      const rdy=(ri==null||ro==null)?null:Math.min(ri,ro), sh=Math.min(done(g.p.iw,g.rk),done(g.p.ow,g.rk)), rem=Math.max(0,g.q[nd]-sh);
+      return {n:g.names.join(' · '),q:g.q[nd],sh,rem,rdy,gap:rem===0?0:(rdy==null?null:rdy-rem)}; })
+      .sort((x,y)=>(x.gap==null?1e12:x.gap)-(y.gap==null?1e12:y.gap)||y.rem-x.rem);
+    if(L.length){ const sh=L.filter(o=>o.gap!=null&&o.gap<0).length, tq=L.reduce((x,o)=>x+o.q,0), tr=L.reduce((x,o)=>x+o.rem,0);
+      h+='<div class="shp-b"><div><b>다음 출하 '+nd.slice(5).replace('-','/')+'</b> · '+L.length+'기종 계획 '+nf(tq)
+        +(tr<tq?' · 이미 출하 '+nf(tq-tr)+' · <b>남은 '+nf(tr)+'</b>':'')
+        +(!tr?' · <span style="color:#0B6B3A;font-weight:800">출하 완료</span>':sh?' · <b style="color:#B3261E">출하가능 부족 '+sh+'기종</b>':' · <span style="color:#0B6B3A;font-weight:800">모두 출하가능</span>')+'</div>'
+        +'<table class="t shp-t"><thead><tr><th>기종</th><th>계획</th><th>이미 출하</th><th>남은 계획</th><th>출하가능<br><span style="font-size:10px">(검사완료, 적은 쪽)</span></th><th>과부족<br><span style="font-size:10px">(출하가능 − 남은)</span></th></tr></thead><tbody>'
+        +L.map(o=>'<tr><td class="l">'+esc(o.n)+'</td><td>'+nf(o.q)+'</td><td>'+(o.sh?nf(o.sh):'-')+'</td><td><b>'+(o.rem?nf(o.rem):'완료')+'</b></td><td>'+(o.rdy==null?'-':nf(o.rdy))+'</td><td class="'+(o.gap==null?'':o.gap<0?'neg':'pos')+'"><b>'+(o.rem===0?'-':o.gap==null?'-':(o.gap>0?'+':'')+nf(o.gap))+'</b></td></tr>').join('')
+        +'</tbody></table></div>'; }
   }
-  return h+'</div>';
+  return h+'</div></div>';
 }
 const SBC_BDN={wip:'생산중(MES)',press:'PRESS',heat:'열처리(한성) — 외주',surf:'표면처리(동진·대영) — 외주',wait:'검사대기',done:'검사완료(=출하가능)'};
 function sbcBd(i){ const b=SBC_BD[i]; if(!b) return;
