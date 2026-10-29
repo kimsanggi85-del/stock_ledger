@@ -1207,7 +1207,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.05 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.06 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7188,7 +7188,7 @@ function rSum(){
     if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
     $('gt-sum').innerHTML='SBC 재고 현황 · 전공정이동표 <b>'+esc(EXT.last.at)+'</b> 기준 · '+esc(EXT.last.sheet||'')
       +'<br><span style="font-size:11.5px">· 검사대기·검사완료 = '+atcNote()+'</span>'
-      +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산(생산마감 보정 포함, 불량 차감) — 아직 이동표에 안 올라간 분, 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
+      +'<br><span style="font-size:11.5px">· 생산중 = MES '+esc(String(EXT.last.d||'').slice(0,10))+' 이후 생산 중 <b>아직 생산마감 전</b>인 분 · 생산마감이 되면 양품 수량이 <b>PRESS</b> 로 자동으로 넘어감 (회색 = 이동표 PRESS) — 기종 구분 전이라 앱 품번 첫 줄에 표시</span>'
       +'<br><span style="font-size:11.5px">· <b style="color:#B3261E">출하(당월)</b> = 레이스웨이 앱 출하(출하대기장 → SBC), 앱 품번 첫 줄에 표시 · <b style="color:#1D4ED8">현재고</b> = 공정 합계(생산중~검사완료) − 검사 시트를 읽은 뒤의 출하 (그 전 출하는 시트 값에 이미 빠져 있음 · 차감이 있을 때만 아래에 「시트 ○ − 출하 ○」 표시)</span>'
       +'<br><span style="font-size:11.5px">· <b style="color:#0B6B3A">사내재고</b> = 현재고 − 외주(열처리·표면처리) — 공장 안에 실물이 있는 수량 · <b>현재고 칸을 누르면 공정별 내역</b> · <b style="color:#B45309">검사완료 = 출하가능</b> — 포장까지 끝나 바로 실을 수 있는 수량 (검사 시트를 읽은 뒤 출하가 있으면 그만큼 빼고 아래에 「시트 ○ − 출하 ○」 표시)</span>'
       +' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=1;rSum()" style="color:#7C3AED;font-weight:800">품목별 보기 ▸</a>'
@@ -14137,6 +14137,18 @@ function mesWip(it,from){
     const t=take(r); if(t) q+=t.io==='I'?t.q:-t.q; });
   return q;
 }
+/* 생산중을 마감 여부로 나눈다 — 생산마감(생산일보 보정 CLOSE 전표)이 들어온 날 = 마감분 → PRESS 로,
+   아직 마감 전인 날(보통 오늘) = 생산중. 마감은 하루 단위로 전 품목이 함께 들어오므로 날짜로 판단한다 */
+function mesWipSplit(it,from){
+  if(!it||!from) return {open:0,closed:0};
+  const take=takeOf(it), b=CUT||mEnd(), cd=new Set(); let open=0, closed=0;
+  S.led.forEach(r=>{ if(r.d>=from&&r.d<=b&&isCloseRow(r)) cd.add(r.d); });
+  S.led.forEach(r=>{ if(r.d<from||r.d>b) return;
+    const mes=String(r.src||'').indexOf('MES|')===0;
+    if(!((r.k==='생산입고'&&mes)||isCloseRow(r)||(r.k==='불량폐기'&&mes))) return;
+    const t=take(r); if(!t) return; const q=t.io==='I'?t.q:-t.q; if(cd.has(r.d)) closed+=q; else open+=q; });
+  return {open,closed};
+}
 /* ═══ SBC 출하 기종 구분 — 1159C 처럼 앱 품번(1159B)과 끝 글자가 다른 기종은 레이스웨이 원본 표기가
    전표 비고(「· 1159C Inner」)에 남는다. 그 표기로 기종을 나눠 본다.
    1159B = 표면처리 삭제(X), 1159C = 표면처리(O) — 다른 제품이지만 프레스 생산 실적이 1159 하나로 들어와
@@ -14319,11 +14331,11 @@ function sbcTblHtml(s){
   const body=s.rows.map(o=>{
     const pn=extPn(o.m,o.side), it=pn&&S.items.find(i=>i.pn===pn);
     if(it&&!(pn in LMs)) LMs[pn]=extLedM(it);
-    const mw=(it&&!wDone.has(pn))?(wDone.add(pn),mesWip(it,wFrom)):0;
+    const ms=(it&&!wDone.has(pn))?(wDone.add(pn),mesWipSplit(it,wFrom)):{open:0,closed:0}, mw=ms.open, mc=ms.closed;   /* 마감분은 PRESS 로 */
     const LM=it?LMs[pn]:null, la=LM?(LM[extMKey(o.m)]||{heat:0,surf:0}):null, ac=atcRow(o);
     /* 열처리·표면처리는 전공정이동표 값을 쓴다. 외주입고(돌아옴)를 전표로 등록하지 않아 전표 잔량을 쓰면
        이미 돌아와 검사대기·완료(검사 시트)에 있는 물량이 외주에도 남아 두 번 잡힌다 — 전표 잔량은 쓰지 않는다(화면에도 표시하지 않음) */
-    const v={wip:o.wip+mw,press:o.press,heat:o.heat,surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
+    const v={wip:o.wip+mw,press:o.press+mc,heat:o.heat,surf:o.surf,wait:ac?ac.wait:o.wait,done:ac?ac.done:o.done};
     const lv=la?{heat:la.heat,surf:la.surf}:null;
     const tot=C.reduce((a,c)=>a+v[c],0), x=v.heat+v.surf;
     C.forEach(c=>T[c]+=v[c]); tt+=tot; tx+=x;
@@ -14339,7 +14351,7 @@ function sbcTblHtml(s){
           +(sfTxt(mk)?'<div class="sx" style="color:'+(EXT_SF[mk]==='O'?'#7C3AED':'#64748B')+'">'+sfTxt(mk)+'</div>':''):'품목 없음')+'</td>'
       +C.map(c=>c==='done'?'<td class="'+(rdy<0?'neg':'')+'" style="background:#FFF8E6" title="검사완료(포장) = 출하가능 수량'+(sh.a?' — 시트 '+nf(v.done)+' − 시트 이후 출하 '+nf(sh.a):'')+'"><b>'+(rdy?nf(rdy):'-')+'</b>'
           +(sh.a?'<div class="sx" style="color:#64748B">시트 '+nf(v.done)+'<br>− 출하 '+nf(sh.a)+'</div>':(v.done!==o.done?gray(o.done):''))+'</td>'
-        :'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
+        :'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 중 생산마감 전 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':c==='press'&&mc?' title="이동표 PRESS '+nf(o.press)+' + 생산마감된 생산 '+nf(mc)+' ('+esc(wFrom)+' 이후, 양품)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
         +'</td>').join('')
       +'<td style="color:#B3261E"'+(sh.m?' title="'+esc(pn)+' 이번 달 출하 '+nf(sh.m)+(sh.a?' · 기준('+esc(sD)+') 이후 '+nf(sh.a)+' → 현재고에서 차감':' · 모두 기준('+esc(sD)+') 이전이라 검사 시트·이동표에 이미 반영')+'"':'')+'>'
         +(sh.m?nf(sh.m):'-')+(sh.a?'<div class="sx" style="color:#B3261E" title="검사 시트를 읽은 뒤 출하 — 검사완료·현재고에서 차감">−'+nf(sh.a)+'</div>':'')+'</td>'
