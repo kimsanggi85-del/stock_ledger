@@ -1136,6 +1136,10 @@ body.qp-on{overflow:hidden}
 .dashBox .dRow b{font-variant-numeric:tabular-nums}.dashBox .dRow.warn b{color:#B3261E}
 .dashBox .dKv{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;gap:2px 6px;align-items:baseline;margin:2px 0 3px;padding:3px 4px;background:#F5F8FF;border-radius:4px}
 .dashBox .dKv span{color:#64748B;font-size:11px}.dashBox .dKv b{text-align:right}
+#dashM{display:none}
+@media(max-width:760px){ #dashM{display:flex;gap:6px;overflow-x:auto;margin:-2px 0 8px;padding-bottom:2px}
+  #dashM .dChip{flex:0 0 auto;border:1px solid #C9D6E3;background:#fff;border-radius:16px;padding:6px 10px;font-size:12.5px;color:#334155;white-space:nowrap}
+  #dashM .dChip b{font-weight:800}#dashM .dChip.warn{border-color:#F3B4AE;background:#FDF1F0}#dashM .dChip.warn b{color:#B3261E} }
 .dashBox .dMore,.dashBox .dEmpty{color:#1D4ED8;cursor:pointer;padding:2px 4px}.dashBox .dDone{color:#0B6B3A;font-weight:700;margin-top:3px;font-size:11px}
 .shp-p .shp-chg{margin-top:6px;padding:5px 8px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:5px;font-size:11.5px;line-height:1.6}.shp-p .shp-b{flex:1 1 56%;min-width:0}
 .shp-p .shp-t{width:100%;margin-top:4px;font-size:12.5px}
@@ -1191,7 +1195,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.00 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.01 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1255,6 +1259,7 @@ body.qp-on{overflow:hidden}
     <div class="d"><span>안전재고 미달</span><b id="q5">37</b><em>품목</em></div>
     <div class="w pc-only"><span>장기 미불출</span><b id="q6">5</b><em>품목</em></div>
   </div>
+  <div id="dashM" class="m-only"></div>
   <div id="cuShip" class="cuship" title="고객사를 누르면 그 고객사 품목만 표시합니다"></div>
   </div><div id="dashR" class="dashBox pc-only"></div></div>
   <div class="fbar">
@@ -7060,6 +7065,11 @@ function dashPaint(){
     +row('⚠️','안전재고 미달',nShort+'품목','short',nShort>0)
     +(nx?row('📦','SBC 다음 출하 부족 ('+nx.d.slice(5).replace('-','/')+')',nx.sh.length+'기종','sbc',nx.sh.length>0):'')
     +row('📋',dl<=2?'월말 재고실사 기간':'월말 재고실사까지',dl<=2?'실사표 받기':'D-'+dl,'cnt',dl<=2);
+  /* 휴대폰 — 같은 내용을 버튼 한 줄로 */
+  const M=$('dashM'), chip=(t,k,warn)=>'<button type="button" class="dChip'+(warn?' warn':'')+'" onclick="dashGo(\''+k+'\')">'+t+'</button>';
+  if(M) M.innerHTML=chip('🔍 실물확인 <b>'+nChk+'</b>','chk',nChk>0)
+    +(nx?chip('📦 SBC '+nx.d.slice(5).replace('-','/')+' '+(nx.sh.length?'부족 <b>'+nx.sh.length+'</b>기종':'<b>출하가능</b>'),'sbc',nx.sh.length>0):'')
+    +chip('📋 실사 '+(dl<=2?'<b>기간</b>':'<b>D-'+dl+'</b>'),'cnt',dl<=2);
   if(!nx){ R.innerHTML='<div class="dHd">📦 SBC 다음 출하</div><div class="dEmpty" onclick="fcOpen()">출하계획(확정출하 List)을 아직 읽지 않았습니다 ▸</div>'; return; }
   R.innerHTML='<div class="dHd" onclick="dashGo(\'sbc\')" style="cursor:pointer">📦 SBC 다음 출하 <b>'+nx.d.slice(5).replace('-','/')+'</b> <em>'+nx.m+'월 '+nx.cha+'차</em></div>'
     +'<div class="dKv"><span>계획</span><b>'+nf(nx.tq)+'</b><span>남은</span><b>'+nf(nx.tr)+'</b><span>부족</span><b class="'+(nx.sh.length?'neg':'pos')+'">'+(nx.sh.length?nx.sh.length+'기종':'없음')+'</b></div>'
