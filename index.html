@@ -1207,7 +1207,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.03 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.04 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -14340,7 +14340,7 @@ function sbcTblHtml(s){
       +C.map(c=>c==='done'?'<td class="'+(rdy<0?'neg':'')+'" style="background:#FFF8E6" title="검사완료(포장) = 출하가능 수량'+(sh.a?' — 시트 '+nf(v.done)+' − 시트 이후 출하 '+nf(sh.a):'')+'"><b>'+(rdy?nf(rdy):'-')+'</b>'
           +(sh.a?'<div class="sx" style="color:#64748B">시트 '+nf(v.done)+'<br>− 출하 '+nf(sh.a)+'</div>':(v.done!==o.done?gray(o.done):''))+'</td>'
         :'<td class="'+(v[c]<0?'neg':'')+'"'+(c==='wip'&&mw?' title="MES '+esc(wFrom)+' 이후 생산 (앱 품번 '+esc(pn)+' 합계, 기종 구분 전)"':'')+'>'+(v[c]?nf(v[c]):'-')+(v[c]!==o[c]?gray(o[c]):'')
-        +(lv&&(c==='heat'||c==='surf')&&lv[c]!==v[c]?'<div class="sx" style="color:#7C3AED" title="외주 전표 잔량(외주출고 − 외주입고) — 외주입고 미등록이면 실제보다 많음">전표 '+nf(lv[c])+'</div>':'')+'</td>').join('')
+        +'</td>').join('')
       +'<td style="color:#B3261E"'+(sh.m?' title="'+esc(pn)+' 이번 달 출하 '+nf(sh.m)+(sh.a?' · 기준('+esc(sD)+') 이후 '+nf(sh.a)+' → 현재고에서 차감':' · 모두 기준('+esc(sD)+') 이전이라 검사 시트·이동표에 이미 반영')+'"':'')+'>'
         +(sh.m?nf(sh.m):'-')+(sh.a?'<div class="sx" style="color:#B3261E" title="검사 시트를 읽은 뒤 출하 — 검사완료·현재고에서 차감">−'+nf(sh.a)+'</div>':'')+'</td>'
       +'<td style="background:#EEF4FF;cursor:pointer" onclick="sbcBd('+(SBC_BD.push({t:o.m+' '+o.side,cur,x,a:sh.a,v:Object.assign({},v,{done:rdy})})-1)+')" class="'+(cur<0?'neg':'')+'" title="눌러서 공정별 내역 보기'+(tot!==o.tot?' · 전공정이동표 합계 '+nf(o.tot):'')+'"><b>'+nf(cur)+'</b>'
