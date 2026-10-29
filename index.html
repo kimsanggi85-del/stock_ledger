@@ -1137,6 +1137,13 @@ body.qp-on{overflow:hidden}
 .dashBox .dKv{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;gap:2px 6px;align-items:baseline;margin:2px 0 3px;padding:3px 4px;background:#F5F8FF;border-radius:4px}
 .dashBox .dKv span{color:#64748B;font-size:11px}.dashBox .dKv b{text-align:right}
 #dashM{display:none}
+.dmsg{display:flex;align-items:center;gap:10px;justify-content:center;margin:2px auto 10px;padding:6px 14px;border-radius:6px;border:1px solid #C9D6E3;background:#fff;font-size:13px;color:#1F2937;max-width:960px}
+.dmsg b{white-space:nowrap;font-weight:800}.dmsg span{line-height:1.4}
+.dmsg.s{background:#FFF7E6;border-color:#F5C77E}.dmsg.s b{color:#B45309}
+.dmsg.q{background:#EEF6FF;border-color:#A9C8F0}.dmsg.q b{color:#1D4ED8}
+.dmsg.e{background:#EFF8F1;border-color:#A6D5B2}.dmsg.e b{color:#0B6B3A}
+.dmsg.o{background:#F5F3FF;border-color:#C9BEF2}.dmsg.o b{color:#5B21B6}
+@media(max-width:760px){ .dmsg{flex-direction:column;align-items:flex-start;gap:2px;font-size:12.5px;margin:0 0 8px;padding:6px 10px} }
 @media(max-width:760px){ #dashM{display:flex;gap:6px;overflow-x:auto;margin:-2px 0 8px;padding-bottom:2px}
   #dashM .dChip{flex:0 0 auto;border:1px solid #C9D6E3;background:#fff;border-radius:16px;padding:6px 10px;font-size:12.5px;color:#334155;white-space:nowrap}
   #dashM .dChip b{font-weight:800}#dashM .dChip.warn{border-color:#F3B4AE;background:#FDF1F0}#dashM .dChip.warn b{color:#B3261E} }
@@ -1195,7 +1202,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.01 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.02 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1261,6 +1268,7 @@ body.qp-on{overflow:hidden}
   </div>
   <div id="dashM" class="m-only"></div>
   <div id="cuShip" class="cuship" title="고객사를 누르면 그 고객사 품목만 표시합니다"></div>
+  <div id="dailyMsg" class="dmsg"></div>
   </div><div id="dashR" class="dashBox pc-only"></div></div>
   <div class="fbar">
     <label>품번</label>
@@ -7044,6 +7052,44 @@ document.addEventListener('click',e=>{
   const c=b.dataset.cu; sel.value=(sel.value===c)?'':c;   /* 다시 누르면 전체 */
   sel.dispatchEvent(new Event('change',{bubbles:true}));
 });
+/* ═══ 오늘의 생산·안전 문구 — 날짜마다 바뀐다 (같은 날은 모든 기기 같은 문구) ═══ */
+const DAILY_MSG=[
+  ['안전','금형 교체·이물 제거 전 전원 차단, LOTO 잠금 표지 확인 후 작업합니다.'],
+  ['안전','프레스 안전장치(광전자식·양수조작)를 끄거나 우회하지 않습니다.'],
+  ['안전','슬라이드 아래로 손을 넣지 않습니다. 반드시 수공구를 사용합니다.'],
+  ['안전','작업 전 보호구(안전화·장갑·보안경·귀마개) 착용을 서로 확인합니다.'],
+  ['안전','코일 운반·장착 시 크레인 와이어와 훅 해지장치를 먼저 점검합니다.'],
+  ['안전','바닥의 기름·스크랩은 즉시 치웁니다. 넘어짐 사고가 가장 흔합니다.'],
+  ['안전','이상음·이상진동이 나면 즉시 멈추고 관리자에게 알립니다.'],
+  ['안전','지게차 이동 통로에서는 멈추고, 보고, 지나갑니다.'],
+  ['안전','스크랩 배출구 근처에 손을 두지 않습니다. 날카로운 모서리 주의.'],
+  ['안전','아차사고도 보고합니다. 작은 보고가 큰 사고를 막습니다.'],
+  ['안전','작업 시작 전 프레스 일상점검표를 확인하고 서명합니다.'],
+  ['안전','혼자 무리하게 들지 않습니다. 중량물은 2인 1조 또는 보조기구로.'],
+  ['품질','초물·중물·종물 검사를 빠짐없이 기록합니다. 초품 합격 전 양산 금지.'],
+  ['품질','금형 교체 후 첫 제품은 반드시 치수 확인 후 진행합니다.'],
+  ['품질','다른 재질·기종이 섞이지 않게 LOT 표와 현품표를 확인합니다.'],
+  ['품질','부적합품은 빨간 상자에 즉시 격리하고 식별표를 붙입니다.'],
+  ['품질','버(Burr)·찍힘·크랙은 눈으로 한 번 더, 손으로 한 번 더.'],
+  ['품질','4M(사람·설비·재료·방법) 변경 시 반드시 보고하고 초품 검사합니다.'],
+  ['품질','고객 불만 0건은 내 공정에서 불량을 넘기지 않는 것에서 시작합니다.'],
+  ['품질','게이지·측정기는 교정 유효기간을 확인하고 사용합니다.'],
+  ['품질','작업표준서대로 작업합니다. 내 방식보다 표준이 먼저입니다.'],
+  ['품질','생산 수량과 불량 수량은 그날 MES에 정확히 입력합니다.'],
+  ['품질','포장 전 수량·라벨·LOT 번호 일치를 확인합니다.'],
+  ['품질','이상이 보이면 멈추고, 부르고, 기다립니다.'],
+  ['환경','폐유·폐윤활유는 지정 용기에 분리 보관합니다.'],
+  ['환경','스크랩은 재질별로 분리 배출합니다.'],
+  ['환경','쉬는 시간 공회전 설비와 조명은 끄고 갑니다.'],
+  ['환경','누유를 발견하면 흡착포로 즉시 막고 보고합니다.'],
+  ['정리','쓰고 난 공구는 제자리에. 정리정돈이 안전과 품질의 시작입니다.'],
+  ['정리','통로와 비상구, 소화기 앞에는 물건을 두지 않습니다.'],
+  ['정리','교대 시 설비 상태와 특이사항을 다음 근무자에게 꼭 인계합니다.']];
+function dailyPaint(){ const el=$('dailyMsg'); if(!el) return;
+  const d=new Date(), k=Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(2026,0,1))/864e5);
+  const o=DAILY_MSG.at(((k%DAILY_MSG.length)+DAILY_MSG.length)%DAILY_MSG.length);
+  el.className='dmsg '+({안전:'s',품질:'q',환경:'e',정리:'o'}[o[0]]||'');
+  el.innerHTML='<b>'+({안전:'⛑️ 오늘의 안전',품질:'✅ 오늘의 품질',환경:'🌱 오늘의 환경',정리:'🧹 오늘의 정리정돈'}[o[0]])+'</b><span>'+esc(o[1])+'</span>'; }
 /* ═══ 재고현황 맨 위 양옆 — 왼쪽 「오늘 할 일」, 오른쪽 「SBC 다음 출하」 (PC 넓은 화면만) ═══ */
 function dashGo(k){
   if(k==='chk'){ setTab('cnt'); toast('🔍실물확인 표시 품목을 실사해 주세요'); return; }
@@ -7052,6 +7098,7 @@ function dashGo(k){
   if(k==='sbc'){ const sel=$('sCu'); if(sel&&[...sel.options].some(o=>o.value==='SBC')){ sel.value='SBC'; sel.dispatchEvent(new Event('change',{bubbles:true})); } else fcOpen(); return; }
 }
 function dashPaint(){
+  try{ dailyPaint(); }catch(e){}
   const L=$('dashL'), R=$('dashR'); if(!L||!R) return;
   const it=new Set((S.items||[]).map(i=>i.pn));
   const nChk=Object.keys(CHK||{}).filter(p=>it.has(p)).length, nShort=+String(($('q5')||{}).textContent||'0').replace(/,/g,'')||0;
