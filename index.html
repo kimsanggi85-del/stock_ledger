@@ -1207,7 +1207,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.07 · 원소재 v11.44</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.08 · 원소재 v11.45</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9583,6 +9583,7 @@ function watchHead(t){
 }
 document.querySelectorAll('table.t').forEach(watchHead);
 /* 원소재 월마감 데이터 — 화면·엑셀 공용 */
+function rcBy(){ return S.rcBy==='spec'?'spec':'sup'; }   /* 원소재 월마감 묶음 — 업체별(기본) / 규격별 */
 function rawCloseData(y2,q){
   const mEndOf=y=>{ const [Y,M]=y.split('-').map(Number); return y+'-'+p2(new Date(Y,M,0).getDate()); };
   const y1=prevYm(y2), y0=prevYm(y1), td=today();
@@ -9612,17 +9613,20 @@ function exportRawClose(){
   sh.set(1,0,'■기준 : '+mm(y2)+' '+(live?'진행중 ('+td+' 까지)':'마감 ('+E(y2)+')')+' · 이월 = '+mm(y1)+' 말('+E(y1)+') 재고 · 출력 '+td,XS.meta);
   sh.set(2,0,'■말일 재고 = 그날까지 입고됐고 투입완료되지 않은 코일(장착중은 입고중량) · 사급 제외 · 규격은 두께×폭(등급 무시) · 당월투입 = 이월 + 입고 − 말일',XS.meta);
   const H=3;
-  ['규격 (두께×폭)','소재','업체',mm(y0)+' 말',mm(y1)+' 말\n(이월)',mm(y2)+' 입고',mm(y2)+' 투입',mm(y2)+' 말'+(live?'\n(현재)':'')].forEach((h,i)=>sh.set(H,i,h,XS.th));
+  const bySup=rcBy()==='sup', gk=o=>bySup?o.sn:o.sk;
+  if(bySup) R.sort((x,y)=>x.sn.localeCompare(y.sn,'ko')||x.t-y.t||x.w-y.w);
+  (bySup?['업체','규격 (두께×폭)','소재']:['규격 (두께×폭)','소재','업체']).concat([mm(y0)+' 말',mm(y1)+' 말\n(이월)',mm(y2)+' 입고',mm(y2)+' 투입',mm(y2)+' 말'+(live?'\n(현재)':'')]).forEach((h,i)=>sh.set(H,i,h,XS.th));
   sh.ht[H]=32;
   let r=H+1, cur='', g0=0, grp=[]; const subs=[], rk=v=>Math.round(v*10)/10, K=['e0','e1','inq','used','e2'];
   const tot=a=>K.map(k=>rk(a.reduce((s,o)=>s+o[k],0)));
-  const sub=()=>{ if(grp.length>1){ sh.set(r,0,'└ '+cur+' 소계',XS.tL); sh.merge(r,0,r,2,XS.tL);
+  const sub=()=>{ if(grp.length>(bySup?0:1)){ sh.set(r,0,'└ '+cur+' 소계',XS.tL); sh.merge(r,0,r,2,XS.tL);
       tot(grp).forEach((v,i)=>sh.set(r,3+i,v,XS.tN,`SUM(${xCol(3+i)}${g0+1}:${xCol(3+i)}${r})`)); subs.push(r+1); r++; }
     else if(grp.length) subs.push(r); grp=[]; };
   R.forEach(o=>{
-    if(o.sk!==cur){ if(cur) sub(); cur=o.sk; g0=r; }
+    if(gk(o)!==cur){ if(cur) sub(); cur=gk(o); g0=r; }
     grp.push(o);
-    sh.set(r,0,o.sk,XS.pn); sh.set(r,1,[...o.mt].join('·'),XS.cS); sh.set(r,2,o.sn,XS.c);
+    if(bySup){ sh.set(r,0,o.sn,XS.c); sh.set(r,1,o.sk,XS.pn); sh.set(r,2,[...o.mt].join('·'),XS.cS); }
+    else { sh.set(r,0,o.sk,XS.pn); sh.set(r,1,[...o.mt].join('·'),XS.cS); sh.set(r,2,o.sn,XS.c); }
     sh.set(r,3,rk(o.e0),XS.n); sh.set(r,4,rk(o.e1),XS.n); sh.set(r,5,rk(o.inq),XS.n);
     sh.set(r,6,rk(o.used),XS.n,`E${r+1}+F${r+1}-H${r+1}`); sh.set(r,7,rk(o.e2),XS.n); r++;
   });
@@ -9630,7 +9634,7 @@ function exportRawClose(){
   sh.set(r,0,'합 계',XS.tL); sh.merge(r,0,r,2,XS.tL);
   tot(R).forEach((v,i)=>sh.set(r,3+i,v,XS.tN,subs.map(n=>xCol(3+i)+n).join('+')));
   sh.freeze=H+1; sh.titles='$'+(H+1)+':$'+(H+1);
-  dl(xBook([sh]),'원소재월마감_'+y2.replace('-','')+(live?'_진행중':'')+'.xlsx');
+  dl(xBook([sh]),'원소재월마감_'+y2.replace('-','')+(bySup?'_업체별':'')+(live?'_진행중':'')+'.xlsx');
   toast(mm(y2)+' 원소재 월마감 엑셀을 내려받았습니다');
 }
 function rRaw(){
@@ -9979,19 +9983,23 @@ function rRaw(){
     const {R,y0,y1,y2,live,td}=rawCloseData(ym,q);
     const mm=y=>(+y.slice(5))+'월';
     $('gt-raw').innerHTML='원소재 월마감 · <b>'+mm(y2)+'</b> '+(live?'(진행중 · '+td+' 까지)':'마감')+' · 이월 = '+mm(y1)+' 말 재고 · 규격 '+new Set(R.map(o=>o.sk)).size+'종'
-      +' &nbsp;<button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportRawClose()">📗 엑셀</button>';
+      +' &nbsp;<span class="seg" style="display:inline-flex;gap:0">'+[['sup','업체별'],['spec','규격별']].map(([k,t])=>'<button class="btn" style="padding:2px 9px;font-size:11px;'+(rcBy()===k?'background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800':'')+'" onclick="S.rcBy=\''+k+'\';save();rRaw()">'+t+'</button>').join('')+'</span>'
+      +' <button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportRawClose()">📗 엑셀</button>';
     $('rawHint').innerHTML='· 말일 재고 = 그날까지 입고됐고 <b>투입완료(설비에서 내림)되지 않은 코일</b> — 장착중은 입고중량 그대로 (재고조사서 ②원자재재고와 같은 규칙)<br>'
       +'· 당월투입 = 이월 + 당월입고 − 당월 말 재고 · 규격은 두께×폭 기준(소재 등급 무시) · 사급 소재 제외 · 다른 달을 보려면 상단 <b>기준월</b>을 바꾸세요';
     const n=v=>Math.abs(v)<0.5?'<span style="color:#C3CBD3">-</span>':kg(v);
     const sum=a=>({e0:a.reduce((s,o)=>s+o.e0,0),e1:a.reduce((s,o)=>s+o.e1,0),inq:a.reduce((s,o)=>s+o.inq,0),used:a.reduce((s,o)=>s+o.used,0),e2:a.reduce((s,o)=>s+o.e2,0)});
     const cells=o=>`<td>${n(o.e0)}</td><td style="font-weight:700">${n(o.e1)}</td><td class="pos">${n(o.inq)}</td><td class="neg">${n(o.used)}</td><td style="font-weight:800">${n(o.e2)}</td>`;
     let h='',cur='',grp=[];
-    const flush=()=>{ if(grp.length>1) h+=`<tr class="supg"><td class="l" colspan="2">└ ${cur} 소계</td>${cells(sum(grp))}</tr>`; grp=[]; };
-    R.forEach(o=>{ if(o.sk!==cur){ flush(); cur=o.sk; } grp.push(o);
-      h+=`<tr><td class="l" style="font-weight:700">${o.sk} <em style="color:#7d8b99;font-style:normal;font-size:10.5px">${esc([...o.mt].join('·'))}</em></td><td class="l">${esc(o.sn)}</td>${cells(o)}</tr>`; });
+    const bySup=rcBy()==='sup', gk=o=>bySup?o.sn:o.sk;
+    if(bySup) R.sort((x,y)=>x.sn.localeCompare(y.sn,'ko')||x.t-y.t||x.w-y.w);
+    const spC=o=>`<td class="l" style="font-weight:700">${o.sk} <em style="color:#7d8b99;font-style:normal;font-size:10.5px">${esc([...o.mt].join('·'))}</em></td>`;
+    const flush=()=>{ if(grp.length>(bySup?0:1)) h+=`<tr class="supg"><td class="l" colspan="2">└ ${esc(cur)} 소계${bySup?' <em style="font-style:normal;font-weight:400;font-size:10.5px">('+grp.length+'규격)</em>':''}</td>${cells(sum(grp))}</tr>`; grp=[]; };
+    R.forEach(o=>{ if(gk(o)!==cur){ flush(); cur=gk(o); } grp.push(o);
+      h+=bySup?`<tr><td class="l">${esc(o.sn)}</td>${spC(o)}${cells(o)}</tr>`:`<tr>${spC(o)}<td class="l">${esc(o.sn)}</td>${cells(o)}</tr>`; });
     flush();
     const T=sum(R);
-    $('tRaw').innerHTML=`<thead><tr><th>규격 (두께×폭)</th><th>업체</th><th>${mm(y0)} 말</th><th>${mm(y1)} 말<br>(이월)</th><th>${mm(y2)} 입고</th><th>${mm(y2)} 투입</th><th>${mm(y2)} 말${live?'<br>(현재)':''}</th></tr></thead><tbody>`
+    $('tRaw').innerHTML=`<thead><tr>${bySup?'<th>업체</th><th>규격 (두께×폭)</th>':'<th>규격 (두께×폭)</th><th>업체</th>'}<th>${mm(y0)} 말</th><th>${mm(y1)} 말<br>(이월)</th><th>${mm(y2)} 입고</th><th>${mm(y2)} 투입</th><th>${mm(y2)} 말${live?'<br>(현재)':''}</th></tr></thead><tbody>`
       +(R.length?h:'<tr><td colspan="7" style="padding:24px;text-align:center;color:#93A0AB">해당 기간 원소재 재고가 없습니다.</td></tr>')
       +`</tbody><tfoot><tr><td class="c" colspan="2">합　계</td>${cells(T)}</tr></tfoot>`;
     fillRawLists(); return;
