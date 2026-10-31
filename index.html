@@ -1207,7 +1207,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.08 · 원소재 v11.45</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.09 · 원소재 v11.46</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -4583,7 +4583,7 @@ body.qp-on{overflow:hidden}
     <label>실사일자</label><input type="date" id="cntD2" style="width:140px">
     <label>실사자</label><input id="cntBy" style="width:110px" placeholder="성명">
     <button class="btn" onclick="cntAllOk()" title="아직 입력하지 않은 코일을 전산 잔량 그대로 확인 처리합니다">✔ 나머지 전산값 그대로</button>
-    <button class="btn" onclick="cntSheet()" title="현장에 들고 나갈 실사표를 엑셀로 내려받습니다">⬇ 실사표 받기</button>
+    <button class="btn" onclick="cntSheet()" title="실사표를 미리보고 엑셀로 받거나 인쇄합니다 — 공급업체 → 소재별 소계·합계">⬇ 실사표 받기</button>
     <button class="btn" onclick="pick('fCnt2')" title="현장에서 적어온 값을 파일로 올립니다">📥 실사값 올리기</button>
     <input type="file" id="fCnt2" accept=".csv,.txt,.tsv" style="display:none">
     <div class="rt">
@@ -8371,20 +8371,65 @@ function cntClear(){
   S.coils.forEach(c=>{delete c.ct;});
   save(); rRaw(); toast('실사값을 지웠습니다');
 }
-function cntSheet(){
-  const R=cntTargets();
-  if(!R.length){toast('실사할 코일이 없습니다');return;}
-  const h=['No','코일 No.','재질','두께','폭','공급업체','보관위치','전산 잔량(kg)','실사 잔량(kg)','비고'];
-  const rows=R.map(({c},i)=>[i+1,c.cno,c.mt||'',tmm(c.t),c.w||'',c.sup||'',c.lc||'',
-    Math.round(remOf(c)*10)/10,'','']);
-  const html='<html><head><meta charset="utf-8"><style>table{border-collapse:collapse}'
-    +'td,th{border:1px solid #999;padding:4px 7px;font-size:11px;font-family:맑은 고딕}'
-    +'th{background:#DCE3EF;font-weight:700}</style></head><body>'
-    +'<h3>원소재 재고 실사표 &nbsp; 실사일자 '+($('cntD2').value||today())+' &nbsp; 실사자 ______</h3>'
-    +'<table><tr>'+h.map(x=>'<th>'+x+'</th>').join('')+'</tr>'
-    +rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('')+'</table></body></html>';
-  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),'원소재실사표_'+today().replace(/-/g,'')+'.xls');
-  toast('실사표 '+R.length+'본을 내려받았습니다 — 실사 잔량 칸을 채워 오세요');
+/* 원소재 실사표 — 공급업체 → 소재(재질·두께×폭)로 묶고 소재 소계 · 업체 합계 · 총합계 (미리보기 → 엑셀/인쇄) */
+function cntSheetData(){
+  const G=new Map();
+  cntTargets().forEach(({c})=>{ const sn=supNm(c.sup), mk=(c.mt||'(재질 미상)')+' '+tmm(c.t)+'×'+(Math.round(+c.w||0)||'-');
+    if(!G.has(sn)) G.set(sn,new Map()); const M=G.get(sn);
+    if(!M.has(mk)) M.set(mk,{mk,mt:c.mt||'',t:+c.t||0,w:+c.w||0,L:[]}); M.get(mk).L.push(c); });
+  return [...G.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ko')).map(([sn,M])=>({sn,
+    mats:[...M.values()].sort((x,y)=>x.mt.localeCompare(y.mt)||x.t-y.t||x.w-y.w)
+      .map(m=>Object.assign(m,{L:m.L.sort((x,y)=>String(x.cno).localeCompare(String(y.cno))),kg:m.L.reduce((a,c)=>a+remOf(c),0)}))}))
+    .map(g=>Object.assign(g,{n:g.mats.reduce((a,m)=>a+m.L.length,0),kg:g.mats.reduce((a,m)=>a+m.kg,0)}));
+}
+function cntSheetHtml(){
+  const D=cntSheetData(), r1=v=>(Math.round(v*10)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const N=D.reduce((a,g)=>a+g.n,0), K=D.reduce((a,g)=>a+g.kg,0);
+  let no=0, h='<table class="cs"><thead><tr><th>No</th><th>코일 No.</th><th>재질</th><th>두께</th><th>폭</th><th>공급업체</th><th>보관위치</th><th>전산 잔량(kg)</th><th>실사 잔량(kg)</th><th>비고</th></tr></thead><tbody>';
+  D.forEach(g=>{
+    h+='<tr class="cs1"><td colspan="10">■ '+esc(g.sn)+' <span>— '+g.mats.length+'소재 · '+g.n+'본 · '+r1(g.kg)+' kg</span></td></tr>';
+    g.mats.forEach(m=>{
+      m.L.forEach(c=>{ h+='<tr><td class="cc">'+(++no)+'</td><td>'+esc(c.cno)+'</td><td class="cc">'+esc(c.mt||'')+'</td><td class="cc">'+tmm(c.t)+'</td><td class="cc">'+(c.w||'')+'</td><td>'+esc(c.sup||'')+'</td><td>'+esc(c.lc||'')+'</td><td class="cn">'+r1(remOf(c))+'</td><td class="ci"></td><td></td></tr>'; });
+      h+='<tr class="cs2"><td></td><td colspan="6">└ '+esc(m.mk)+' 소계 ('+m.L.length+'본)</td><td class="cn">'+r1(m.kg)+'</td><td class="ci"></td><td></td></tr>';
+    });
+    h+='<tr class="cs3"><td></td><td colspan="6">'+esc(g.sn)+' 합계 ('+g.n+'본)</td><td class="cn">'+r1(g.kg)+'</td><td class="ci"></td><td></td></tr>';
+  });
+  h+='</tbody><tfoot><tr class="cs4"><td></td><td colspan="6">총 합 계 ('+D.length+'개사 · '+N+'본)</td><td class="cn">'+r1(K)+'</td><td class="ci"></td><td></td></tr></tfoot></table>';
+  const css='table.cs{border-collapse:collapse;width:100%}table.cs td,table.cs th{border:1px solid #999;padding:4px 7px;font-size:11px;font-family:"맑은 고딕",sans-serif;white-space:nowrap}'
+    +'table.cs th{background:#DCE3EF;font-weight:700}table.cs .cc{text-align:center}table.cs .cn{text-align:right;mso-number-format:"#,##0.0"}table.cs .ci{min-width:80px}'
+    +'table.cs .cs1 td{background:#1E2A36;color:#fff;font-weight:800;font-size:12px}table.cs .cs1 span{font-weight:400;color:#C9D3DD}'
+    +'table.cs .cs2 td{background:#EEF3F9;font-weight:700}table.cs .cs3 td{background:#FFF4D6;font-weight:800}table.cs .cs4 td{background:#DCE3EF;font-weight:900;font-size:12px}';
+  const title='원소재 재고 실사표 &nbsp; 실사일자 '+($('cntD2').value||today())+' &nbsp; 실사자 ______';
+  return {D,N,K,css,title,tbl:h};
+}
+function cntSheet(){   /* 미리보기 */
+  if(!cntTargets().length){toast('실사할 코일이 없습니다');return;}
+  const X=cntSheetHtml(); let ov=$('csPv'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='csPv';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(15,23,32,.55);display:flex;align-items:center;justify-content:center;padding:12px';
+  ov.innerHTML='<style>'+X.css+'</style><div style="background:#fff;border-radius:10px;width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 14px;border-bottom:1px solid #DDE3EA">'
+    +'<b style="font-size:15px;margin-right:auto">📋 원소재 실사표 미리보기 <span style="font-weight:400;font-size:12px;color:#5B6B7B">'+X.D.length+'개사 · '+X.N+'본 · '+kg(X.K)+' kg</span></b>'
+    +'<button class="btn" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800" onclick="cntSheetDl()">⬇ 엑셀 받기</button>'
+    +'<button class="btn" onclick="cntSheetPrint()">🖨 인쇄</button>'
+    +'<button class="btn" onclick="$(\'csPv\').remove()">✕ 닫기</button></div>'
+    +'<div style="padding:8px 14px 2px;font-size:12px;font-weight:700">'+X.title+'</div>'
+    +'<div style="overflow:auto;padding:6px 14px 14px;-webkit-overflow-scrolling:touch">'+X.tbl+'</div></div>';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+function cntSheetDl(){
+  const X=cntSheetHtml();
+  const html='<html><head><meta charset="utf-8"><style>'+X.css+'</style></head><body><h3>'+X.title+'</h3>'+X.tbl+'</body></html>';
+  dl(new Blob(['﻿'+html],{type:'application/vnd.ms-excel'}),'원소재실사표_'+today().replace(/-/g,'')+'.xls');
+  toast('실사표 '+X.N+'본을 내려받았습니다 — 실사 잔량 칸을 채워 오세요');
+}
+function cntSheetPrint(){
+  const X=cntSheetHtml(), wn=window.open('','_blank');
+  if(!wn){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 눌러 주세요'); return; }
+  wn.document.write('<html><head><meta charset="utf-8"><title>원소재 실사표</title><style>@page{size:A4 landscape;margin:10mm}body{margin:12px}'+X.css
+    +'table.cs thead{display:table-header-group}table.cs tr{page-break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><h3 style="font-family:sans-serif">'+X.title+'</h3>'+X.tbl+RPT_BAR+'</body></html>');
+  wn.document.close(); try{ wn.opener=null; wn.focus(); }catch(e){}
 }
 /* 실사값 CSV: 코일No,실사잔량kg  (헤더 있어도 됨) */
 $('fCnt2').onchange=async e=>{
@@ -8394,10 +8439,13 @@ $('fCnt2').onchange=async e=>{
   txt.split(/\r?\n/).forEach(l=>{
     if(!l.trim())return;
     const p2=l.split(/[,\t;]/).map(x=>x.trim().replace(/^"|"$/g,''));
-    const cno=p2[0]; if(!cno||/코일|No|no/.test(cno)&&p2.length&&isNaN(parseFloat(p2[1])))return;
+    if(/소계|합계|합 계|^■/.test(l))return;                       /* 실사표의 업체·소재 묶음 줄은 건너뛴다 */
+    /* 실사표 양식 그대로(No, 코일No, …, 실사잔량은 9번째 칸) 저장한 파일도 읽는다 */
+    const sheet=p2.length>=9&&/^\d+$/.test(p2[0])&&S.coils.some(x=>x.cno===p2[1]);
+    const cno=sheet?p2[1]:p2[0]; if(!cno||/코일|No|no/.test(cno)&&p2.length&&isNaN(parseFloat(p2[1])))return;
     const c=S.coils.find(x=>x.cno===cno);
     if(!c){unk.push(cno);return;}
-    const v=p2[1];
+    const v=sheet?p2[8]:p2[1]; if(sheet&&(v===''||v==null))return;
     c.ct=(v===''||v==null)?null:Math.max(0,Math.round((parseFloat(String(v).replace(/[^0-9.]/g,''))||0)*10)/10);
     ok++;
   });
