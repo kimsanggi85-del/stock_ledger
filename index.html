@@ -1210,7 +1210,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.10 · 원소재 v11.47</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.11 · 원소재 v11.48</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8390,7 +8390,7 @@ function cntSheetHtml(){
   const D=cntSheetData(), r1=v=>(Math.round(v*10)/10).toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
   const N=D.reduce((a,g)=>a+g.n,0), K=D.reduce((a,g)=>a+g.kg,0);
   let no=0, h='<table class="cs"><thead><tr><th>No</th><th>코일 No.</th><th>재질</th><th>두께</th><th>폭</th><th>공급업체</th><th>보관위치</th><th>전산 잔량(kg)</th><th>실사 잔량(kg)</th><th>비고</th></tr></thead><tbody>';
-  D.forEach(g=>{
+  D.forEach(g=>{ no=0;                                         /* 번호는 업체마다 1부터 */
     h+='<tr class="cs1"><td colspan="10">■ '+esc(g.sn)+' <span>— '+g.mats.length+'소재 · '+g.n+'본 · '+r1(g.kg)+' kg</span></td></tr>';
     g.mats.forEach(m=>{
       m.L.forEach(c=>{ h+='<tr><td class="cc">'+(++no)+'</td><td>'+esc(c.cno)+'</td><td class="cc">'+esc(c.mt||'')+'</td><td class="cc">'+tmm(c.t)+'</td><td class="cc">'+(c.w||'')+'</td><td>'+esc(c.sup||'')+'</td><td>'+esc(c.lc||'')+'</td><td class="cn">'+r1(remOf(c))+'</td><td class="ci"></td><td></td></tr>'; });
@@ -10137,7 +10137,7 @@ function rRaw(){
       const real=d.reduce((a,{c})=>a+(+c.ct||0),0), gap=d.reduce((a,{c})=>a+((+c.ct||0)-remOf(c)),0);
       return {n,dn:d.length,sys,real,gap:Math.round(gap*10)/10}; };
     const grpRows=(rowFn,subFn,hdFn)=>{ let h='',n=0; const S2=[...new Set(R.map(o=>o.sn))];
-      S2.forEach(sn=>{ const G=R.filter(o=>o.sn===sn), M=[...new Set(G.map(o=>o.mk))];
+      S2.forEach(sn=>{ const G=R.filter(o=>o.sn===sn), M=[...new Set(G.map(o=>o.mk))]; n=0;   /* 번호는 업체마다 1부터 */
         h+=hdFn(sn,M.length,agg(G));
         M.forEach(mk=>{ const L=G.filter(o=>o.mk===mk); L.forEach(o=>{ h+=rowFn(o,n++); }); h+=subFn('└ '+mk+' 소계',agg(L),2); });
         h+=subFn(sn+' 합계',agg(G),3); });
