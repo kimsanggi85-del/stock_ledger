@@ -1201,13 +1201,16 @@ body.qp-on{overflow:hidden}
   #fcTbl td,#fcTbl th{white-space:nowrap}
   #mCntRemind .crHint{display:block!important}
 }
+#tRaw tr.cntG1 td{text-align:left!important;background:#1E2A36!important;color:#fff;font-weight:800;font-family:var(--sans)}#tRaw tr.cntG1 td span{font-weight:400;color:#C9D3DD;font-size:11px}
+#tRaw tr.cntG2 td{background:#EEF3F9!important;font-weight:700}#tRaw tr.cntG3 td{background:#FFF4D6!important;font-weight:800}
+#tRaw tr.cntG2 em,#tRaw tr.cntG3 em{font-style:normal;font-weight:400;color:#5B6B7B;font-size:10.5px}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.09 · 원소재 v11.46</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.10 · 원소재 v11.47</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8372,9 +8375,10 @@ function cntClear(){
   save(); rRaw(); toast('실사값을 지웠습니다');
 }
 /* 원소재 실사표 — 공급업체 → 소재(재질·두께×폭)로 묶고 소재 소계 · 업체 합계 · 총합계 (미리보기 → 엑셀/인쇄) */
+function cntMk(c){ return (c.mt||'(재질 미상)')+' '+tmm(c.t)+'×'+(Math.round(+c.w||0)||'-'); }
 function cntSheetData(){
   const G=new Map();
-  cntTargets().forEach(({c})=>{ const sn=supNm(c.sup), mk=(c.mt||'(재질 미상)')+' '+tmm(c.t)+'×'+(Math.round(+c.w||0)||'-');
+  cntTargets().forEach(({c})=>{ const sn=supNm(c.sup), mk=cntMk(c);
     if(!G.has(sn)) G.set(sn,new Map()); const M=G.get(sn);
     if(!M.has(mk)) M.set(mk,{mk,mt:c.mt||'',t:+c.t||0,w:+c.w||0,L:[]}); M.get(mk).L.push(c); });
   return [...G.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ko')).map(([sn,M])=>({sn,
@@ -10126,6 +10130,18 @@ function rRaw(){
       else if(fst==='__miss'){ if(c.iq!=='미등록')return false; }
       else if(fst&&fst!=='__all'&&fst!=='__free'&&coilSt(c)!==fst)return false;
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.lc).includes(q);});
+    /* 공급업체 → 소재(재질 두께×폭)로 모아 소재 소계 · 업체 합계 (실사표와 같은 순서) */
+    R.forEach(o=>{ o.sn=supNm(o.c.sup); o.mk=cntMk(o.c); });
+    R.sort((x,y)=>x.sn.localeCompare(y.sn,'ko')||String(x.c.mt||'').localeCompare(String(y.c.mt||''))||(+x.c.t||0)-(+y.c.t||0)||(+x.c.w||0)-(+y.c.w||0)||String(x.c.cno).localeCompare(String(y.c.cno)));
+    const agg=L=>{ const n=L.length, d=L.filter(({c})=>c.ct!=null), sys=L.reduce((a,{c})=>a+remOf(c),0);
+      const real=d.reduce((a,{c})=>a+(+c.ct||0),0), gap=d.reduce((a,{c})=>a+((+c.ct||0)-remOf(c)),0);
+      return {n,dn:d.length,sys,real,gap:Math.round(gap*10)/10}; };
+    const grpRows=(rowFn,subFn,hdFn)=>{ let h='',n=0; const S2=[...new Set(R.map(o=>o.sn))];
+      S2.forEach(sn=>{ const G=R.filter(o=>o.sn===sn), M=[...new Set(G.map(o=>o.mk))];
+        h+=hdFn(sn,M.length,agg(G));
+        M.forEach(mk=>{ const L=G.filter(o=>o.mk===mk); L.forEach(o=>{ h+=rowFn(o,n++); }); h+=subFn('└ '+mk+' 소계',agg(L),2); });
+        h+=subFn(sn+' 합계',agg(G),3); });
+      return h; };
     const done=R.filter(({c})=>c.ct!=null).length;
     let gPlus=0,gMinus=0,nGap=0;
     R.forEach(({c})=>{ if(c.ct==null)return; const g=(+c.ct||0)-remOf(c);
@@ -10138,13 +10154,17 @@ function rRaw(){
       +'· 다 넣은 뒤 <b>[✅ 조정전표 발행]</b>을 누르면 전산과 다른 코일만 재고조정 전표가 만들어집니다.<br>'
       +'· 현장에 들고 나가려면 <b>[⬇ 실사표 받기]</b>로 받아 적어 온 뒤 <b>[📥 실사값 올리기]</b>로 올리세요.';
     if(MC){
-      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({c,i})=>mcRawCnt(c,i)).join('')
+      const gm=v=>v.dn?((v.gap>0?'+':'')+kg(v.gap)):'-';
+      $('tRaw').innerHTML='<tbody>'+(R.length?grpRows(({c,i})=>mcRawCnt(c,i),
+          (t,v,lv)=>`<tr class="cntG${lv}"><td><div class="mrow" style="justify-content:space-between;gap:6px"><b>${esc(t)}</b><span>${v.n}본 · 입력 ${v.dn}</span></div>
+            <div class="mrow" style="gap:10px"><span>전산 <b>${kg(v.sys)}</b></span><span>실사 <b>${v.dn?kg(v.real):'-'}</b></span><span class="${v.dn&&Math.abs(v.gap)>0.05?(v.gap>0?'pos':'neg'):''}">차이 <b>${gm(v)}</b></span></div></td></tr>`,
+          (sn,nm,v)=>`<tr class="cntG1"><td><b>■ ${esc(sn)}</b> <span>${nm}소재 · ${v.n}본 · ${kg(v.sys)} kg</span></td></tr>`)
         :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">실사할 코일이 없습니다.</td></tr>')+'</tbody>';
       fillRawLists(); return;
     }
     $('tRaw').innerHTML=`<thead><tr><th>No</th><th>코일 No.</th><th>규격</th><th>공급업체</th><th>보관위치</th>
       <th>상태</th><th>전산 잔량(kg)</th><th>실사 잔량(kg)</th><th>있음</th><th>없음</th><th>차이(kg)</th><th>판정</th></tr></thead><tbody>`
-     +(R.length?R.map(({c,i},n)=>{
+     +(R.length?grpRows(({c,i},n)=>{
         const sys=Math.round(remOf(c)*10)/10;
         const has=c.ct!=null, g=has?Math.round(((+c.ct||0)-sys)*10)/10:null;
         const ok=has&&Math.abs(g)<=0.05;
@@ -10165,7 +10185,13 @@ function rRaw(){
          <td class="${has?(ok?'pos':'neg'):''}" style="font-weight:700">${has?((g>0?'+':'')+kg(g)):'-'}</td>
          <td class="c" style="font-family:var(--sans);font-weight:700;color:${has?(ok?'#0B6B3A':'#B3261E'):'#93A0AB'}">
             ${has?(ok?'일치':(g>0?'과다':'부족')):'미실사'}</td></tr>`;
-       }).join(''):`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">실사할 코일이 없습니다.</td></tr>`)
+       },(t,v,lv)=>{ const all=v.dn===v.n, okg=Math.abs(v.gap)<=0.05;
+         return `<tr class="cntG${lv}"><td></td><td class="l" colspan="5">${esc(t)} <em>(${v.n}본${v.dn<v.n?' · 입력 '+v.dn:''})</em></td>
+         <td>${kg(v.sys)}</td><td>${v.dn?kg(v.real):'-'}</td><td colspan="2"></td>
+         <td class="${v.dn&&!okg?(v.gap>0?'pos':'neg'):''}">${v.dn?((v.gap>0?'+':'')+kg(v.gap)):'-'}</td>
+         <td class="c" style="color:${!v.dn?'#93A0AB':okg?'#0B6B3A':'#B3261E'}">${!v.dn?'미실사':!okg?(v.gap>0?'과다':'부족'):all?'일치':'입력중'}</td></tr>`; },
+       (sn,nm,v)=>`<tr class="cntG1"><td colspan="12">■ ${esc(sn)} <span>— ${nm}소재 · ${v.n}본 · 전산 ${kg(v.sys)} kg${v.dn?' · 입력 '+v.dn+'/'+v.n:''}</span></td></tr>`)
+       :`<tr><td colspan="12" class="c" style="padding:30px;color:#93A0AB">실사할 코일이 없습니다.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본 · 입력 ${done}본)</td>
        <td>${kg(R.reduce((a,{c})=>a+remOf(c),0))}</td>
        <td>${kg(R.reduce((a,{c})=>a+(c.ct!=null?+c.ct:0),0))}</td>
