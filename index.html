@@ -1210,7 +1210,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.11 · 원소재 v11.48</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.12 · 원소재 v11.49</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -4588,7 +4588,7 @@ body.qp-on{overflow:hidden}
     <button class="btn" onclick="cntAllOk()" title="아직 입력하지 않은 코일을 전산 잔량 그대로 확인 처리합니다">✔ 나머지 전산값 그대로</button>
     <button class="btn" onclick="cntSheet()" title="실사표를 미리보고 엑셀로 받거나 인쇄합니다 — 공급업체 → 소재별 소계·합계">⬇ 실사표 받기</button>
     <button class="btn" onclick="pick('fCnt2')" title="현장에서 적어온 값을 파일로 올립니다">📥 실사값 올리기</button>
-    <input type="file" id="fCnt2" accept=".csv,.txt,.tsv" style="display:none">
+    <input type="file" id="fCnt2" accept=".xls,.xlsx,.csv,.txt,.tsv" style="display:none">
     <div class="rt">
       <button class="btn" onclick="cntClear()">🧹 실사값 지우기</button>
       <button class="btn g" onclick="applyCoilCount()" title="전산과 다른 코일에 재고조정 전표를 발행합니다">✅ 조정전표 발행</button>
@@ -8435,27 +8435,49 @@ function cntSheetPrint(){
     +'table.cs thead{display:table-header-group}table.cs tr{page-break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body><h3 style="font-family:sans-serif">'+X.title+'</h3>'+X.tbl+RPT_BAR+'</body></html>');
   wn.document.close(); try{ wn.opener=null; wn.focus(); }catch(e){}
 }
-/* 실사값 CSV: 코일No,실사잔량kg  (헤더 있어도 됨) */
+/* 실사값 올리기 — 받은 실사표(.xls)를 그대로 저장한 파일, .xlsx, .csv/.tsv 모두 읽는다.
+   머리줄의 '코일'·'실사' 칸을 찾아 그 칸 값을 쓰고, 머리줄이 없으면 [코일No, 실사kg] 두 칸으로 본다.
+   업체(■)·소계·합계 줄과 실사 칸이 빈 줄은 건너뛴다(미입력) */
+async function cntReadRows(f){
+  const b=new Uint8Array(await f.arrayBuffer());
+  if(b[0]===0x50&&b[1]===0x4B){                                     /* .xlsx */
+    const bk=await readXlsx(f); return Object.values(bk).reduce((a,g)=>a.concat(g),[]);
+  }
+  if(b[0]===0xD0&&b[1]===0xCF) throw new Error('옛 엑셀(.xls 97-2003) 형식은 읽을 수 없습니다 — 엑셀에서 [다른 이름으로 저장 → Excel 통합 문서(.xlsx)]로 저장해 올려 주세요');
+  const txt=(await readText(f)).replace(/^﻿/,'');
+  if(/<table/i.test(txt)){                                           /* 앱에서 받은 실사표(.xls = HTML 표) */
+    const d=new DOMParser().parseFromString(txt,'text/html');
+    return [...d.querySelectorAll('tr')].map(tr=>{ const a=[]; [...tr.children].forEach(td=>{ a.push(td.textContent.trim()); for(let k=1;k<(+td.colSpan||1);k++)a.push(''); }); return a; });
+  }
+  return parseDelim(txt).map(r=>r.length===1&&r[0].indexOf(';')>=0?r[0].split(';'):r);
+}
 $('fCnt2').onchange=async e=>{
   const f=e.target.files[0]; if(!f)return; e.target.value='';
-  const txt=(await readText(f)).replace(/^\ufeff/,'');
-  let ok=0; const unk=[];
-  txt.split(/\r?\n/).forEach(l=>{
-    if(!l.trim())return;
-    const p2=l.split(/[,\t;]/).map(x=>x.trim().replace(/^"|"$/g,''));
-    if(/소계|합계|합 계|^■/.test(l))return;                       /* 실사표의 업체·소재 묶음 줄은 건너뛴다 */
-    /* 실사표 양식 그대로(No, 코일No, …, 실사잔량은 9번째 칸) 저장한 파일도 읽는다 */
-    const sheet=p2.length>=9&&/^\d+$/.test(p2[0])&&S.coils.some(x=>x.cno===p2[1]);
-    const cno=sheet?p2[1]:p2[0]; if(!cno||/코일|No|no/.test(cno)&&p2.length&&isNaN(parseFloat(p2[1])))return;
+  let rows; try{ rows=await cntReadRows(f); }catch(x){ alert('실사값 파일을 읽지 못했습니다.\n'+(x.message||x)); return; }
+  rows=rows.map(r=>(r||[]).map(x=>String(x==null?'':x).trim()));
+  /* 머리줄: '코일' 과 '실사' 가 들어간 칸 */
+  let ci=-1,vi=-1;
+  for(const r of rows.slice(0,15)){ const a=r.findIndex(x=>/코일/.test(x)), v=r.findIndex(x=>/실사/.test(x)&&!/일자/.test(x));
+    if(a>=0&&v>=0){ ci=a; vi=v; break; } }
+  const num=v=>{ const n=parseFloat(String(v).replace(/,/g,'').replace(/[^0-9.\-]/g,'')); return isFinite(n)?Math.max(0,Math.round(n*10)/10):null; };
+  let ok=0,blank=0; const unk=[];
+  rows.forEach(r=>{
+    const line=r.join(' ');
+    if(!line.trim()||/소계|합계|합 계|^\s*■/.test(line))return;      /* 업체·소재 묶음 줄 */
+    let cno,v;
+    if(ci>=0){ cno=r[ci]; v=r[vi]; }
+    else { cno=r[0]; v=r[1]; }
+    if(!cno||/코일/.test(cno))return;
     const c=S.coils.find(x=>x.cno===cno);
-    if(!c){unk.push(cno);return;}
-    const v=sheet?p2[8]:p2[1]; if(sheet&&(v===''||v==null))return;
-    c.ct=(v===''||v==null)?null:Math.max(0,Math.round((parseFloat(String(v).replace(/[^0-9.]/g,''))||0)*10)/10);
-    ok++;
+    if(!c){ if(!/^\d+$/.test(cno)) unk.push(cno); return; }
+    if(v===''||v==null){ blank++; return; }                          /* 실사 칸 비움 = 미입력 */
+    const n=num(v); if(n==null){ unk.push(cno+'(값 '+v+')'); return; }
+    c.ct=n; ok++;
   });
   save(); setRV('cnt');
-  toast('실사값 '+ok+'본 반영'+(unk.length?' · 없는 코일 '+unk.length+'건':'')+' — 확인 후 [조정전표 발행]');
-  if(unk.length)alert('코일 목록에 없어 건너뛴 코일번호 '+unk.length+'건:\n'+unk.slice(0,20).join(', '));
+  toast('실사값 '+ok+'본 반영'+(blank?' · 빈 칸 '+blank+'본':'')+(unk.length?' · 확인 필요 '+unk.length+'건':'')+' — 확인 후 [조정전표 발행]');
+  if(unk.length)alert('코일 목록에 없거나 값이 이상해 건너뛴 줄 '+unk.length+'건:\n'+unk.slice(0,20).join(', ')+(unk.length>20?' 외':''));
+  if(!ok&&!unk.length) alert('반영된 실사값이 없습니다.\n실사표의 [실사 잔량(kg)] 칸에 값을 적어 저장했는지 확인해 주세요.');
 };
 function applyCoilCount(){
   const d0=$('cntD2').value||today(), by=$('cntBy').value.trim()||S.user||'실사';
@@ -10152,7 +10174,7 @@ function rRaw(){
     $('rawHint').innerHTML='· <b>미개봉 코일</b>은 [있음]만 누르면 전산 잔량 그대로 확인됩니다. <b>사용중 코일</b>만 실제 무게를 재서 넣으세요.<br>'
       +'· 코일이 <b>없으면 0</b>을 넣으세요. 전량 재고조정(−)으로 처리됩니다.<br>'
       +'· 다 넣은 뒤 <b>[✅ 조정전표 발행]</b>을 누르면 전산과 다른 코일만 재고조정 전표가 만들어집니다.<br>'
-      +'· 현장에 들고 나가려면 <b>[⬇ 실사표 받기]</b>로 받아 적어 온 뒤 <b>[📥 실사값 올리기]</b>로 올리세요.';
+      +'· 현장에 들고 나가려면 <b>[⬇ 실사표 받기]</b>로 엑셀을 받아 <b>실사 잔량(kg)</b> 칸을 채워 저장한 뒤, 그 파일 그대로 <b>[📥 실사값 올리기]</b>로 올리세요 (.xls·.xlsx·.csv). 올리기만으로는 재고가 바뀌지 않고, 확인 후 <b>[✅ 조정전표 발행]</b>을 눌러야 재고조정이 됩니다.';
     if(MC){
       const gm=v=>v.dn?((v.gap>0?'+':'')+kg(v.gap)):'-';
       $('tRaw').innerHTML='<tbody>'+(R.length?grpRows(({c,i})=>mcRawCnt(c,i),
