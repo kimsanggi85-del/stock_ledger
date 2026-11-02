@@ -1211,7 +1211,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.15 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.16 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6894,6 +6894,7 @@ function load(){
 const SAVE_DROP1=['ru','eqRaw','iqcDiag','diag','lotDate'];
 let saveLvl=0;
 const save=()=>{
+  LEDV++;                                                    /* 고정수량 계산 캐시 무효화 */
   const tryPut=o=>{ try{ localStorage.setItem(KEY,JSON.stringify(o)); return true; }catch(e){ return false; } };
   if(tryPut(S)){ saveLvl=0; return; }
   try{ localStorage.removeItem(KEY); }catch(e){}            /* 옛 큰 값을 먼저 지워 자리를 만든다 */
@@ -6974,7 +6975,38 @@ function takeOf(it){
     if(r.k==='검사입고') return null;                      /* 2층 계정이 없는 품목 — 검사수량은 재고 이동이 아니다 */
     return {q:effQ(r,it),io:kindIO(r.k)};
   };
-  return take;
+  const eff=fixEff(it,take);
+  return eff ? r=>(eff.has(r.id)?eff.get(r.id):take(r)) : take;
+}
+/* ═══ 고정수량 — 재고 수정 [💾 저장] 전표 ('재고 직접수정 [고정 N] … · 당일 S')
+   그 날 재고를 N 으로 고정한다. 그 전 날짜 전표가 나중에 바뀌거나 늦게 들어와도(동기화 지연·자동전표 재계산)
+   고정 전표의 실제 반영량이 그만큼 바뀌어 그 날 재고는 N 그대로. 그 뒤 날짜 전표만 더하고 빼며,
+   같은 날 전표는 저장 때 반영돼 있던 합계(S) 대비 늘어난 만큼만 더한다. 옛 직접수정 전표([고정] 없음)는 예전처럼 차이만 반영 */
+let LEDV=0; const FIX_C=new Map();
+const isFixRow=r=>r&&String(r.k||'').indexOf('재고조정')===0&&/\[고정 -?\d+\]/.test(String(r.n||''));
+const fixTarget=r=>{ const m=String(r.n||'').match(/\[고정 (-?\d+)\]/); return m?+m[1]:0; };
+const fixS0=r=>{ const m=String(r.n||'').match(/· 당일 (-?\d+)\s*$/); return m?+m[1]:null; };
+function fixEff(it,take){
+  const key=it.pn+'|'+(+it.bs||0)+'|'+(it.bd||'');
+  const c=FIX_C.get(key);
+  if(c&&c.led===S.led&&c.n===S.led.length&&c.v===LEDV) return c.eff;
+  let eff=null;
+  if(S.led.some(r=>r.pn===it.pn&&isFixRow(r))){
+    const D=new Map();
+    S.led.forEach(r=>{ if(r.d<=it.bd) return;
+      const fx=r.pn===it.pn&&isFixRow(r), t=fx?null:take(r); if(!fx&&!t) return;
+      const o=D.get(r.d)||{s:0,fx:[]}; if(fx) o.fx.push(r); else o.s+=t.io==='I'?t.q:-t.q; D.set(r.d,o); });
+    eff=new Map(); let bal=+it.bs||0;
+    [...D.keys()].sort().forEach(d=>{ const o=D.get(d);
+      if(!o.fx.length){ bal+=o.s; return; }
+      o.fx.sort((x,y)=>String(x.ua||'').localeCompare(String(y.ua||''))||x.id-y.id);
+      const L=o.fx[o.fx.length-1], s0=fixS0(L), val=fixTarget(L)+(s0==null?0:o.s-s0), df=val-(bal+o.s);
+      o.fx.forEach(r=>eff.set(r.id,{q:0,io:'I'}));
+      eff.set(L.id,{q:Math.abs(df),io:df>=0?'I':'O'});
+      bal=val; });
+  }
+  FIX_C.set(key,{led:S.led,n:S.led.length,v:LEDV,eff});
+  return eff;
 }
 function calc(it){
   const a=mStart(), b=CUT||mEnd();
@@ -13172,7 +13204,7 @@ async function syncMes(silent){
     S.led=rows.filter(x=>x.pn&&x.led_date&&x.kind
         &&!S.ledDel[x.src_key]&&!localSrc.has(x.src_key))
       .map(x=>({id:S.seq++,d:x.led_date,pn:canonPn(x.pn),k:x.kind,q:+x.qty||0,
-        p:x.party||'',lot:x.lot||'',n:x.note||'',by:x.by_name||'MES',src:x.src_key}));
+        p:x.party||'',lot:x.lot||'',n:x.note||'',by:x.by_name||'MES',src:x.src_key,ua:x.updated_at||''}));
     S.led.push(...keepLocal);
     const add=Math.max(0,S.led.length-before),upd=0,del=Math.max(0,before-S.led.length);
     S.led.forEach(o=>{ if(!S.items.some(i=>i.pn===o.pn))unk.add(o.pn); });
@@ -15773,7 +15805,7 @@ function openFix(pn){
     +'</div>'
     +'<div class="fx-r" data-r>실사 <b>'+nf(cur)+'</b> EA · 차이 <b class="z">0</b></div>'
     +'<div class="fx-r"><label>조정일자 <input type="date" class="fxd" data-d value="'+fxDate()+'" max="'+today()+'"></label></div>'
-    +'<div class="fx-b"><button class="ok" data-go>이 재고로 맞춤</button>'
+    +'<div class="fx-b"><button class="ok" data-go>💾 저장 (고정수량)</button>'
     +'<button class="cx" data-cx>취소</button></div>';
   const ins=box.querySelectorAll('input.kbi');
   box.querySelector('[data-d]').addEventListener('change',e=>{ fxSet(e.target.value); cur=stockAt(it,fxDate()); calcNow(); });
@@ -15834,7 +15866,7 @@ function openQty(pn,mode){
   qpNowPaint();
   $('qpDw').style.display=mode==='cur'?'':'none'; fxSync();
   $('qpF').querySelector('[data-f="b"]').style.display=bx?'':'none';
-  $('qpOk').textContent=mode==='cur'?'이 재고로 맞춤':'안전재고 저장';
+  $('qpOk').textContent=mode==='cur'?'💾 저장 (고정수량)':'안전재고 저장';
   $('qpOk').className='ok '+mode;
   sumEdit=true;
   qpPaint();
@@ -15983,7 +16015,7 @@ async function fixStock(it, val, dd){
   if(needGuard) it.bd=dayBefore(d);
   let cur; try{ cur=stockAt(it,d); } finally { it.bd=bd0; }
   const df=want-cur;
-  if(!df){ toast(d+' 기준 재고가 이미 '+nf(want)+' EA 입니다'); rCfg(); return; }
+  /* 차이가 없어도 [고정] 전표를 남긴다 — 이후 지난 전표가 바뀌어도 이 날 재고는 그대로 */
   const b0=+it.bx||0;
   const bx=(n)=>b0?(Math.floor(n/b0)+'박스'+(((n%b0)+b0)%b0?'+'+nf(((n%b0)+b0)%b0):'')+' = '+nf(n)+' EA'):(nf(n)+' EA');
   const mc=(typeof mcGet==='function')?mcGet(d.slice(0,7)):null;
@@ -15993,7 +16025,7 @@ async function fixStock(it, val, dd){
   if(!confirm(it.pn+'\n\n조정일자 '+d+(isToday?' (오늘)':'')+'\n'
       +'전산 '+bx(cur)+(isToday?'':' ('+d+' 기준)')+'\n실사 '+bx(want)+'\n'
       +'차이 '+(df>0?'+':'')+nf(df)+' EA'+(b0?' ('+(df>0?'+':'')+(df/b0).toFixed(1)+'박스)':'')
-      +' 를 재고조정 전표로 등록합니다.'
+      +'\n\n💾 '+d+' 재고를 '+nf(want)+' EA 로 [고정] 저장합니다.\n  (그 전 날짜 전표가 나중에 바뀌어도 이 수량은 바뀌지 않습니다)'
       +(mc?'\n\n⚠ '+d.slice(0,7)+' 은(는) 월마감 확정된 달입니다. 확정 재고조사서에는 반영되지 않습니다.':'')
       +(later.length?'\n\n⚠ '+d+' 이후에 재고조정 '+later.length+'건이 이미 있습니다 (마지막 '+later.map(r=>r.d).sort().pop()+').\n'
         +'  이 조정을 넣으면 현재고가 '+(df>0?'+':'')+nf(df)+' EA 만큼 함께 바뀝니다.\n'
@@ -16006,13 +16038,17 @@ async function fixStock(it, val, dd){
   /* 박스 단위 품목은 박스 수도 함께 남긴다 — SKF씰은 박스로 세고 박스로 확인한다 */
   const bxs=(n)=>{ const b=+it.bx||0; if(!b) return nf(n)+' EA';
     const q=Math.floor(n/b), r=((n%b)+b)%b; return q+'박스'+(r?'+'+nf(r):'')+' ('+nf(n)+' EA)'; };
-  const rec={ id:S.seq++, d:d, pn:it.pn, k:(df>0?'재고조정(+)':'재고조정(-)'),
-    q:Math.abs(df), p:'', lot:'',
-    n:'재고 직접수정 · '+(isToday?'':d+' 실사 · ')+'전산 '+bxs(cur)+' → 실사 '+bxs(want),
+  const rec={ id:S.seq++, d:d, pn:it.pn, k:(df>=0?'재고조정(+)':'재고조정(-)'),
+    q:Math.abs(df), p:'', lot:'', ua:new Date().toISOString(),
+    n:'재고 직접수정 [고정 '+want+'] · '+(isToday?'':d+' 실사 · ')+'전산 '+bxs(cur)+' → 실사 '+bxs(want),
     by:S.user||'' };
-  S.led.push(rec);
+  S.led.push(rec); LEDV++;
+  /* 같은 날 이미 반영된 전표 합계(S) — 이 뒤로 같은 날 늘어나는 전표만 더하기 위해 남긴다 (고정 전표를 넣은 뒤 기준일로 계산) */
+  { const tk=takeOf(it); let s0=0;
+    S.led.forEach(r=>{ if(r.d!==d||r.d<=it.bd||(r.pn===it.pn&&isFixRow(r))) return; const t=tk(r); if(t) s0+=t.io==='I'?t.q:-t.q; });
+    rec.n+=' · 당일 '+Math.round(s0); LEDV++; }
   save(); render();
-  toast(it.pn+' '+d+' 재고를 '+nf(want)+' EA 로 맞췄습니다 ('+(df>0?'+':'')+nf(df)+')');
+  toast('💾 '+it.pn+' '+d+' 재고를 '+nf(want)+' EA 로 고정했습니다'+(df?' ('+(df>0?'+':'')+nf(df)+')':''));
   try{ await pushManual(); }catch(e){ console.warn('전표 공유:',e.message); }
 }
 
