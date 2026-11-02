@@ -679,6 +679,10 @@ body.qp-on{overflow:hidden}
 .qp-b .ok{flex:1;background:#1F3A5F;color:#fff}
 .qp-b .ok.sf{background:#2B5A8C}
 .qp-b .ok:active{filter:brightness(.9)}
+.qp{max-height:100vh;max-height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.qp .qp-b{position:sticky;bottom:0;background:#fff;padding-top:8px;z-index:1}        /* 저장 버튼은 항상 화면 안에 */
+@media (max-height:760px){.qp-g button{height:40px}.qp-g{gap:5px;margin-top:8px}.qp-fld b{font-size:20px}.qp-now{margin-top:5px}.qp-f{margin-top:6px}}
+@media (max-height:620px){.qp-g button{height:34px}}
 .mc-step{display:flex;align-items:center;gap:7px;margin-top:9px}
 .mc-step button{width:52px;height:46px;border:1.5px solid var(--line);background:#F4F7F9;border-radius:10px;
   font-size:23px;font-weight:700;cursor:pointer;flex:0 0 auto;color:var(--ink)}
@@ -1211,7 +1215,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.16 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.17 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6518,7 +6522,7 @@ body.qp-on{overflow:hidden}
     <div class="fld"><label>단가 (원/EA) — 재고금액 산출용 · 재고조사서 기준</label>
       <input type="number" id="yPrice" placeholder="예) 105" min="0" step="1"></div>
     <div class="fld" id="yCurBox" style="background:#FFFDE7;border:1px solid #E0D9A8;border-radius:7px;padding:9px 11px">
-      <label style="color:#946200">현재고 수정 (실사 수량 입력 → 차이만큼 조정전표 발행)</label>
+      <label style="color:#946200">현재고 수정 (실사 수량 입력 → [저장]하면 그 날 재고가 이 수량으로 💾 고정)</label>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="number" id="yCur" style="flex:1" placeholder="실사 수량(EA)">
         <input type="date" id="yCurD" class="fxd" title="조정일자 (실사일)" onchange="fxSet(this.value)" style="width:132px">
