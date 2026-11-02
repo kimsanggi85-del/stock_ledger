@@ -1210,7 +1210,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.13 · 원소재 v11.50</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.14 · 원소재 v11.51</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11419,7 +11419,7 @@ function mesSyncTxt(){
   const h=Math.floor((Date.now()-d)/36e5);
   return ' · MES 소재 동기화 '+(d.getMonth()+1)+'/'+d.getDate()+' '+p2(d.getHours())+':'+p2(d.getMinutes())+(h>=12?' ('+h+'시간 전)':'');
 }                     /* MES 소재 자료 동기화 시작일 (mes_raw_sync.py 첫 소급일과 동일) */
-const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',HG:'동일스테인레스',DK:'동국산업',HK:'해강스틸',BK:'부강스프링',SW:'송원테크',SWTEC:'송원테크',SG:'송원테크',NS:'나스테크',SU:'세동산업(사급)',SD:'세동산업(사급)',DS:'세동산업(사급)'};
+const VENDOR_MAP={TG:'태경스틸',JM:'정민스틸',DI:'동일스테인레스',HG:'동일스테인레스',DK:'동국산업',HK:'한국금속',BK:'부강스프링',SW:'송원테크',SWTEC:'송원테크',SG:'송원테크',NS:'나스테크',SU:'세동산업(사급)',SD:'세동산업(사급)',DS:'세동산업(사급)'};
 const vendorNm=v=>{ const k=String(v||'').trim().toUpperCase(); return VENDOR_MAP[k]||supNm(v||''); };
 async function syncRawMes(silent){
   if(rawMesBusy)return null; rawMesBusy=true;
