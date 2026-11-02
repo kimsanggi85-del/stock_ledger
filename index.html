@@ -1201,6 +1201,7 @@ body.qp-on{overflow:hidden}
   #fcTbl td,#fcTbl th{white-space:nowrap}
   #mCntRemind .crHint{display:block!important}
 }
+#tRaw .hts{display:inline-block;margin-left:8px;font-size:10.5px;font-weight:400;color:#5B6B7B;font-family:var(--mono,monospace);white-space:normal;line-height:1.35}#tRaw .hts small{color:#93A0AB;font-size:9.5px;margin-left:1px}
 #tRaw tr.cntG1 td{text-align:left!important;background:#1E2A36!important;color:#fff;font-weight:800;font-family:var(--sans)}#tRaw tr.cntG1 td span{font-weight:400;color:#C9D3DD;font-size:11px}
 #tRaw tr.cntG2 td{background:#EEF3F9!important;font-weight:700}#tRaw tr.cntG3 td{background:#FFF4D6!important;font-weight:800}
 #tRaw tr.cntG2 em,#tRaw tr.cntG3 em{font-style:normal;font-weight:400;color:#5B6B7B;font-size:10.5px}
@@ -1210,7 +1211,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.14 · 원소재 v11.51</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.15 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9538,6 +9539,12 @@ function saveSupAlias(){
 function supFold(nm){ S.supFold=S.supFold||{}; if(S.supFold[nm])delete S.supFold[nm]; else S.supFold[nm]=1; save(); rRaw(); }
 function supFoldAll(){ const A=supAgg(), f=S.supFold||{}; const all=A.every(o=>f[o.nm]);
   S.supFold={}; if(!all) A.forEach(o=>S.supFold[o.nm]=1); save(); rRaw(); }
+/* 히트넘버(HEAT) — 밀시트 번호, 없으면 코일번호의 앞부분 (ZI25443-01-08 → ZI25443) */
+function heatOf(c){ return String(c.ms||lotBase(String(c.cno||'').split('#')[0])||'').trim()||'-'; }
+function heatList(sp,max){ const L=[...(sp.heats||new Map()).entries()].sort((x,y)=>x[0].localeCompare(y[0]));
+  if(!L.length) return '';
+  const sh=L.slice(0,max||99).map(([h,n])=>esc(h)+(n>1?'<small>×'+n+'</small>':'')).join(' · ');
+  return '<span class="hts" title="재고 코일 HEAT No. (코일 수)">'+sh+(L.length>(max||99)?' 외 '+(L.length-max):'')+'</span>'; }
 function supAgg(){
   const a=mStart(), b=mEnd(), D=rawAsOf();
   const M=new Map();
@@ -9559,9 +9566,10 @@ function supAgg(){
     /* 규격 소계 */
     const sk=specKey(c);
     if(!o.spec.has(sk))o.spec.set(sk,{sk,mt:c.mt,t:+c.t||0,w:+c.w||0,n:0,inKg:0,remN:0,remKg:0,outN:0,holdN:0,
-      useN:0,waitN:0,mountN:0,mIn:0,mInN:0,mOut:0,last:''});
+      useN:0,waitN:0,mountN:0,mIn:0,mInN:0,mOut:0,last:'',heats:new Map()});
     const sp=o.spec.get(sk);
     sp.n++; sp.inKg+=wt;
+    if(r>0.5){ const h=heatOf(c); sp.heats.set(h,(sp.heats.get(h)||0)+1); }       /* 재고 코일의 히트넘버 */
     if(r>0.5){sp.remN++;sp.remKg+=r; if(S.mled.some(m=>m.cid===c.id&&mKindIO(m.k)==='O'))sp.useN++; else sp.waitN++;}
     else sp.outN++;
     if(!usable(c)&&r>0.5)sp.holdN++;
@@ -10263,7 +10271,7 @@ function rRaw(){
         specs.forEach(sp=>{
           const z=sp.remKg<=0.5;
           h+=`<tr class="sups${z?' zero':''}">
-           <td class="l">${esc(specNm(sp))}</td>
+           <td class="l">${esc(specNm(sp))}${heatList(sp)}</td>
            <td style="font-weight:700">${sp.remN||dash}</td><td style="font-weight:700">${z?dash:kg(sp.remKg)}</td>
            <td>${v(sp.useN)}</td><td>${v(sp.waitN)}</td><td>${v(sp.holdN,'wn')}</td><td>${v(sp.mountN)}</td>
            <td class="c">${esc(sp.last||'-')}</td></tr>`;
@@ -11064,7 +11072,7 @@ function mcSup(o){
       <span style="margin-left:auto">최근 ${esc(o.last||'-')}</span></div>
     ${o.specs.slice(0,4).map(sp=>`<div class="mrow" style="padding-left:8px;border-top:1px dotted #dde3ea;padding-top:4px">
       <span>└ ${esc(specNm(sp))}</span><b style="margin-left:auto">${kg(sp.remKg)} kg</b>
-      <span>(${sp.remN}코일)</span></div>`).join('')}
+      <span>(${sp.remN}코일)</span></div>${sp.remN?'<div class="mrow" style="padding-left:20px;margin-top:0">'+heatList(sp,6)+'</div>':''}`).join('')}
   </td></tr>`;
 }
 function mcEq(e,x){
