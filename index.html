@@ -1210,7 +1210,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.12 · 원소재 v11.49</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.13 · 원소재 v11.50</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -11344,8 +11344,10 @@ function pickStr(o,keys){ for(const k of keys){ const v=String(o[k]==null?'':o[k
 /* "SPCC-0.6-076" / "SPCC 0.6T*76W" / "C67S 1.25X137" → {mt,t,w} */
 function parseMatCode(v){
   let s2=String(v||'').toUpperCase();
-  const m=s2.match(/(?:STS|SUS)\s*-?\s*\d{3}|SAPH\s*-?\s*\d{3}|SPFH\s*-?\s*\d{3}|SPFC\s*-?\s*\d{3}|SPCC|SPHC|SPHD|SGARC|SGCC|C\s*\d{2}\s*S|S\s*\d{2}\s*C\s*M?|SK\s*\d/);
+  /* 'S70_1.25X248' 처럼 MES 가 탄소강 등급의 C 를 빼고 적은 슬릿 코드도 S70C 로 본다 (70 을 폭으로 읽지 않게) */
+  const m=s2.match(/(?:STS|SUS)\s*-?\s*\d{3}|SAPH\s*-?\s*\d{3}|SPFH\s*-?\s*\d{3}|SPFC\s*-?\s*\d{3}|SPCC|SPHC|SPHD|SGARC|SGCC|C\s*\d{2}\s*S|S\s*\d{2}\s*C\s*M?|S\d{2}(?=_)|SK\s*\d/);
   let mt=m?m[0].replace(/[\s-]/g,''):'';
+  if(/^S\d{2}$/.test(mt)) mt+='C';
   if(m)s2=s2.replace(m[0],' ');
   else{ /* MES 소재코드: '304 2B_0.5X130', '430J1L BB_0.5X116' → 304-2B, 430J1L-BB */
     const m2=s2.match(/^\s*([34]\d{2}[A-Z0-9]*)\s*(2B|BA|BB|HL)?/);
@@ -13855,6 +13857,7 @@ const RAW_CU_TABLE=['SKF씰'];
 const RAW_KG_PRICE={};                 /* 등급별 kg 단가 — 예: {SPCC:1200,'430':2900,'304':4500,'304J1':4300} */
 function gradeOfS(s){ s=String(s||'').toUpperCase().trim();
   if(/^304J1/.test(s))return '304J1'; if(/^304/.test(s))return '304'; if(/^430/.test(s))return '430'; if(/^SPCC/.test(s))return 'SPCC';
+  if(/^S\d{2}_/.test(s))return s.slice(0,3)+'C';                  /* S70_1.25X248 → S70C */
   return (s.match(/^[A-Z0-9]+/)||[''])[0]; }
 const matKeyC=c=>gradeOfS(c.rc||c.mt)+' '+(+c.t||0)+'×'+Math.round(+c.w||0);
 function matOwners(){
