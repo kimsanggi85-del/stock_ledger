@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.19 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.20 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7181,7 +7181,7 @@ function dashPaint(){
   try{ dailyPaint(); }catch(e){}
   const L=$('dashL'), R=$('dashR'); if(!L||!R) return;
   const it=new Set((S.items||[]).map(i=>i.pn));
-  const nChk=Object.keys(CHK||{}).filter(p=>it.has(p)).length, nShort=+String(($('q5')||{}).textContent||'0').replace(/,/g,'')||0;
+  const nChk=Object.keys(CHK||{}).filter(p=>it.has(p)&&chkOpen(p)).length, nShort=+String(($('q5')||{}).textContent||'0').replace(/,/g,'')||0;
   const td=today(), [y,m]=td.split('-').map(Number), last=new Date(y,m,0).getDate(), dl=last-(+td.slice(8));
   const row=(ic,txt,n,k,warn)=>'<div class="dRow'+(warn?' warn':'')+'" onclick="dashGo(\''+k+'\')"><i>'+ic+'</i><span>'+txt+'</span><b>'+n+'</b></div>';
   /* SBC 다음 출하 — SBC 화면이 아니어도 계산 (재고 표는 그리지 않고 출하가능만 구한다) */
@@ -7931,17 +7931,27 @@ async function delItemRemote(pn){
    (애드온 v2.6과 같은 kv_store 키 `tj_item_del_v1` 를 써서 두 빌드가 같이 동작) ═══ */
 /* ═══ 실물확인 표시 — 장부와 실물이 다를 수 있어 실사 때 꼭 세어 볼 품목 (kv `tj_item_chk_v1` {pns:{품번:사유}}) ═══ */
 const CHK_KEY='tj_item_chk_v1';
-let CHK={};
+let CHK={}, CHK_FROM='2026-10-23', CHK_C={led:null,n:-1,v:-1,s:null};
 async function chkPull(){
   try{
     const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+CHK_KEY+'&select=value',{headers:itHeaders(),cache:'no-store'});
     if(!r.ok)return;
     const j=await r.json(); const v=j&&j[0]&&j[0].value;
     CHK=(v&&v.pns&&typeof v.pns==='object')?v.pns:{};
+    if(v&&v.ua) CHK_FROM=String(v.ua).slice(0,10);
   }catch(e){}
 }
+/* 실물 확인 끝난 품목 — 표시한 다음 날부터 그 품번에 재고 수정(💾 저장·직접수정)·실사 조정 전표가 있으면 확인 완료로 본다 */
+function chkDoneSet(){
+  if(CHK_C.led!==S.led||CHK_C.n!==S.led.length||CHK_C.v!==LEDV){
+    const st=new Set(); S.led.forEach(r=>{ if(r.d>CHK_FROM&&String(r.k).indexOf('재고조정')===0
+      &&/^(재고 직접수정|재고실사 차이조정|실사조정)/.test(String(r.n||''))) st.add(r.pn); });
+    CHK_C={led:S.led,n:S.led.length,v:LEDV,s:st}; }
+  return CHK_C.s;
+}
+function chkOpen(pn){ return CHK[pn]!=null&&!chkDoneSet().has(pn); }
 function chkTag(pn){
-  const w=CHK[pn]; if(w==null)return '';
+  const w=CHK[pn]; if(w==null||!chkOpen(pn))return '';
   return '<span class="chkTag" title="'+esc(w||'실사 때 실물 수량 확인 필요')+'">🔍실물확인</span>';
 }
 const ITEM_DEL_KEY='tj_item_del_v1';
@@ -12377,7 +12387,7 @@ function exportCnt(){
   const head=['품번','실사박스','품명','보관위치','박스단위','전산(박스)','전산재고(EA)','확인사항'];
   const rows=R.map(it=>{const v=calc(it);
     return [it.pn, (it.cnt==null?'':it.cnt), it.nm||'', it.lc||'', it.bx||0,
-            it.bx?Math.floor(v.cur/it.bx):0, v.cur, CHK[it.pn]!=null?'실물확인 '+(CHK[it.pn]||''):''];});
+            it.bx?Math.floor(v.cur/it.bx):0, v.cur, chkOpen(it.pn)?'실물확인 '+(CHK[it.pn]||''):''];});
   const c=[head,...rows].map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   dl(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}),
      '재고 실사_'+(WH?whNm(WH):'전체')+'_'+($('cntD').value||today()).replace(/-/g,'')+'.csv');
