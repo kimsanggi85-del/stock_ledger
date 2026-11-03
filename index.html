@@ -196,7 +196,7 @@ body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--ink);font
   #tSum td:nth-child(1){padding:0 6px}
   #tSum td.bxc{padding:0 4px;white-space:nowrap}
   #tSum .sumAct{display:none;margin-left:4px;vertical-align:middle}
-  #tSum tr.sumDirty .sumAct{display:inline-flex;gap:3px}
+  #tSum tr.sumDirty .sumAct,#tSum tr.sumOn .sumAct{display:inline-flex;gap:3px}
   #tSum tr.sumDirty td{background:#FFF8E1}
   #tSum .sumSave{height:28px;padding:0 10px;border:0;border-radius:6px;background:#1F3A5F;color:#fff;font-weight:800;font-size:12.5px;cursor:pointer;font-family:var(--sans)}
   #tSum .sumCx{height:28px;width:26px;border:1px solid #C9D9EA;border-radius:6px;background:#fff;color:#5C7390;cursor:pointer}
@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.20 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.21 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -15992,10 +15992,11 @@ function sumRowEA(tr,it){ let ea=0;
   return ea; }
 function sumSaveRow(tr){
   const b=tr.querySelector('.sumSave'); const it=b&&S.items.find(x=>x.pn===b.dataset.pn); if(!it) return;
-  const ea=sumRowEA(tr,it); tr.classList.remove('sumDirty'); sumEdit=false;
+  const ea=sumRowEA(tr,it); tr.classList.remove('sumDirty','sumOn'); sumEdit=false;
   fixStock(it, ea, fxDate());
 }
-function sumCancelRow(tr){ tr.classList.remove('sumDirty'); sumEdit=false; rSum(); }
+function sumCancelRow(tr){ tr.classList.remove('sumDirty','sumOn'); sumEdit=false; rSum(); }
+$('tSum').addEventListener('mousedown',e=>{ if(e.target.closest&&e.target.closest('.sumAct')) e.preventDefault(); },true);
 $('tSum').addEventListener('click',e=>{
   const sv=e.target.closest&&e.target.closest('.sumSave'); if(sv){ e.stopPropagation(); kbClose(); sumSaveRow(sv.closest('tr')); return; }
   const cx=e.target.closest&&e.target.closest('.sumCx'); if(cx){ e.stopPropagation(); kbClose(); sumCancelRow(cx.closest('tr')); }
@@ -16007,7 +16008,11 @@ function isSumInput(el){
   if(!el||!el.classList) return false;
   return el.classList.contains('sumBx') || !!(el.closest&&el.closest('.fixbox'));
 }
-$('tSum').addEventListener('focusin',e=>{ if(isSumInput(e.target)) sumEdit=true; });
+$('tSum').addEventListener('focusin',e=>{ if(!isSumInput(e.target)) return; sumEdit=true;
+  /* 박스·낱개 칸을 누르면 그 행에 [💾 저장] 표시 — 실물이 전산과 같아도 '확인 완료'로 저장할 수 있게 */
+  const tr=e.target.closest&&e.target.closest('tr'); if(!tr||!tr.querySelector('.sumSave')) return;
+  document.querySelectorAll('#tSum tr.sumOn').forEach(x=>{ if(x!==tr) x.classList.remove('sumOn'); });
+  tr.classList.add('sumOn'); });
 $('tSum').addEventListener('focusout',e=>{
   if(!isSumInput(e.target)) return;
   setTimeout(()=>{ if(!isSumInput(document.activeElement)) sumEdit=false; },200);
@@ -16079,6 +16084,7 @@ async function fixStock(it, val, dd){
   if(!confirm(it.pn+'\n\n조정일자 '+d+(isToday?' (오늘)':'')+'\n'
       +'전산 '+bx(cur)+(isToday?'':' ('+d+' 기준)')+'\n실사 '+bx(want)+'\n'
       +'차이 '+(df>0?'+':'')+nf(df)+' EA'+(b0?' ('+(df>0?'+':'')+(df/b0).toFixed(1)+'박스)':'')
+      +(df?'':'\n\n✔ 실물 수량이 전산과 같습니다 → 확인 완료로 저장합니다 (🔍실물확인 표시도 사라집니다)')
       +'\n\n💾 '+d+' 재고를 '+nf(want)+' EA 로 [고정] 저장합니다.\n  (그 전 날짜 전표가 나중에 바뀌어도 이 수량은 바뀌지 않습니다)'
       +(mc?'\n\n⚠ '+d.slice(0,7)+' 은(는) 월마감 확정된 달입니다. 확정 재고조사서에는 반영되지 않습니다.':'')
       +(later.length?'\n\n⚠ '+d+' 이후에 재고조정 '+later.length+'건이 이미 있습니다 (마지막 '+later.map(r=>r.d).sort().pop()+').\n'
