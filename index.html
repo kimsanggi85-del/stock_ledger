@@ -1160,7 +1160,7 @@ body.qp-on{overflow:hidden}
 @media(max-width:760px){ .dmsg{justify-content:flex-start;font-size:12.5px;margin:0 0 8px;padding:6px 10px 12px;min-height:58px} .dmsg .dm-in{flex-direction:column;align-items:flex-start;gap:2px} }
 @media(max-width:760px){ #dashM{display:flex;gap:6px;overflow-x:auto;margin:-2px 0 8px;padding-bottom:2px}
   #dashM .dChip{flex:0 0 auto;border:1px solid #C9D6E3;background:#fff;border-radius:16px;padding:6px 10px;font-size:12.5px;color:#334155;white-space:nowrap}
-  #dashM .dChip b{font-weight:800}#dashM .dChip.warn{border-color:#F3B4AE;background:#FDF1F0}#dashM .dChip.warn b{color:#B3261E} }
+  #dashM .dChip b{font-weight:800}#dashM .dChip.warn{border-color:#F3B4AE;background:#FDF1F0}#dashM .dChip.warn b{color:#B3261E}#dashM .dChip.on{background:#1F3A5F;border-color:#1F3A5F;color:#fff}#dashM .dChip.on b{color:#fff} }
 .dashBox .dMore,.dashBox .dEmpty{color:#1D4ED8;cursor:pointer;padding:2px 4px}.dashBox .dDone{color:#0B6B3A;font-weight:700;margin-top:3px;font-size:11px}
 .shp-p .shp-chg{margin-top:6px;padding:5px 8px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:5px;font-size:11.5px;line-height:1.6}.shp-p .shp-b{flex:1 1 56%;min-width:0}
 .shp-p .shp-t{width:100%;margin-top:4px;font-size:12.5px}
@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.21 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.22 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1316,7 +1316,8 @@ body.qp-on{overflow:hidden}
     <label class="pc-only">필터</label>
     <select id="fSel" class="fsel pc-only">
       <option value="all">전체</option><option value="short">안전재고 미달</option><option value="zero">재고 0</option>
-      <option value="move">당월 입출고 발생</option><option value="dead">장기 미불출</option></select>
+      <option value="move">당월 입출고 발생</option><option value="dead">장기 미불출</option>
+      <option value="chk">🔍 실물확인 대기</option><option value="chkdone">✔ 실물확인 완료</option></select>
     <div id="sumPg" class="cnt-pg pc-only"><div class="cp-bar"><i style="width:5%"></i></div><b>7 / 131</b>품목 확인 · SKF씰 · 남은 124개</div>
     <div class="rt pc-only"><button class="btn" onclick="exportCsv('sum')">CSV</button></div>
     <div class="m-only qs" id="qsPad">
@@ -7172,7 +7173,8 @@ function dailyPaint(){ if(!$('dailyMsg')) return; dailyShow(DM_I,0);
   if(!DM_T) DM_T=setInterval(()=>{ if(document.visibilityState==='hidden'||!$('dailyMsg')||!$('dailyMsg').offsetParent) return; DM_I=(DM_I+1)%4; dailyShow(DM_I,1); },6000); }
 /* ═══ 재고현황 맨 위 양옆 — 왼쪽 「오늘 할 일」, 오른쪽 「SBC 다음 출하」 (PC 넓은 화면만) ═══ */
 function dashGo(k){
-  if(k==='chk'){ setTab('cnt'); toast('🔍실물확인 표시 품목을 실사해 주세요'); return; }
+  if(k==='chk'&&F==='chk'){ F='all'; if($('fSel')) $('fSel').value='all'; rSum(); toast('전체 품목 보기'); return; }   /* 한 번 더 누르면 필터 해제 */
+  if(k==='chk'){ setTab('sum'); F='chk'; if($('fSel')) $('fSel').value='chk'; rSum(); toast('🔍 실물확인 대기 품목 — 실물을 세어 [💾 저장] 하면 목록에서 빠집니다'); return; }
   if(k==='short'){ F='short'; if($('fSel')) $('fSel').value='short'; rSum(); return; }
   if(k==='cnt'){ try{ cntRemind(true); }catch(e){ setTab('cnt'); } return; }
   if(k==='sbc'){ const sel=$('sCu'); if(sel&&[...sel.options].some(o=>o.value==='SBC')){ sel.value='SBC'; sel.dispatchEvent(new Event('change',{bubbles:true})); } else fcOpen(); return; }
@@ -7193,7 +7195,7 @@ function dashPaint(){
     +(nx?row('📦','SBC 다음 출하 부족 ('+nx.d.slice(5).replace('-','/')+')',nx.sh.length+'기종','sbc',nx.sh.length>0):'')
     +row('📋',dl<=2?'월말 재고실사 기간':'월말 재고실사까지',dl<=2?'실사표 받기':'D-'+dl,'cnt',dl<=2);
   /* 휴대폰 — 같은 내용을 버튼 한 줄로 */
-  const M=$('dashM'), chip=(t,k,warn)=>'<button type="button" class="dChip'+(warn?' warn':'')+'" onclick="dashGo(\''+k+'\')">'+t+'</button>';
+  const M=$('dashM'), chip=(t,k,warn)=>'<button type="button" class="dChip'+(warn?' warn':'')+(k==='chk'&&F==='chk'?' on':'')+'" onclick="dashGo(\''+k+'\')">'+t+(k==='chk'&&F==='chk'?' ✕':'')+'</button>';
   if(M) M.innerHTML=chip('🔍 실물확인 <b>'+nChk+'</b>','chk',nChk>0)
     +(nx?chip('📦 SBC '+nx.d.slice(5).replace('-','/')+' '+(nx.sh.length?'부족 <b>'+nx.sh.length+'</b>기종':'<b>출하가능</b>'),'sbc',nx.sh.length>0):'')
     +chip('📋 실사 '+(dl<=2?'<b>기간</b>':'<b>D-'+dl+'</b>'),'cnt',dl<=2);
@@ -7222,6 +7224,8 @@ function rSum(){
     if(F==='zero')return v.cur<=0;
     if(F==='move')return v.iq||v.oq;
     if(F==='dead')return isDead(it);
+    if(F==='chk')return chkOpen(it.pn);                                   /* 실물 수량을 아직 확인 안 한 표시 품목 */
+    if(F==='chkdone')return CHK[it.pn]!=null&&!chkOpen(it.pn);            /* 표시 품목 중 확인(저장) 끝난 것 */
     return true;
   }));
   const td0=today();
