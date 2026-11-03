@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.18 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.19 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6961,6 +6961,7 @@ function takeOf(it){
      → 현장 −검사수량, 2층 +검사수량 −불량, 합계 −불량. 마지막 실사일 이전 검사분은 옮기지 않는다 */
   const insp=S.inspQty!==false, anc=(isF2||hasPair)?inspAnc(isF2?base:it.pn,isF2?it.pn:it.pair):'';
   const take=r=>{
+    if(zgSkip(r)) return null;                             /* 공타(MES 양품 0) 생산입고·불량은 재고에 넣지 않는다 */
     if(isF2){
       if(r.pn===it.pn) return r.k.indexOf('재고조정')===0 ? {q:r.q,io:kindIO(r.k)} : null;
       if(r.pn===base){
@@ -6992,6 +6993,28 @@ function takeOf(it){
    고정 전표의 실제 반영량이 그만큼 바뀌어 그 날 재고는 N 그대로. 그 뒤 날짜 전표만 더하고 빼며,
    같은 날 전표는 저장 때 반영돼 있던 합계(S) 대비 늘어난 만큼만 더한다. 옛 직접수정 전표([고정] 없음)는 예전처럼 차이만 반영 */
 let LEDV=0; const FIX_C=new Map();
+/* ═══ 공타 제외 — MES 타발은 있는데 그 날 그 품번 양품이 0 (금형 교체·조정·옛 작업지시에 찍힌 공타) 이면
+   MES 생산입고·불량을 재고에 넣지 않는다. 그 날 생산마감이 입력되면(CLOSE 전표) 마감 보정으로 맞추므로 그대로 둔다.
+   11/1 부터 적용 (지난달·마감월 재고는 그대로) */
+const ZG_FROM='2026-11-01'; let ZG_C={a:null,s:null}, ZC_C={led:null,n:-1,v:-1,s:null};
+function zgSet(){ const a=S.zg||[]; if(ZG_C.a!==a){ ZG_C={a,s:new Set(a)}; } return ZG_C.s; }
+function zgClose(){ if(ZC_C.led!==S.led||ZC_C.n!==S.led.length||ZC_C.v!==LEDV){
+    const st=new Set(); S.led.forEach(r=>{ if(String(r.src||'').indexOf('CLOSE|')===0) st.add(r.d+'|'+r.pn); });
+    ZC_C={led:S.led,n:S.led.length,v:LEDV,s:st}; } return ZC_C.s; }
+function zgSkip(r){
+  if(!r||r.d<ZG_FROM||(r.k!=='생산입고'&&r.k!=='불량폐기')||String(r.src||'').indexOf('MES|')!==0) return false;
+  const k=r.d+'|'+r.pn; return zgSet().has(k)&&!zgClose().has(k);
+}
+async function zgPull(){
+  try{
+    const rows=await fetchAll(SB_URL+'/rest/v1/daily_production?select=ymd,item_code,shot_qty,normal_shot&ymd=gte.'+ZG_FROM,
+      {apikey:SB_KEY,Authorization:'Bearer '+SB_KEY});
+    const M={}; (rows||[]).forEach(x=>{ const k=String(x.ymd||'').slice(0,10)+'|'+canonPn(String(x.item_code||'').trim());
+      const o=M[k]=M[k]||{s:0,g:0}; o.s+=+x.shot_qty||0; o.g+=+x.normal_shot||0; });
+    const z=Object.keys(M).filter(k=>M[k].s>0&&M[k].g<=0).sort();
+    if(JSON.stringify(z)!==JSON.stringify(S.zg||[])){ S.zg=z; save(); render(); }
+  }catch(e){ console.warn('공타 확인:',e.message); }
+}
 const isFixRow=r=>r&&String(r.k||'').indexOf('재고조정')===0&&/\[고정 -?\d+\]/.test(String(r.n||''));
 const fixTarget=r=>{ const m=String(r.n||'').match(/\[고정 (-?\d+)\]/); return m?+m[1]:0; };
 const fixS0=r=>{ const m=String(r.n||'').match(/· 당일 (-?\d+)\s*$/); return m?+m[1]:null; };
@@ -13231,6 +13254,7 @@ async function syncMes(silent){
     try{ lastAuto=Date.now(); }catch(e){}
     setTimeout(()=>syncBar(),3500);
     syncInfo();
+    zgPull();                                            /* 공타(양품 0) 품목·날짜 갱신 */
     const t=new Date();
     mesStat('MES '+p2(t.getHours())+':'+p2(t.getMinutes())+' 동기화됨 · 서버전표 '+rawN+'건','#7FD8A4');
     if(!silent)toast('서버 기준 '+rows.length+'건 재구성'+(add?' · +'+add:'')+(del?' · -'+del:'')
