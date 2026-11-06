@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.23 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.24 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -4526,7 +4526,7 @@ body.qp-on{overflow:hidden}
     <div><span>프레스에 물린</span><b id="r6">21</b><em>코일</em></div>
     <div class="w"><span>검사 등록 빠짐</span><b id="r8">0</b><em>코일</em></div>
     <div class="w"><span>사용연한 임박·초과</span><b id="r7">3</b><em>코일</em></div>
-    <div class="w" style="cursor:pointer" onclick="$('rawSt').value='__long';setRV('coil')" title="입고 후 60일 넘게 미투입 — 누르면 코일대장에서 장기재고만"><span>장기재고(60일↑)</span><b id="r9">0</b><em id="r9k">코일</em></div>
+    <div class="w" style="cursor:pointer" onclick="$('rawSt').value='__long';setRV('coil')" title="입고 후 90일 넘게 미투입 — 누르면 코일대장에서 장기재고만"><span>장기재고(90일↑)</span><b id="r9">0</b><em id="r9k">코일</em></div>
   </div>
 
   <div class="guide">
@@ -4588,7 +4588,7 @@ body.qp-on{overflow:hidden}
     <input id="rawQ" placeholder="코일번호 · 업체 · 품번 검색" class="kbi" style="width:180px;margin-left:10px">
     <select id="rawSt" class="fsel" style="min-width:112px">
       <option value="">재고 있는 코일 (사용완료 제외)</option><option>대기</option><option>사용중</option><option value="소진">✔ 사용완료(소진)만</option><option>반품</option>
-      <option value="__long">📦 장기재고(60일↑ 미투입)</option>
+      <option value="__long">📦 장기재고(90일↑ 미투입)</option>
       <option value="__hold">⛔ 검사 안 끝난 것</option>
       <option value="__miss">🩹 보완 등록분</option>
       <option value="__free">🏷 사급·관리제외만 보기</option>
@@ -4608,7 +4608,7 @@ body.qp-on{overflow:hidden}
     </div>
   </div>
 
-  <div id="rawWarn" style="display: block; max-width: 1400px; margin: 0px auto 10px; background: rgb(251, 233, 231); border: 1px solid rgb(224, 169, 162); border-radius: 3px; padding: 9px 12px; font-size: 11.5px; color: rgb(138, 43, 34);"><div class="wh" onclick="tglWarn()">⚠ 확인할 사항<span class="cnt">7건</span><span class="tags"><i>목록에 없는 코일 1</i><i>쓸 코일 없음 8</i><i>중복 20</i></span><span class="arw">▼</span></div><div class="wb">⚠ <b>코일 잔량 부족</b> — 당월 생산투입 중 5건 / <b>413.5 kg</b> 이 전표 LOT 코일의 잔량을 넘었습니다. 코일 중량(성적서 총중량 균등배분)이 실제와 다르거나 LOT 이 잘못 찍힌 경우입니다. (AB3248-SC-01, IW/OW-BDA-1179-1, IW/OW-BDA-1179-2, IW/OW-BDA-1106-2, 1958-365-2(2호))<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>프레스에 물려 있는데 목록에 없는 코일 1건</b> — 현장에서는 쓰고 있는데 수입검사 등록이 빠진 코일입니다. 아래 버튼을 누르면 MES 정보로 자동 등록됩니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixMesLots()">🩹 미등록 LOT 보완 등록</button><div style="margin-top:5px"><b>*</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>쓸 코일이 없는 제품 8종</b> — 소요량은 등록돼 있는데 맞는 코일이 재고에 없습니다. <b>1781-0001-00</b>: 규격은 맞으나 104본 모두 소진 — 입고 60,022.0kg / 투입 60,022.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1945-349-1</b>: 규격은 맞으나 4본 모두 소진 — 입고 1,384.0kg / 투입 1,384.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2(2호)</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 외 4종<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">ℹ <b>재고 시작일 2026-08-28</b> — 그 이전 생산분 2638건 / 24,333,797 EA 가 <b>차감되지 않습니다</b>. 재고는 <b>2026-08-28 MES 소재재고 기준</b>으로 맞춰져 있어 그 전 생산분은 이미 반영된 것입니다.<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⏳ <b>사용연한 관리</b> · <b style="color:#B3261E">초과 3본 / 5,431.5 kg</b> — SPCC 60일 · 430 계열 180일 · 304 계열 360일 기준입니다. 초과분은 재검토 후 사용하세요.<div style="margin-top:5px"><b>26C12060-21-022A (2026-07-06), 26C12152-21-011A (2026-07-06), AT45049C-01-2 (2026-08-15)</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>입고일이 실제와 다른 코일 862본</b> — 수입검사 성적서에 입고일이 비어 있어 <b>등록한 날짜</b>가 들어갔습니다. 검사 발행분에 실제 입고일이 있으니 바로잡을 수 있습니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixDates()">📅 지금 바로잡기</button><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>같은 코일이 두 번 등록됨 20건</b> — 재고가 실제보다 많게 잡힙니다. <b>[🔄 최신화]</b>를 한 번 더 누르면 자동으로 합쳐집니다.<div style="margin-top:5px"><b>26A12B20-11-011A2A, 26A12D27-11-011A4A, 26A12B20-11-011A3A, 26A12D27-11-011A1A, 26A12B64-21-011A1B, 26A12264-21-011A2B, 26A12264-21-011A1B, 26A12264-21-011A3B 외 12건</b></div></div></div>
+  <div id="rawWarn" style="display: block; max-width: 1400px; margin: 0px auto 10px; background: rgb(251, 233, 231); border: 1px solid rgb(224, 169, 162); border-radius: 3px; padding: 9px 12px; font-size: 11.5px; color: rgb(138, 43, 34);"><div class="wh" onclick="tglWarn()">⚠ 확인할 사항<span class="cnt">7건</span><span class="tags"><i>목록에 없는 코일 1</i><i>쓸 코일 없음 8</i><i>중복 20</i></span><span class="arw">▼</span></div><div class="wb">⚠ <b>코일 잔량 부족</b> — 당월 생산투입 중 5건 / <b>413.5 kg</b> 이 전표 LOT 코일의 잔량을 넘었습니다. 코일 중량(성적서 총중량 균등배분)이 실제와 다르거나 LOT 이 잘못 찍힌 경우입니다. (AB3248-SC-01, IW/OW-BDA-1179-1, IW/OW-BDA-1179-2, IW/OW-BDA-1106-2, 1958-365-2(2호))<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>프레스에 물려 있는데 목록에 없는 코일 1건</b> — 현장에서는 쓰고 있는데 수입검사 등록이 빠진 코일입니다. 아래 버튼을 누르면 MES 정보로 자동 등록됩니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixMesLots()">🩹 미등록 LOT 보완 등록</button><div style="margin-top:5px"><b>*</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>쓸 코일이 없는 제품 8종</b> — 소요량은 등록돼 있는데 맞는 코일이 재고에 없습니다. <b>1781-0001-00</b>: 규격은 맞으나 104본 모두 소진 — 입고 60,022.0kg / 투입 60,022.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1945-349-1</b>: 규격은 맞으나 4본 모두 소진 — 입고 1,384.0kg / 투입 1,384.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 / <b>1958-365-2(2호)</b>: 규격은 맞으나 10본 모두 소진 — 입고 4,515.0kg / 투입 4,515.0kg. 기초일자(2026-08-28) 이후 코일 입고가 생산량에 못 미칩니다 외 4종<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">ℹ <b>재고 시작일 2026-08-28</b> — 그 이전 생산분 2638건 / 24,333,797 EA 가 <b>차감되지 않습니다</b>. 재고는 <b>2026-08-28 MES 소재재고 기준</b>으로 맞춰져 있어 그 전 생산분은 이미 반영된 것입니다.<hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⏳ <b>사용연한 관리</b> · <b style="color:#B3261E">초과 3본 / 5,431.5 kg</b> — 전 재질 입고 후 3개월(90일) 기준입니다 (SQ). 초과분은 재검토 후 사용하세요.<div style="margin-top:5px"><b>26C12060-21-022A (2026-07-06), 26C12152-21-011A (2026-07-06), AT45049C-01-2 (2026-08-15)</b></div><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>입고일이 실제와 다른 코일 862본</b> — 수입검사 성적서에 입고일이 비어 있어 <b>등록한 날짜</b>가 들어갔습니다. 검사 발행분에 실제 입고일이 있으니 바로잡을 수 있습니다. &nbsp;<button class="btn k" style="padding:3px 10px;font-size:11px" onclick="fixDates()">📅 지금 바로잡기</button><hr style="border:0;border-top:1px solid #E0A9A2;margin:8px 0">⚠ <b>같은 코일이 두 번 등록됨 20건</b> — 재고가 실제보다 많게 잡힙니다. <b>[🔄 최신화]</b>를 한 번 더 누르면 자동으로 합쳐집니다.<div style="margin-top:5px"><b>26A12B20-11-011A2A, 26A12D27-11-011A4A, 26A12B20-11-011A3A, 26A12D27-11-011A1A, 26A12B64-21-011A1B, 26A12264-21-011A2B, 26A12264-21-011A1B, 26A12264-21-011A3B 외 12건</b></div></div></div>
 
   <div class="sheet">
     <div class="doc-hd"><div class="doc-no">문서번호 <b>TJP-QP-0806</b><br>개정번호 <b>Rev.0</b></div>
@@ -6105,7 +6105,7 @@ body.qp-on{overflow:hidden}
         · 코일을 <b>엑셀 대장(CSV)</b>으로 넣고 <b>수입검사 연동</b>도 쓰면 같은 코일이 두 번 잡힐 수 있습니다.
           연동할 때 대장에 이미 있는 밀시트는 <b>건너뛰고</b>, 이미 겹친 것은
           [관리 도구 → <b>중복 코일 정리</b>]로 자동연동분만 지웁니다. <b>엑셀 대장이 정본</b>입니다.<br>
-        · <b>사용연한</b>은 재질로 자동 계산합니다 — <b>SPCC 60일 · 430 계열 180일 · 304 계열 360일</b>.
+        · <b>사용연한</b>은 재질로 자동 계산합니다 — <b>전 재질 입고 후 3개월(90일)</b> (SQ 기준).
           코일 목록에 마감일과 <b>D-일수</b>가 표시되고, 14일 이내면 주황·초과하면 빨강으로 뜹니다.
           코일을 열어 마감일을 직접 지정할 수도 있습니다.<br>
         · <b>📥 코일 CSV 등록</b>: 코일번호를 비우면 <b>밀시트-롤번호</b>(260109/01S7639327-3)로 자동 부여되어
@@ -6404,7 +6404,7 @@ body.qp-on{overflow:hidden}
         <option value="합격">합격</option><option value="특채">특채</option><option value="미등록">수입검사 미등록 (보완분)</option><option value="대기">검사대기 (투입 보류)</option><option value="불합격">불합격 (격리)</option></select></div></div>
     <div class="g2">
       <div class="fld"><label>보관위치</label><input id="cLc" style="font-family:var(--sans)" placeholder="예: 코일장 A-3"></div>
-      <div class="fld"><label>사용연한 마감일</label><input type="date" id="cDue" title="비우면 재질 기준으로 자동 계산합니다 (SPCC 60일 · 430 180일 · 304 360일)"></div></div>
+      <div class="fld"><label>사용연한 마감일</label><input type="date" id="cDue" title="비우면 재질 기준으로 자동 계산합니다 (전 재질 입고 후 90일)"></div></div>
     <div class="g2">
       <div class="fld"><label>상태</label><select id="cSt" style="font-family:var(--sans)">
         <option>대기</option><option>사용중</option><option>소진</option><option>반품</option></select></div></div>
@@ -8263,8 +8263,8 @@ function coilSt(c){
 }
 /* 경과일 — 지난달을 보면 그 달 말일, 이번 달은 오늘 기준 */
 function coilAge(c){ return c.d?Math.floor((new Date(rawAsOf()||today())-new Date(c.d))/864e5):0; }
-/* 장기재고 = 입고 후 60일 넘게 미투입(대기)으로 남은 코일 (사급(부강·세동 포함)·관리제외·반품·소진 제외) */
-const RAW_LONG=60;
+/* 장기재고 = 입고 후 90일(3개월) 넘게 미투입(대기)으로 남은 코일 (사급(부강·세동 포함)·관리제외·반품·소진 제외) */
+const RAW_LONG=90;
 function isDeadCoil(c){ return !isOff(c)&&!RAW_SKIP.test(c.sup||'')&&coilSt(c)==='대기'&&remOf(c)>0.5&&coilAge(c)>RAW_LONG; }
 
 /* ── 원단위 FIFO 자동차감 ─────────────────────────────────── */
@@ -9474,17 +9474,20 @@ async function exportTrc(){
 
 
 /* ═══════ 소재 사용연한 ═══════
-   현행 관리대장 기준 — SPCC 60일 · 430 계열 180일 · 304(STS) 계열 360일 */
-const LIFE_DEF='SPCC=60,SPH=60,SGA=60,430=180,STS430=180,SUS430=180,304=360,STS304=360,SUS304=360,316=360';
+   SQ 기준 — 전 재질 입고 후 3개월(90일). (2026-11 이전 관리대장: SPCC 60 · 430 180 · 304 360일)
+   서버에 옛 기본값(LIFE_OLD)이 그대로 저장돼 있으면 새 기본값으로 본다 */
+const LIFE_DEF='SPCC=90,SPH=90,SGA=90,430=90,STS430=90,SUS430=90,304=90,STS304=90,SUS304=90,316=90';
+const LIFE_OLD='SPCC=60,SPH=60,SGA=60,430=180,STS430=180,SUS430=180,304=360,STS304=360,SUS304=360,316=360';
+function lifeRuleOf(){ return (S.lifeRule==null||S.lifeRule===LIFE_OLD)?LIFE_DEF:S.lifeRule; }
 function lifeDays(mt){
   const k=String(mt||'').toUpperCase().replace(/[\s\-_]/g,'');
-  const L=String(S.lifeRule==null?LIFE_DEF:S.lifeRule).split(',').map(x=>x.trim()).filter(Boolean);
+  const L=String(lifeRuleOf()).split(',').map(x=>x.trim()).filter(Boolean);
   for(const e of L){
     const i=e.lastIndexOf('='); if(i<0)continue;
     const pat=e.slice(0,i).toUpperCase().replace(/[\s\-_]/g,''), v=+e.slice(i+1)||0;
     if(pat&&v&&k.includes(pat))return v;
   }
-  return 60;                                   /* 모르면 가장 짧게 잡는다 */
+  return 90;                                   /* 모르는 재질도 SQ 3개월 */
 }
 /* 코일의 사용연한 마감일 */
 function dueOf(c){
@@ -9587,7 +9590,7 @@ function ltRender(){
         :'<tr><td colspan="8" style="text-align:center;padding:18px;color:#6b7885">입고 '+LT_DAYS+'일 넘은 재고가 없습니다.</td></tr>');
   }else{
     $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 출하 전 <b>외관(발청·이물) 검사</b>를 하고 결과를 기록하세요.'
-      +'<br><span style="color:#6b7885">※ 사용연한은 설정의 소재 사용연한(SPCC 60일 · 430 180일 · 304 360일 등)을 따릅니다.</span>';
+      +'<br><span style="color:#6b7885">※ 사용연한은 설정의 소재 사용연한(전 재질 입고 후 90일, SQ 3개월)을 따릅니다.</span>';
     const P=ltProd();
     $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>외관검사</th></tr>'
       +(P.length?P.map(g=>{ const r=LT.insp[g.key];
@@ -10060,7 +10063,7 @@ function rRaw(){
       msgs.push('⏳ <b>사용연한 관리</b>'
         +(over.length?' · <b style="color:#B3261E">초과 '+over.length+'본 / '+kgs(over)+' kg</b>':'')
         +(soon.length?' · <b style="color:#9A6400">14일 이내 '+soon.length+'본 / '+kgs(soon)+' kg</b>':'')
-        +' — SPCC 60일 · 430 계열 180일 · 304 계열 360일 기준입니다. 초과분은 재검토 후 사용하세요.'
+        +' — 전 재질 입고 후 3개월(90일) 기준입니다 (SQ). 초과분은 재검토 후 사용하세요.'
         +'<div style="margin-top:5px"><b>'
         +over.concat(soon).slice(0,8).map(c=>esc(c.cno)+' ('+dueOf(c)+')').join(', ')
         +(over.length+soon.length>8?' 외 '+(over.length+soon.length-8)+'본':'')+'</b></div>');
@@ -10088,7 +10091,7 @@ function rRaw(){
       +'<div style="margin-top:5px"><b>'+P.slice(0,6).map(g=>esc(g.d)+' '+esc(g.pn)+' ('+g.coils.map(x=>esc(x.c.cno)+' '+x.age+'일').join(', ')+')').join(' · ')
       +(P.length>6?' 외 '+(P.length-6)+'건':'')+'</b></div>');
   }catch(e){ console.warn('장기보관 생산:',e.message); }
-  /* 장기재고 — 60일 넘게 미투입 */
+  /* 장기재고 — 90일 넘게 미투입 */
   {
     const LG=S.coils.filter(isDeadCoil).sort((x,y)=>String(x.d).localeCompare(String(y.d)));
     if(LG.length) msgs.push('📦 <b>장기재고(입고 '+RAW_LONG+'일 넘게 미투입) '+LG.length+'본 / '+kg(LG.reduce((a2,c)=>a2+remOf(c),0))+' kg</b>'
@@ -11433,7 +11436,7 @@ function rawPayload(){
     spec:S.spec||{}, lotDate:S.lotDate||{},
     mled:S.mled.filter(m=>!m.auto),          /* 수기·실사·분할조정만 공유 */
     del:S.rawDel||{}, supAlias:S.supAlias||{}, freeMat:S.freeMat==null?FREE_DEF:S.freeMat,
-    custRule:S.custRule==null?CUST_RULE_DEF:S.custRule, lifeRule:S.lifeRule==null?LIFE_DEF:S.lifeRule,
+    custRule:S.custRule==null?CUST_RULE_DEF:S.custRule, lifeRule:lifeRuleOf(),
     cseq:S.cseq, mseq:S.mseq, iqcFrom:S.iqcFrom||'', baseSet:S.baseSet||''
   };
 }
@@ -11494,6 +11497,7 @@ function mergeRaw(sv){
   if(sv.freeMat!=null&&S.freeMat==null)S.freeMat=sv.freeMat;
   if(sv.custRule!=null&&S.custRule==null)S.custRule=sv.custRule;
   if(sv.lifeRule!=null&&S.lifeRule==null)S.lifeRule=sv.lifeRule;
+  if(S.lifeRule===LIFE_OLD)S.lifeRule=LIFE_DEF;        /* 옛 기본값 → SQ 3개월 */
   /* 코일: 코일번호 기준 */
   const byCno=new Map(S.coils.map(x=>[x.cno,x]));
   (sv.coils||[]).forEach(r=>{
