@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.29 · 원소재 v11.53</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.29 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -10404,8 +10404,14 @@ function rRaw(){
       else if(!fst&&/^(소진|반품)$/.test(coilSt(c)))return false;   /* 기본 보기 = 재고 있는 코일만 — 사용완료는 [사용완료만]·[전체]에서 (LOT 추적용 기록은 남는다) */
       return !q||nz(c.cno+' '+c.mt+' '+c.sup+' '+c.ms+' '+c.lc).includes(q);})
       .sort((x,y)=>String(y.c.d||'').localeCompare(String(x.c.d||''))||y.c.id-x.c.id);   /* 최근 입고가 위로 */
+    /* 업체 → 재질로 묶어 소계·합계 (기본) · 「최근 입고 순」은 예전처럼 한 줄로 */
+    const grp=S.coilGrp!=='date';
+    const supK=c=>String(c.sup||'').trim()||'(업체 없음)', mtK=c=>String(c.mt||'').trim().toUpperCase()||'(재질 없음)';
+    if(grp) R.sort((x,y)=>supK(x.c).localeCompare(supK(y.c),'ko')||mtK(x.c).localeCompare(mtK(y.c),'en',{numeric:true})
+      ||(+x.c.t||0)-(+y.c.t||0)||(+x.c.w||0)-(+y.c.w||0)||String(y.c.d||'').localeCompare(String(x.c.d||'')));
     const usedN=fst?0:S.coils.filter(c=>!isOff(c)&&/^(소진|반품)$/.test(coilSt(c))).length;
-    $('gt-raw').innerHTML='코일대장 · '+(fst?'':'재고 ')+'<b>'+R.length+'</b>본 (최근 입고 순)'+(usedN?' <span style="color:#7d8b99">· 사용완료 '+usedN+'본 숨김</span>':'')+' · 잔량합계 <b>'
+    $('gt-raw').innerHTML='코일대장 · '+(fst?'':'재고 ')+'<b>'+R.length+'</b>본 ('+(grp?'업체 → 재질별 묶음':'최근 입고 순')+')'
+      +' <span class="seg" style="display:inline-flex;gap:0">'+[['sup','업체·재질별'],['date','최근 입고 순']].map(([k,t])=>'<button class="btn" style="padding:2px 9px;font-size:11px;'+((grp?'sup':'date')===k?'background:#1E2A36;color:#fff;border-color:#1E2A36;font-weight:800':'')+'" onclick="S.coilGrp=\''+k+'\';save();rRaw()">'+t+'</button>').join('')+'</span>'+(usedN?' <span style="color:#7d8b99">· 사용완료 '+usedN+'본 숨김</span>':'')+' · 잔량합계 <b>'
       +kg(R.reduce((s2,{c})=>s2+Math.max(0,remOf(c)),0))+'</b> kg'
       +' <span style="color:#8A6D1F">· 노란 칸은 클릭해서 바로 수정</span>'
       +' <span style="color:#7d8b99">· 창이 좁으면 표를 옆으로 밀어서 보세요 ↔</span>'
@@ -10415,8 +10421,15 @@ function rRaw(){
       +'· 직접 고친 칸은 <b>🔒</b> 표시가 붙고, 이후 최신화해도 덮어쓰지 않습니다. 되돌리려면 코일번호를 눌러 <b>[연동값으로 되돌리기]</b>를 선택하세요.<br>'
       +'· <b>잔량·투입·소진율</b>은 자동 계산이라 고칠 수 없습니다. 수량을 정정하려면 [관리 도구 → 소재 입출고 직접 입력]에서 재고조정 전표를 쓰세요.<br>'
       +'· 코일번호를 누르면 전체 수정·삭제 창이 열립니다.';
+    const SUMS=a=>({n:a.length,wt:a.reduce((s2,{c})=>s2+(+c.wt||0),0),rem:a.reduce((s2,{c})=>s2+remOf(c),0)});
+    const supTot={}, mtTot={};
+    if(grp) R.forEach(o=>{ const a=supK(o.c), b=a+'|'+mtK(o.c); (supTot[a]=supTot[a]||[]).push(o); (mtTot[b]=mtTot[b]||[]).push(o); });
     if(MC){
-      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({c,i},n)=>mcCoil(c,i,n)).join('')
+      let lastS='';
+      $('tRaw').innerHTML='<tbody>'+(R.length?R.map(({c,i},n)=>{ let h='';
+          if(grp&&supK(c)!==lastS){ lastS=supK(c); const t=SUMS(supTot[lastS]);
+            h='<tr><td style="background:#1E2A36;color:#fff;font-weight:800;padding:6px 10px">'+esc(lastS)+' · '+t.n+'본 · 잔량 '+kg(t.rem)+' kg</td></tr>'; }
+          return h+mcCoil(c,i,n); }).join('')
         :'<tr><td style="padding:24px;text-align:center;color:#93A0AB">등록된 코일이 없습니다.</td></tr>')+'</tbody>';
       fillRawLists(); return;
     }
@@ -10429,7 +10442,8 @@ function rRaw(){
       <thead><tr><th>No</th><th>입고일</th><th>코일 No.</th><th>재질</th><th>t</th><th>W</th>
       <th>입고중량</th><th>투입</th><th>잔량(kg)</th><th>소진율</th><th>상태</th><th>검사</th><th>공급업체</th>
       <th>MILL SHEET</th><th>성적서 / 검사일</th><th>장착설비</th><th>위치</th><th>경과일</th><th>사용연한</th><th>비고</th></tr></thead><tbody>`
-     +(R.length?R.map(({c,i},n)=>{
+     +(R.length?(()=>{
+      const rowH=({c,i},n)=>{
         const r=remOf(c), used=(+c.wt||0)-r, st=coilSt(c), pct=c.wt?used/c.wt*100:0;
         const sc=st==='소진'?'#93A0AB':(st==='사용중'?'#0B4F9E':(st==='반품'?'#B3261E':'#0B6B3A'));
         const lk=f=>String(c.lk||'').split(',').includes(f)?'🔒':'';
@@ -10462,7 +10476,20 @@ function rRaw(){
             return d2?esc(d2)+(v==null?'':'<div style="font-size:9px">'+(v<0?'초과 '+(-v)+'일':'D-'+v)+'</div>'):'-';})(dueLeft(c))}</td>
          <td class="l" style="padding:0">${isFree(c)?'<span style="background:#EDE7F6;color:#5B4B8A;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700">사급</span>':''}${c.src?'<span style="background:#E4F1EA;color:#0B6B3A;padding:1px 5px;border-radius:8px;font-size:9.5px">수입검사</span>':''}
            ${E('n',c.n,'class="ce l" style="font-family:var(--sans);font-size:10.5px"')}</td></tr>`;
-       }).join(''):`<tr><td colspan="20" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
+      };
+      if(!grp) return R.map(rowH).join('');
+      /* 업체 → 재질 묶음: 재질 소계, 업체 합계 */
+      const subRow=(lab,a,lv)=>{ const t=SUMS(a), u=t.wt-t.rem;
+        return `<tr style="background:${lv?'#E8EEF5':'#F5F8FB'};font-weight:${lv?800:700}"><td colspan="6" class="${lv?'l':'r'}" style="${lv?'':'color:#41556a'}">${esc(lab)} ${lv?'합계':'소계'} (${t.n}본)</td>
+          <td>${kg(t.wt)}</td><td class="${u?'neg':''}">${u?kg(u):'-'}</td><td style="font-weight:800">${kg(t.rem)}</td><td colspan="11"></td></tr>`; };
+      let h='', n=0;
+      Object.keys(supTot).forEach(sk=>{
+        h+=`<tr><td colspan="20" class="l" style="background:#1E2A36;color:#fff;font-weight:800;padding:5px 10px">${esc(sk)}</td></tr>`;
+        const mts=[...new Set(supTot[sk].map(o=>mtK(o.c)))];
+        mts.forEach(mk=>{ const a=mtTot[sk+'|'+mk]; a.forEach(o=>{ h+=rowH(o,n++); }); if(mts.length>1) h+=subRow(mk,a,0); });
+        h+=subRow(sk,supTot[sk],1); });
+      return h; })()
+     :`<tr><td colspan="20" class="c" style="padding:30px;color:#93A0AB">등록된 코일이 없습니다. [＋ 코일 입고]로 등록하세요.</td></tr>`)
      +`</tbody><tfoot><tr><td colspan="6" class="c">합　계 (${R.length}본)</td>
        <td>${kg(R.reduce((s2,{c})=>s2+(+c.wt||0),0))}</td>
        <td>${kg(R.reduce((s2,{c})=>s2+((+c.wt||0)-remOf(c)),0))}</td>
