@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.24 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.25 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6337,7 +6337,7 @@ body.qp-on{overflow:hidden}
 </div></div>
 
 <!-- 장기보관 관리 (SQ 5_2·5_5) -->
-<div class="mask" id="mLt"><div class="modal" style="max-width:980px">
+<div class="mask" id="mLt"><div class="modal" style="max-width:1100px">
   <h3>📦 장기보관 관리<span onclick="closeAll()">✕</span></h3>
   <div class="mb">
     <div style="display:flex;gap:6px;margin-bottom:9px">
@@ -6346,6 +6346,21 @@ body.qp-on{overflow:hidden}
     </div>
     <div class="hint" id="ltHint" style="margin-bottom:9px"></div>
     <div class="scroll" style="max-height:60vh;overflow:auto"><table class="t" id="ltTbl" style="width:100%"></table></div>
+  </div>
+</div></div>
+
+<!-- 장기 소재 생산품 외관검사 (재질별 항목) -->
+<div class="mask" id="mLtI"><div class="modal" style="max-width:520px">
+  <h3 id="ltiTtl">외관검사 기록<span onclick="$('mLtI').classList.remove('on')">✕</span></h3>
+  <div class="mb">
+    <div class="hint" id="ltiHint" style="margin-bottom:9px"></div>
+    <table class="t" id="ltiTbl" style="width:100%"></table>
+    <div class="fld" style="margin-top:9px"><label>검사 내용 · 수량 · 조치 (불합격이면 필수)</label><input id="ltiMemo" style="width:100%" placeholder="예: 200개 전수 · 이물 3개 선별"></div>
+    <div class="fld" style="margin-top:6px"><label>검사자</label><input id="ltiBy" style="width:100%"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+      <span id="ltiRes" style="margin-right:auto;font-weight:800;align-self:center"></span>
+      <button class="btn" onclick="$('mLtI').classList.remove('on')">닫기</button>
+      <button class="btn k" onclick="ltInspSave()">저장</button></div>
   </div>
 </div></div>
 
@@ -9507,13 +9522,28 @@ const dueCls=v=>v==null?'':(v<0?'neg':(v<=14?'wn':''));
 /* ═══════ 장기보관 관리 (SQ 2026-07-20 5_2 · 5_5) ═══════
    5_2 : '25.02.27 입고 제품(1807-653) 장기보관 식별 누락 — 절차서 TJP-QP0854 : 3개월 이상 제품 식별, 재사용 시 전수검사
    5_5 : 장기보관(3개월) 초과 원소재로 생산한 제품의 외관(발청·이물) 검사 방안 미지정
+         → 재질별 검사 항목: 탄소강 = 발청 중심 · SUS = 이물·청정도 중심(전이녹·점녹 함께) — LT_CHK
    ① 제품 : 선입선출(FIFO)로 남은 재고의 입고일을 계산 → 입고 LT_DAYS 일 넘은 수량 = 장기보관
             재고조정(+)은 실제 입고일을 알 수 없어 가장 오래된 층에 붙인다(보수적) · 기초재고는 기준일 이전 입고로 본다
    ② 소재 : MES 실사용(raw_use) 입고번호 → 코일 → 사용일이 사용연한(dueOf) 또는 입고 LT_DAYS 일을 넘었으면 그 날 그 품번 생산품 = 외관검사 대상
-   기록 : kv_store 'tj_longterm_chk_v1' = { tag:{품번:{at,by,qty,oldest}}, insp:{'일자|품번':{at,by,res,memo}} } — 앱 본 저장과 따로 둠 */
+   기록 : kv_store 'tj_longterm_chk_v1' = { tag:{품번:{at,by,qty,oldest}}, insp:{'일자|품번':{at,by,res,memo,kind,chk:{항목:'OK'|'NG'}}} } — 앱 본 저장과 따로 둠 */
 const LT_DAYS=90, LT_KEY='tj_longterm_chk_v1';
 let LT={tag:{},insp:{}}, LT_TAB='stock';
 const ltDays=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+/* 재질별 외관검사 항목 — SUS 는 부동태 피막으로 전면 발청이 드물어 이물·청정도 위주, 철분 오염에 의한 전이녹·점녹은 함께 본다 */
+const ltKind=mt=>/SUS|STS|304|430|316|409|410/i.test(String(mt||''))?'sus':'cs';
+const LT_KIND_NM={cs:'탄소강 · 발청 중심',sus:'SUS · 이물·청정도 중심',mix:'탄소강+SUS 혼용'};
+const LT_KIND_SH={cs:'탄소강<br>발청',sus:'SUS<br>이물·청정도',mix:'혼용<br>발청+청정도'};
+const LT_CHK={
+  cs:[['rust','발청 (적청·점녹) 없음'],['dirt','이물·오염 없음']],
+  sus:[['dirt','이물 (먼지·칩·가루) 없음'],['clean','청정도 — 흰 천으로 닦아 유분·오염 묻어나지 않음'],['stain','얼룩 (물자국·변색) 없음'],
+       ['film','보호필름 접착 잔류 없음'],['rust','전이녹·점녹 없음 (탄소강·철분 접촉 부위)']]};
+function ltGroupKind(g){ const k=new Set(g.coils.map(x=>ltKind(x.c.mt))); return k.size>1?'mix':([...k][0]||'cs'); }
+function ltItems(kind){
+  if(kind!=='mix')return LT_CHK[kind];
+  const m=new Map(); LT_CHK.cs.concat(LT_CHK.sus).forEach(([k,t])=>{ if(!m.has(k))m.set(k,t); });
+  m.set('rust','발청·전이녹 (적청·점녹) 없음'); return [...m.entries()];
+}
 async function ltLoad(){
   try{ const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+LT_KEY+'&select=value',{headers:itHeaders(),cache:'no-store'});
     if(!r.ok)return; const d=await r.json(); const v=(d[0]&&d[0].value)||{};
@@ -9589,15 +9619,19 @@ function ltRender(){
             :(stale?'<div style="font-size:10.5px;color:#B45309">'+esc(stale.at)+' 확인 '+nf(stale.qty)+' → 이후 늘어남</div>':'')+'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltTag('+esc(JSON.stringify(it.pn))+')">식별 확인</button>')+'</td></tr>'; }).join('')
         :'<tr><td colspan="8" style="text-align:center;padding:18px;color:#6b7885">입고 '+LT_DAYS+'일 넘은 재고가 없습니다.</td></tr>');
   }else{
-    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 출하 전 <b>외관(발청·이물) 검사</b>를 하고 결과를 기록하세요.'
+    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 출하 전 <b>외관검사</b>를 하고 결과를 기록하세요. 검사 항목은 사용 코일 재질에 따라 다릅니다 — <b>탄소강: 발청 중심</b> · <b>SUS: 이물·청정도 중심</b>(전이녹·점녹 함께).'
       +'<br><span style="color:#6b7885">※ 사용연한은 설정의 소재 사용연한(전 재질 입고 후 90일, SQ 3개월)을 따릅니다.</span>';
     const P=ltProd();
-    $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>외관검사</th></tr>'
-      +(P.length?P.map(g=>{ const r=LT.insp[g.key];
+    $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>검사 구분</th><th>외관검사</th></tr>'
+      +(P.length?P.map(g=>{ const r=LT.insp[g.key], gk=ltGroupKind(g);
+        const ng=r&&r.chk?ltItems(r.kind||gk).filter(([k])=>r.chk[k]==='NG').map(([,t])=>t.split(' ')[0]):[];
         return '<tr><td>'+esc(g.d)+'</td><td><b>'+esc(g.pn)+'</b></td><td style="font-size:11px">'+g.coils.map(x=>esc(x.c.cno)+' <span style="color:#6b7885">'+esc(x.c.mt||'')+' · '+esc(x.c.d)+' · '+x.age+'일'+(x.overDue?' · <b style="color:#B91C1C">사용연한 초과</b>':'')+'</span>').join('<br>')+'</td>'
-          +'<td class="r">'+kg(g.kg)+' kg</td><td>'+(r?'<b style="color:'+(r.res==='합격'?'#0B6B3A':'#B91C1C')+'">'+esc(r.res)+'</b> '+esc(r.at)+' '+esc(r.by||'')+(r.memo?'<div style="font-size:10.5px;color:#6b7885">'+esc(r.memo)+'</div>':'')
+          +'<td class="r">'+kg(g.kg)+' kg</td>'
+          +'<td style="font-size:11px;font-weight:700;white-space:nowrap;color:'+(gk==='cs'?'#9A3412':gk==='sus'?'#1D4ED8':'#6D28D9')+'">'+LT_KIND_SH[gk]+'</td>'
+          +'<td>'+(r?'<b style="color:'+(r.res==='합격'?'#0B6B3A':'#B91C1C')+'">'+esc(r.res)+'</b> '+esc(r.at)+' '+esc(r.by||'')
+            +(ng.length?'<div style="font-size:10.5px;color:#B91C1C">NG: '+esc(ng.join(', '))+'</div>':'')+(r.memo?'<div style="font-size:10.5px;color:#6b7885">'+esc(r.memo)+'</div>':'')
             :'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltInsp('+esc(JSON.stringify(g.key))+')">검사 기록</button>')+'</td></tr>'; }).join('')
-        :'<tr><td colspan="5" style="text-align:center;padding:18px;color:#6b7885">해당 생산이 없습니다.</td></tr>');
+        :'<tr><td colspan="6" style="text-align:center;padding:18px;color:#6b7885">해당 생산이 없습니다.</td></tr>');
   }
 }
 async function ltTag(pn,undo){
@@ -9608,14 +9642,36 @@ async function ltTag(pn,undo){
   try{ await ltSave(v=>{ if(undo)delete v.tag[pn]; else v.tag[pn]={at:today(),by,qty:a.old,oldest:a.oldest}; });
     ltRender(); try{ltBarPaint();}catch(e){} toast(undo?'취소했습니다':'식별 확인을 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
 }
-async function ltInsp(key){
-  const [d,pn]=key.split('|');
-  const res=prompt(d+' '+pn+' 외관(발청·이물) 검사 결과를 입력하세요\n합격 또는 불합격','합격'); if(res==null)return;
-  const rv=String(res).trim(); if(!/^(합격|불합격)$/.test(rv)){ alert('합격 또는 불합격으로 입력하세요'); return; }
-  const memo=prompt('검사 내용·수량·조치 (선택)','')||'';
-  const by=ltWho(); if(!by){ alert('검사자 이름이 있어야 기록합니다'); return; }
-  try{ await ltSave(v=>{ v.insp[key]={at:today(),by,res:rv,memo:memo.trim()}; });
-    ltRender(); toast('검사 결과를 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
+let LTI=null;                                               /* 열려 있는 외관검사 {key,kind,chk} */
+function ltInsp(key){
+  const g=ltProd().find(x=>x.key===key); if(!g){ alert('해당 생산을 찾지 못했습니다'); return; }
+  const kind=ltGroupKind(g), items=ltItems(kind);
+  LTI={key,kind,chk:{}};
+  $('ltiTtl').firstChild.nodeValue='외관검사 — '+g.d+' '+g.pn+' ';
+  $('ltiHint').innerHTML='<b>'+LT_KIND_NM[kind]+'</b> · 사용 코일: '+g.coils.map(x=>esc(x.c.cno)+' <span style="color:#6b7885">'+esc(x.c.mt||'')+' · '+x.age+'일</span>').join(', ')
+    +(kind!=='cs'?'<br><span style="color:#6b7885">※ SUS 는 전면 발청보다 이물·오염·얼룩이 주 불량입니다. 청정도는 흰 천(와이퍼)으로 표면을 닦아 유분·검은 오염이 묻어나는지 봅니다.</span>':'');
+  $('ltiTbl').innerHTML='<tr><th>검사 항목</th><th style="width:120px">판정</th></tr>'+items.map(([k,t])=>
+    '<tr><td class="l">'+esc(t)+'</td><td style="white-space:nowrap"><button class="btn" data-k="'+k+'" data-v="OK" onclick="ltiSet(this)">OK</button> <button class="btn" data-k="'+k+'" data-v="NG" onclick="ltiSet(this)">NG</button></td></tr>').join('');
+  $('ltiMemo').value=''; $('ltiBy').value=S.user||''; ltiPaint();
+  $('mLtI').classList.add('on');
+}
+function ltiSet(b){ LTI.chk[b.dataset.k]=b.dataset.v; ltiPaint(); }
+function ltiPaint(){
+  document.querySelectorAll('#ltiTbl button[data-k]').forEach(b=>{ const on=LTI.chk[b.dataset.k]===b.dataset.v;
+    b.style.background=on?(b.dataset.v==='OK'?'#0B6B3A':'#B91C1C'):''; b.style.color=on?'#fff':''; });
+  const items=ltItems(LTI.kind), done=items.every(([k])=>LTI.chk[k]), ng=items.some(([k])=>LTI.chk[k]==='NG');
+  $('ltiRes').innerHTML=!done?'<span style="color:#6b7885">'+items.filter(([k])=>LTI.chk[k]).length+' / '+items.length+' 판정</span>'
+    :(ng?'<span style="color:#B91C1C">불합격</span>':'<span style="color:#0B6B3A">합격</span>');
+}
+async function ltInspSave(){
+  const items=ltItems(LTI.kind);
+  if(!items.every(([k])=>LTI.chk[k])){ alert('모든 항목을 OK / NG 로 판정하세요'); return; }
+  const ng=items.some(([k])=>LTI.chk[k]==='NG'), memo=$('ltiMemo').value.trim(), by=$('ltiBy').value.trim();
+  if(ng&&!memo){ alert('불합격이면 검사 내용·수량·조치를 적어 주세요'); return; }
+  if(!by){ alert('검사자 이름이 있어야 기록합니다'); return; }
+  const rec={at:today(),by,res:ng?'불합격':'합격',memo,kind:LTI.kind,chk:Object.assign({},LTI.chk)}, key=LTI.key;
+  try{ await ltSave(v=>{ v.insp[key]=rec; });
+    $('mLtI').classList.remove('on'); ltRender(); toast('검사 결과를 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
 }
 
 
@@ -10082,11 +10138,11 @@ function rRaw(){
       +'<div style="margin-top:5px"><b>'+UL.slice(0,10).map(c=>esc(c.cno)+' ('+esc(eqName(c.mes.mc)||c.mes.mc||'')+' · '+esc(c.mes.pout||c.mes.pon||'')+' · 입고 '+kg(+c.wt)+' / 사용 '+kg(+c.mes.usew||0)+'kg · '+Math.round((+c.mes.usew||0)/(+c.wt)*100)+'%)').join(', ')
       +(UL.length>10?' 외 '+(UL.length-10)+'본':'')+'</b></div>');
   }
-  /* 장기보관 소재로 생산한 제품 — 외관(발청·이물) 검사 지정 (SQ 5_5) */
+  /* 장기보관 소재로 생산한 제품 — 외관검사 지정 (SQ 5_5) · 탄소강 발청 / SUS 이물·청정도 */
   try{
     const P=ltProd().filter(g=>!LT.insp[g.key]);
     if(P.length) msgs.push('🧪 <b>장기보관 소재로 생산 · 외관검사 미실시 '+P.length+'건</b>'
-      +' — 사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품입니다. 출하 전 외관(발청·이물) 검사를 실시하고 결과를 기록하세요. &nbsp;'
+      +' — 사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품입니다. 출하 전 외관검사(탄소강: 발청 · SUS: 이물·청정도)를 실시하고 결과를 기록하세요. &nbsp;'
       +'<button class="btn" style="padding:3px 10px;font-size:11px" onclick="ltOpen(\'prod\')">검사 기록</button>'
       +'<div style="margin-top:5px"><b>'+P.slice(0,6).map(g=>esc(g.d)+' '+esc(g.pn)+' ('+g.coils.map(x=>esc(x.c.cno)+' '+x.age+'일').join(', ')+')').join(' · ')
       +(P.length>6?' 외 '+(P.length-6)+'건':'')+'</b></div>');
