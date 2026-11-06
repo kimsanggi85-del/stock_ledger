@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.30 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.31 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9722,6 +9722,7 @@ function exportLtF03(){
   toast('관리대장(F03) 엑셀을 내려받았습니다');
 }
 /* 관리대장 F03 결재 — 담당(검사 기록 시 담당자 PIN) → 검토(담당자 PIN) → 승인(팀장 PIN)
+   승인 = PIN 목록(user_pin) 직책이 '팀장'인 사람만 (2026-11 : 강병주)
    같은 사람이 두 칸에 서명할 수 없음 · 검토 후 승인 · 취소는 서명한 본인 PIN 으로만 (승인이 있으면 검토 취소 불가) */
 const LT_SIGN={rev:'검토',lead:'승인'};
 let LTL=null;
@@ -9751,7 +9752,7 @@ const ltLead=(key,undo)=>ltSign(key,'lead',undo);
 async function ltPinUser(pin){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin));
   const h=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
-  const q=await fetch(SB_URL+'/rest/v1/user_pin?select=id,name,dept,emp_id&pin_hash=eq.'+h,{headers:itHeaders(),cache:'no-store'});
+  const q=await fetch(SB_URL+'/rest/v1/user_pin?select=id,name,dept,emp_id,position&pin_hash=eq.'+h,{headers:itHeaders(),cache:'no-store'});
   if(!q.ok)throw new Error('HTTP '+q.status);
   return (await q.json())[0]||null;
 }
@@ -9766,6 +9767,7 @@ async function ltLeadOk(){
   else{
     if(u.name===r.by){ E.textContent='담당('+u.name+') 본인은 '+nm+'할 수 없습니다'; return; }
     if(role==='lead'&&r.rev&&u.name===r.rev.by){ E.textContent='검토자('+u.name+') 본인은 승인할 수 없습니다'; return; }
+    if(role==='lead'&&String(u.position||'').trim()!=='팀장'){ E.textContent=u.name+' 님은 승인 권한(팀장)이 없습니다'; return; }
   }
   try{ await ltSave(v=>{ const x=v.insp[key]; if(!x)throw new Error('검사 기록이 서버에 없습니다');
       if(undo){ if(role==='rev'&&x.lead)throw new Error('승인이 있어 검토를 취소할 수 없습니다'); delete x[role]; }
