@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.25 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.26 · 원소재 v11.52</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6342,7 +6342,7 @@ body.qp-on{overflow:hidden}
   <div class="mb">
     <div style="display:flex;gap:6px;margin-bottom:9px">
       <button class="btn" id="ltTabStock" onclick="ltOpen('stock')">제품 장기보관 (식별표)</button>
-      <button class="btn" id="ltTabProd" onclick="ltOpen('prod')">장기 소재 생산품 (외관검사)</button>
+      <button class="btn" id="ltTabProd" onclick="ltOpen('prod')">장기 소재 생산품 (관리대장 F03)</button>
     </div>
     <div class="hint" id="ltHint" style="margin-bottom:9px"></div>
     <div class="scroll" style="max-height:60vh;overflow:auto"><table class="t" id="ltTbl" style="width:100%"></table></div>
@@ -6351,11 +6351,20 @@ body.qp-on{overflow:hidden}
 
 <!-- 장기 소재 생산품 외관검사 (재질별 항목) -->
 <div class="mask" id="mLtI"><div class="modal" style="max-width:520px">
-  <h3 id="ltiTtl">외관검사 기록<span onclick="$('mLtI').classList.remove('on')">✕</span></h3>
+  <h3 id="ltiTtl">장기보관 원소재 사용 기록<span onclick="$('mLtI').classList.remove('on')">✕</span></h3>
   <div class="mb">
     <div class="hint" id="ltiHint" style="margin-bottom:9px"></div>
     <table class="t" id="ltiTbl" style="width:100%"></table>
-    <div class="fld" style="margin-top:9px"><label>검사 내용 · 수량 · 조치 (불합격이면 필수)</label><input id="ltiMemo" style="width:100%" placeholder="예: 200개 전수 · 이물 3개 선별"></div>
+    <div style="display:flex;gap:6px;margin-top:9px">
+      <div class="fld" style="flex:1"><label>시작부분 제거(회전)</label><input id="ltiRot" type="number" min="0" inputmode="numeric" style="width:100%"></div>
+      <div class="fld" style="flex:1"><label>재판정</label><select id="ltiRe" style="width:100%" onchange="ltiPaint()"><option value="">선택</option><option>사용</option><option>선별</option><option>반품</option></select></div></div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <div class="fld" style="flex:1"><label>생산 100% 검사</label><input id="ltiPq" type="number" min="0" inputmode="numeric" style="width:100%"></div>
+      <div class="fld" style="flex:1"><label>생산 불량</label><input id="ltiPn" type="number" min="0" inputmode="numeric" style="width:100%"></div>
+      <div class="fld" style="flex:1"><label>품질 100% 검사</label><input id="ltiQq" type="number" min="0" inputmode="numeric" style="width:100%"></div>
+      <div class="fld" style="flex:1"><label>품질 불량</label><input id="ltiQn" type="number" min="0" inputmode="numeric" style="width:100%"></div></div>
+    <div class="fld" style="margin-top:6px"><label>최종 판정</label><select id="ltiFin" style="width:100%" onchange="ltiPaint(1)"><option>합격</option><option>불합격</option></select></div>
+    <div class="fld" style="margin-top:9px"><label>검사 내용 · 조치 (NG·선별·반품·불량·불합격이면 필수)</label><input id="ltiMemo" style="width:100%" placeholder="예: 200개 전수 · 이물 3개 선별"></div>
     <div class="fld" style="margin-top:6px"><label>검사자</label><input id="ltiBy" style="width:100%"></div>
     <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
       <span id="ltiRes" style="margin-right:auto;font-weight:800;align-self:center"></span>
@@ -9619,17 +9628,18 @@ function ltRender(){
             :(stale?'<div style="font-size:10.5px;color:#B45309">'+esc(stale.at)+' 확인 '+nf(stale.qty)+' → 이후 늘어남</div>':'')+'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltTag('+esc(JSON.stringify(it.pn))+')">식별 확인</button>')+'</td></tr>'; }).join('')
         :'<tr><td colspan="8" style="text-align:center;padding:18px;color:#6b7885">입고 '+LT_DAYS+'일 넘은 재고가 없습니다.</td></tr>');
   }else{
-    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 출하 전 <b>외관검사</b>를 하고 결과를 기록하세요. 검사 항목은 사용 코일 재질에 따라 다릅니다 — <b>탄소강: 발청 중심</b> · <b>SUS: 이물·청정도 중심</b>(전이녹·점녹 함께).'
+    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 투입 전 소재 확인 · 생산/품질 100% 전수검사 결과를 기록합니다 — <b>장기보관 초과 원소재 사용 관리대장(TJP-QP0854-F03 Rev.1)</b> 전산 관리. 확인 항목은 재질별 — <b>탄소강: 발청 중심</b> · <b>SUS: 이물·청정도 중심</b>(전이녹·점녹 함께). &nbsp;<button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportLtF03()">📥 관리대장(F03) 엑셀</button>'
       +'<br><span style="color:#6b7885">※ 사용연한은 설정의 소재 사용연한(전 재질 입고 후 90일, SQ 3개월)을 따릅니다.</span>';
     const P=ltProd();
-    $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>검사 구분</th><th>외관검사</th></tr>'
+    $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>검사 구분</th><th>관리대장(F03)</th></tr>'
       +(P.length?P.map(g=>{ const r=LT.insp[g.key], gk=ltGroupKind(g);
         const ng=r&&r.chk?ltItems(r.kind||gk).filter(([k])=>r.chk[k]==='NG').map(([,t])=>t.split(' ')[0]):[];
         return '<tr><td>'+esc(g.d)+'</td><td><b>'+esc(g.pn)+'</b></td><td style="font-size:11px">'+g.coils.map(x=>esc(x.c.cno)+' <span style="color:#6b7885">'+esc(x.c.mt||'')+' · '+esc(x.c.d)+' · '+x.age+'일'+(x.overDue?' · <b style="color:#B91C1C">사용연한 초과</b>':'')+'</span>').join('<br>')+'</td>'
           +'<td class="r">'+kg(g.kg)+' kg</td>'
           +'<td style="font-size:11px;font-weight:700;white-space:nowrap;color:'+(gk==='cs'?'#9A3412':gk==='sus'?'#1D4ED8':'#6D28D9')+'">'+LT_KIND_SH[gk]+'</td>'
           +'<td>'+(r?'<b style="color:'+(r.res==='합격'?'#0B6B3A':'#B91C1C')+'">'+esc(r.res)+'</b> '+esc(r.at)+' '+esc(r.by||'')
-            +(ng.length?'<div style="font-size:10.5px;color:#B91C1C">NG: '+esc(ng.join(', '))+'</div>':'')+(r.memo?'<div style="font-size:10.5px;color:#6b7885">'+esc(r.memo)+'</div>':'')
+            +(ng.length?'<div style="font-size:10.5px;color:#B91C1C">NG: '+esc(ng.join(', '))+'</div>':'')
+            +(r.re?'<div style="font-size:10.5px;color:#4a5968">'+esc(r.re)+(r.rot?' · 제거 '+r.rot+'회전':'')+(r.pq!=null?' · 생산 '+nf(r.pq)+'/'+nf(r.pn||0):'')+(r.qq!=null?' · 품질 '+nf(r.qq)+'/'+nf(r.qn||0):'')+'</div>':'')+(r.memo?'<div style="font-size:10.5px;color:#6b7885">'+esc(r.memo)+'</div>':'')
             :'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltInsp('+esc(JSON.stringify(g.key))+')">검사 기록</button>')+'</td></tr>'; }).join('')
         :'<tr><td colspan="6" style="text-align:center;padding:18px;color:#6b7885">해당 생산이 없습니다.</td></tr>');
   }
@@ -9642,34 +9652,74 @@ async function ltTag(pn,undo){
   try{ await ltSave(v=>{ if(undo)delete v.tag[pn]; else v.tag[pn]={at:today(),by,qty:a.old,oldest:a.oldest}; });
     ltRender(); try{ltBarPaint();}catch(e){} toast(undo?'취소했습니다':'식별 확인을 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
 }
+/* 장기보관 초과 원소재 사용 관리대장 TJP-QP0854-F03 (Rev.1) 양식으로 내보내기 — 생산(일자·품번) × 사용 코일 1행 */
+function exportLtF03(){
+  const P=ltProd().slice().sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.pn).localeCompare(String(b.pn)));
+  if(!P.length){ toast('장기보관 소재로 생산한 기록이 없습니다'); return; }
+  const sh=xSheet('관리대장 F03'); sh.cols=[5,11,18,22,8,16,9,9,11,14,11,12,12,8,10,8];
+  sh.set(0,0,'장기보관 초과 원소재 사용 관리대장',XS.tt); sh.merge(0,0,0,15,XS.tt); sh.ht[0]=30;
+  sh.set(1,0,'관리번호 : TJP-QP0854-F03 (Rev.1) · 보관 3개월 = 입고일 + '+LT_DAYS+'일 · 출력 '+today()+' · 스마트팩토리 재고현황 전산 기록',XS.meta); sh.merge(1,0,1,15);
+  const H=3;
+  [['No',0],['입고\n일자',1],['소재 규격',2],['소재 LOT\n(코일번호)',3],['보관\n경과(일)',4]].forEach(([t,c])=>{sh.set(H,c,t,XS.th);sh.merge(H,c,H+1,c,XS.th);});
+  sh.set(H,5,'투입 전 소재 확인',XS.th); sh.merge(H,5,H,7,XS.th);
+  sh.set(H,8,'생산 정보',XS.th); sh.merge(H,8,H,10,XS.th);
+  sh.set(H,11,'전수검사 결과',XS.th); sh.merge(H,11,H,13,XS.th);
+  sh.set(H,14,'확인',XS.th); sh.merge(H,14,H,15,XS.th);
+  ['상태','시작부분\n제거(회전)','재판정','투입\n일자','품번','생산\nLOT','생산 100%\n(검사/불량)','품질 100%\n(검사/불량)','최종\n판정','검사원','팀장']
+    .forEach((t,i)=>sh.set(H+1,5+i,t,XS.th));
+  sh.ht[H]=22; sh.ht[H+1]=32;
+  let r=H+2, no=1;
+  P.forEach(g=>{ const rec=LT.insp[g.key]||null, items=rec&&rec.chk?ltItems(rec.kind||ltGroupKind(g)):[];
+    const ngs=items.filter(([k])=>rec.chk[k]==='NG').map(([,t])=>t.split(' ')[0]);
+    const st=!rec?'':!rec.chk?'':(ngs.length?'NG: '+ngs.join('·'):'양호');
+    g.coils.forEach(x=>{ const c=x.c;
+      const v=[no++,c.d||'',[c.mt,(c.t&&c.w)?c.t+'×'+c.w:''].filter(Boolean).join(' '),c.cno||'',x.age,st,rec&&rec.rot!=null?rec.rot:'',rec&&rec.re||'',
+        g.d,g.pn,String(g.d||'').replace(/-/g,''),rec&&rec.pq!=null?nf(rec.pq)+' / '+nf(rec.pn||0):'',rec&&rec.qq!=null?nf(rec.qq)+' / '+nf(rec.qn||0):'',
+        rec?rec.res:'미검사',rec?rec.by||'':'',''];
+      v.forEach((val,i)=>sh.set(r,i,val,i===3||i===9?XS.pn:i===4||i===0?XS.n:XS.c)); r++; });
+  });
+  r++; sh.set(r,0,'※ 작성기준 : 1) 보관 3개월(입고일 + '+LT_DAYS+'일) 초과 코일로 생산한 건 2) 투입 전 시작 부분 확인 — 탄소강: 발청·이물 / SUS: 이물·청정도·얼룩·보호필름·전이녹, 이상 시 1~2회전 제거 후 재판정 3) 생산·품질 각 100% 전수검사 4) 불량 시 LOT 격리·전수 선별, 잔량 사용 중지',XS.meta); sh.merge(r,0,r,15);
+  sh.freeze=H+2; sh.titles='$'+(H+1)+':$'+(H+2);
+  dl(xBook([sh]),'장기보관초과원소재사용관리대장_F03_'+today().replace(/-/g,'')+'.xlsx');
+  toast('관리대장(F03) 엑셀을 내려받았습니다');
+}
 let LTI=null;                                               /* 열려 있는 외관검사 {key,kind,chk} */
 function ltInsp(key){
   const g=ltProd().find(x=>x.key===key); if(!g){ alert('해당 생산을 찾지 못했습니다'); return; }
   const kind=ltGroupKind(g), items=ltItems(kind);
   LTI={key,kind,chk:{}};
-  $('ltiTtl').firstChild.nodeValue='외관검사 — '+g.d+' '+g.pn+' ';
+  $('ltiTtl').firstChild.nodeValue='장기보관 원소재 사용 기록(F03) — '+g.d+' '+g.pn+' ';
   $('ltiHint').innerHTML='<b>'+LT_KIND_NM[kind]+'</b> · 사용 코일: '+g.coils.map(x=>esc(x.c.cno)+' <span style="color:#6b7885">'+esc(x.c.mt||'')+' · '+x.age+'일</span>').join(', ')
     +(kind!=='cs'?'<br><span style="color:#6b7885">※ SUS 는 전면 발청보다 이물·오염·얼룩이 주 불량입니다. 청정도는 흰 천(와이퍼)으로 표면을 닦아 유분·검은 오염이 묻어나는지 봅니다.</span>':'');
   $('ltiTbl').innerHTML='<tr><th>검사 항목</th><th style="width:120px">판정</th></tr>'+items.map(([k,t])=>
     '<tr><td class="l">'+esc(t)+'</td><td style="white-space:nowrap"><button class="btn" data-k="'+k+'" data-v="OK" onclick="ltiSet(this)">OK</button> <button class="btn" data-k="'+k+'" data-v="NG" onclick="ltiSet(this)">NG</button></td></tr>').join('');
+  const q0=Math.round(+g.sq||0)||'';
+  $('ltiRot').value=0; $('ltiRe').value=''; $('ltiPq').value=q0; $('ltiPn').value=0; $('ltiQq').value=q0; $('ltiQn').value=0; $('ltiFin').value='합격'; LTI.finTouched=false;
   $('ltiMemo').value=''; $('ltiBy').value=S.user||''; ltiPaint();
   $('mLtI').classList.add('on');
 }
 function ltiSet(b){ LTI.chk[b.dataset.k]=b.dataset.v; ltiPaint(); }
-function ltiPaint(){
+function ltiPaint(fromFin){
+  if(fromFin)LTI.finTouched=true;
+  if($('ltiRe').value==='반품'){ $('ltiFin').value='불합격'; } else if(!LTI.finTouched){ $('ltiFin').value='합격'; }
   document.querySelectorAll('#ltiTbl button[data-k]').forEach(b=>{ const on=LTI.chk[b.dataset.k]===b.dataset.v;
     b.style.background=on?(b.dataset.v==='OK'?'#0B6B3A':'#B91C1C'):''; b.style.color=on?'#fff':''; });
   const items=ltItems(LTI.kind), done=items.every(([k])=>LTI.chk[k]), ng=items.some(([k])=>LTI.chk[k]==='NG');
-  $('ltiRes').innerHTML=!done?'<span style="color:#6b7885">'+items.filter(([k])=>LTI.chk[k]).length+' / '+items.length+' 판정</span>'
-    :(ng?'<span style="color:#B91C1C">불합격</span>':'<span style="color:#0B6B3A">합격</span>');
+  $('ltiRes').innerHTML=!done?'<span style="color:#6b7885">상태 '+items.filter(([k])=>LTI.chk[k]).length+' / '+items.length+' 판정</span>'
+    :(ng?'<span style="color:#B45309">상태 이상 → 시작부분 제거 후 재판정</span>':'<span style="color:#0B6B3A">상태 양호</span>');
 }
 async function ltInspSave(){
   const items=ltItems(LTI.kind);
   if(!items.every(([k])=>LTI.chk[k])){ alert('모든 항목을 OK / NG 로 판정하세요'); return; }
   const ng=items.some(([k])=>LTI.chk[k]==='NG'), memo=$('ltiMemo').value.trim(), by=$('ltiBy').value.trim();
-  if(ng&&!memo){ alert('불합격이면 검사 내용·수량·조치를 적어 주세요'); return; }
+  const re=$('ltiRe').value, num=id=>{const v=$(id).value;return v===''?null:Math.max(0,Math.round(+v)||0)};
+  const rot=num('ltiRot')||0, pq=num('ltiPq'), pn=num('ltiPn')||0, qq=num('ltiQq'), qn=num('ltiQn')||0, fin=$('ltiFin').value;
+  if(!re){ alert('재판정(사용/선별/반품)을 고르세요'); return; }
+  if(re!=='반품'&&(!pq||!qq)){ alert('생산·품질 100% 검사 수량을 입력하세요'); return; }
+  if((pn>(pq||0))||(qn>(qq||0))){ alert('불량 수량이 검사 수량보다 많습니다'); return; }
+  if((ng||re!=='사용'||pn||qn||fin==='불합격')&&!memo){ alert('상태 NG · 선별 · 반품 · 불량 · 불합격이면 검사 내용·조치를 적어 주세요'); return; }
   if(!by){ alert('검사자 이름이 있어야 기록합니다'); return; }
-  const rec={at:today(),by,res:ng?'불합격':'합격',memo,kind:LTI.kind,chk:Object.assign({},LTI.chk)}, key=LTI.key;
+  const rec={at:today(),by,res:fin,memo,kind:LTI.kind,chk:Object.assign({},LTI.chk),rot,re,pq,pn,qq,qn}, key=LTI.key;
   try{ await ltSave(v=>{ v.insp[key]=rec; });
     $('mLtI').classList.remove('on'); ltRender(); toast('검사 결과를 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
 }
