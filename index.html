@@ -1220,7 +1220,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.26 · 원소재 v11.53</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.27 · 원소재 v11.53</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9640,6 +9640,8 @@ function ltRender(){
           +'<td>'+(r?'<b style="color:'+(r.res==='합격'?'#0B6B3A':'#B91C1C')+'">'+esc(r.res)+'</b> '+esc(r.at)+' '+esc(r.by||'')
             +(ng.length?'<div style="font-size:10.5px;color:#B91C1C">NG: '+esc(ng.join(', '))+'</div>':'')
             +(r.re?'<div style="font-size:10.5px;color:#4a5968">'+esc(r.re)+(r.rot?' · 제거 '+r.rot+'회전':'')+(r.pq!=null?' · 생산 '+nf(r.pq)+'/'+nf(r.pn||0):'')+(r.qq!=null?' · 품질 '+nf(r.qq)+'/'+nf(r.qn||0):'')+'</div>':'')+(r.memo?'<div style="font-size:10.5px;color:#6b7885">'+esc(r.memo)+'</div>':'')
+            +(r.lead?'<div style="font-size:10.5px;color:#0B6B3A;font-weight:700">팀장 ✔ '+esc(r.lead.by)+' '+esc(r.lead.at)+' <button class="btn" style="padding:0 6px;font-size:10px" onclick="ltLead('+esc(JSON.stringify(g.key))+',1)">취소</button></div>'
+              :'<div style="margin-top:3px"><button class="btn" style="padding:2px 8px;font-size:10.5px;border-color:#B45309;color:#B45309" onclick="ltLead('+esc(JSON.stringify(g.key))+')">팀장 확인</button></div>')
             :'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltInsp('+esc(JSON.stringify(g.key))+')">검사 기록</button>')+'</td></tr>'; }).join('')
         :'<tr><td colspan="6" style="text-align:center;padding:18px;color:#6b7885">해당 생산이 없습니다.</td></tr>');
   }
@@ -9675,13 +9677,27 @@ function exportLtF03(){
     g.coils.forEach(x=>{ const c=x.c;
       const v=[no++,c.d||'',[c.mt,(c.t&&c.w)?c.t+'×'+c.w:''].filter(Boolean).join(' '),c.cno||'',x.age,st,rec&&rec.rot!=null?rec.rot:'',rec&&rec.re||'',
         g.d,g.pn,String(g.d||'').replace(/-/g,''),rec&&rec.pq!=null?nf(rec.pq)+' / '+nf(rec.pn||0):'',rec&&rec.qq!=null?nf(rec.qq)+' / '+nf(rec.qn||0):'',
-        rec?rec.res:'미검사',rec?rec.by||'':'',''];
+        rec?rec.res:'미검사',rec?rec.by||'':'',rec&&rec.lead?rec.lead.by+' '+String(rec.lead.at).slice(5):''];
       v.forEach((val,i)=>sh.set(r,i,val,i===3||i===9?XS.pn:i===4||i===0?XS.n:XS.c)); r++; });
   });
   r++; sh.set(r,0,'※ 작성기준 : 1) 보관 3개월(입고일 + '+LT_DAYS+'일) 초과 코일로 생산한 건 2) 투입 전 시작 부분 확인 — 탄소강: 발청·이물 / SUS: 이물·청정도·얼룩·보호필름·전이녹, 이상 시 1~2회전 제거 후 재판정 3) 생산·품질 각 100% 전수검사 4) 불량 시 LOT 격리·전수 선별, 잔량 사용 중지',XS.meta); sh.merge(r,0,r,15);
   sh.freeze=H+2; sh.titles='$'+(H+1)+':$'+(H+2);
   dl(xBook([sh]),'장기보관초과원소재사용관리대장_F03_'+today().replace(/-/g,'')+'.xlsx');
   toast('관리대장(F03) 엑셀을 내려받았습니다');
+}
+/* 관리대장 F03 '확인 — 팀장' : 검사원 기록을 팀장이 확인 (검사원 본인 확인 불가) */
+async function ltLead(key,undo){
+  const r=LT.insp[key]; if(!r){ alert('검사 기록이 없습니다'); return; }
+  const [d,pn]=key.split('|');
+  if(undo){ if(!confirm(d+' '+pn+' 팀장 확인을 취소할까요?'))return; }
+  else{
+    const sum=r.res+(r.re?' · 재판정 '+r.re:'')+(r.pq!=null?' · 생산 '+r.pq+'/'+(r.pn||0):'')+(r.qq!=null?' · 품질 '+r.qq+'/'+(r.qn||0):'');
+    if(!confirm(d+' '+pn+'\n검사원 '+(r.by||'-')+' · '+sum+(r.memo?'\n'+r.memo:'')+'\n\n팀장 확인하시겠습니까?'))return;
+  }
+  const by=undo?'':ltWho(); if(!undo&&!by){ alert('확인자 이름이 있어야 기록합니다'); return; }
+  if(!undo&&by===r.by){ alert('검사원 본인은 팀장 확인을 할 수 없습니다'); return; }
+  try{ await ltSave(v=>{ const x=v.insp[key]; if(!x)throw new Error('검사 기록이 서버에 없습니다'); if(undo)delete x.lead; else x.lead={at:today(),by}; });
+    ltRender(); toast(undo?'팀장 확인을 취소했습니다':'팀장 확인을 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
 }
 let LTI=null;                                               /* 열려 있는 외관검사 {key,kind,chk} */
 function ltInsp(key){
