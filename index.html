@@ -1214,13 +1214,14 @@ body.qp-on{overflow:hidden}
 #tRaw tr.cntG1 td{text-align:left!important;background:#1E2A36!important;color:#fff;font-weight:800;font-family:var(--sans)}#tRaw tr.cntG1 td span{font-weight:400;color:#C9D3DD;font-size:11px}
 #tRaw tr.cntG2 td{background:#EEF3F9!important;font-weight:700}#tRaw tr.cntG3 td{background:#FFF4D6!important;font-weight:800}
 #tRaw tr.cntG2 em,#tRaw tr.cntG3 em{font-style:normal;font-weight:400;color:#5B6B7B;font-size:10.5px}
+#ltTbl tr.lt-over td{background:#FBE0D6}#ltTbl tr.lt-soon td{background:#FFF2CC}
 </style>
 </head>
 <body>
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.27 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.28 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9579,8 +9580,10 @@ function ltAge(it){
   });
   const rem=L.filter(x=>x.q>0.5);
   const oldL=rem.filter(x=>x.d<=lim);
+  const oldest=rem.length?rem[0].d:'', age=oldest?ltDays(oldest,td):0;
   return {cur:rem.reduce((a,x)=>a+x.q,0), old:oldL.reduce((a,x)=>a+x.q,0),
-    oldest:rem.length?rem[0].d:'', age:rem.length&&rem[0].d?ltDays(rem[0].d,td):0, base:oldL.some(x=>x.base)};
+    oldest, age, base:oldL.some(x=>x.base),
+    exp:oldest?(()=>{const t=new Date(oldest);t.setDate(t.getDate()+LT_DAYS);return t.toISOString().slice(0,10);})():'', left:oldest?LT_DAYS-age:null};
 }
 /* 장기보관 소재로 생산한 (일자·품번) 묶음 */
 function ltProd(){
@@ -9596,6 +9599,25 @@ function ltProd(){
   });
   return [...G.values()].sort((a,b)=>String(b.d).localeCompare(String(a.d))||String(a.pn).localeCompare(String(b.pn)));
 }
+/* 유효성 관리 (SQ 5-2 개선대책 : 3개월 만료일 자동 산출 · 남은 일수 · 만료 임박 색상 알림 · 식별표 부착 이력) */
+const LT_SOON=14;
+const ltSt=a=>a.old>0?'초과':(a.cur>0.5&&a.left!=null&&a.left<=LT_SOON?'임박':'');
+function ltValRows(){ return S.items.filter(it=>!it.hide).map(it=>({it,a:ltAge(it)})).filter(x=>ltSt(x.a)).sort((x,y)=>(x.a.left??999)-(y.a.left??999)); }
+/* 장기보관 자재 유효성 관리대장 엑셀 — 만료 임박·초과 품목, 식별표 부착 이력 */
+function exportLtVal(){
+  const rows=ltValRows(); if(!rows.length){ toast('만료 임박·초과 재고가 없습니다'); return; }
+  const sh=xSheet('유효성 관리대장'); sh.cols=[5,16,26,12,10,11,12,12,10,7,22,16];
+  sh.set(0,0,'장기보관 자재 유효성 관리대장',XS.tt); sh.merge(0,0,0,11,XS.tt); sh.ht[0]=30;
+  sh.set(1,0,'기준 : 선입선출(FIFO) 가장 오래된 재고 입고일 + '+LT_DAYS+'일 = 만료일 · 남은 일수 '+LT_SOON+'일 이내 임박 · 출력 '+today()+' · 절차서 TJP-QP0854 (3개월 이상 식별, 재사용 시 전수검사)',XS.meta); sh.merge(1,0,1,11);
+  const H=3; ['No','품번','품명','고객사','현재고','장기보관 수량','가장 오래된 입고','만료일','남은 일수','상태','식별표 부착 (일자 · 확인자)','비고'].forEach((t,i)=>sh.set(H,i,t,XS.th)); sh.ht[H]=26;
+  rows.forEach(({it,a},k)=>{ const r=H+1+k, st=ltSt(a), t=LT.tag[it.pn], ok=st==='초과'&&ltTagOk(it.pn,a);
+    [k+1,it.pn,it.nm||'',it.cu||'',Math.round(a.cur),Math.round(a.old),a.oldest||'',a.exp||'',a.left,st,
+     ok?t.at+' · '+(t.by||''):(st==='초과'?(t?'재확인 필요 ('+t.at+' 확인 후 증가)':'미부착'):'-'),a.base?'기초재고 포함':'']
+      .forEach((v,i)=>sh.set(r,i,v,i===1?XS.pn:(i===4||i===5||i===8)?(i===8&&v<0?XS.nNg:XS.n):XS.c)); });
+  sh.freeze=H+1; sh.titles='$'+(H+1)+':$'+(H+1);
+  dl(xBook([sh]),'장기보관자재유효성관리대장_'+today().replace(/-/g,'')+'.xlsx');
+  toast('유효성 관리대장 엑셀을 내려받았습니다');
+}
 /* 식별 확인이 지금도 유효한가 — 확인 뒤 장기보관 수량이 늘었으면(새 재고가 90일을 넘김) 다시 확인 */
 function ltTagOk(pn,a){ const t=LT.tag[pn]; return !!t && (+a.old||0) <= (+t.qty||0)+0.5; }
 function ltWho(){ return S.user || (prompt('확인자 이름을 입력하세요','')||'').trim(); }
@@ -9603,9 +9625,9 @@ function ltBarPaint(){
   const B=$('ltBar'); if(!B)return;
   if(F!=='old'){ B.innerHTML=''; return; }
   const rows=S.items.filter(it=>!it.hide).map(it=>({it,a:ltAge(it)})).filter(x=>x.a.old>0);
-  const nt=rows.filter(x=>!ltTagOk(x.it.pn,x.a)).length;
+  const nt=rows.filter(x=>!ltTagOk(x.it.pn,x.a)).length, ns=ltValRows().filter(x=>ltSt(x.a)==='임박').length;
   B.innerHTML='<div class="hint" style="margin:0 0 8px;background:#FFF7E6;border:1px solid #F0C27A;padding:9px 11px;border-radius:4px">'
-    +'📦 <b>장기보관(입고 '+LT_DAYS+'일↑) '+rows.length+'품목</b> · 식별표 미확인 <b style="color:#B91C1C">'+nt+'</b>품목'
+    +'📦 <b>장기보관(입고 '+LT_DAYS+'일↑) '+rows.length+'품목</b> · 식별표 미확인 <b style="color:#B91C1C">'+nt+'</b>품목 · 만료 임박('+LT_SOON+'일 이내) <b style="color:#9A6400">'+ns+'</b>품목'
     +' — 선입선출 기준으로 남은 재고 중 입고 3개월이 지난 수량입니다. 장기보관 식별표를 붙이고, 출하(재사용) 전 전수검사 하세요 (TJP-QP0854). &nbsp;'
     +'<button class="btn" style="padding:3px 10px;font-size:11px" onclick="ltOpen(\'stock\')">식별표 확인 기록</button></div>';
 }
@@ -9617,18 +9639,19 @@ function ltRender(){
   const st=LT_TAB==='stock';
   $('ltTabStock').classList.toggle('k',st); $('ltTabProd').classList.toggle('k',!st);
   if(st){
-    $('ltHint').innerHTML='선입선출(FIFO)로 계산한 <b>입고 '+LT_DAYS+'일 넘은 재고</b>입니다. 실물에 <b>장기보관 식별표</b>를 붙인 뒤 [식별 확인]을 누르세요. 출하(재사용) 전에는 전수검사가 필요합니다 (TJP-QP0854).'
+    $('ltHint').innerHTML='<b>장기보관 자재 유효성 관리</b> — 선입선출(FIFO) 기준 가장 오래된 재고의 입고일 + '+LT_DAYS+'일 = 만료일, 남은 일수 '+LT_SOON+'일 이내는 <span style="background:#FFF2CC;padding:0 4px">임박</span>, 만료 경과는 <span style="background:#FBE0D6;padding:0 4px">초과</span>. &nbsp;<button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportLtVal()">📥 유효성 관리대장 엑셀</button><br>초과 재고는 실물에 <b>장기보관 식별표</b>를 붙인 뒤 [식별 확인]을 누르세요. 출하(재사용) 전에는 전수검사가 필요합니다 (TJP-QP0854).'
       +'<br><span style="color:#6b7885">※ 재고조정(+)은 입고일을 알 수 없어 오래된 재고로 봅니다 · "기초재고 포함"은 기준일 이전 입고분이 남은 것입니다.</span>';
-    const rows=S.items.filter(it=>!it.hide).map(it=>({it,a:ltAge(it)})).filter(x=>x.a.old>0).sort((a,b)=>b.a.age-a.a.age);
-    $('ltTbl').innerHTML='<tr><th>품번</th><th>품명</th><th>고객사</th><th class="r">현재고</th><th class="r">장기보관 수량</th><th>가장 오래된 입고</th><th class="r">경과일</th><th>식별표</th></tr>'
-      +(rows.length?rows.map(({it,a})=>{ const t=ltTagOk(it.pn,a)?LT.tag[it.pn]:null, stale=!t&&LT.tag[it.pn];
-        return '<tr><td><b>'+esc(it.pn)+'</b></td><td>'+esc(it.nm||'')+'</td><td>'+esc(it.cu||'')+'</td><td class="r">'+nf(a.cur)+'</td>'
+    const rows=ltValRows();
+    $('ltTbl').innerHTML='<tr><th>품번</th><th>품명</th><th>고객사</th><th class="r">현재고</th><th class="r">장기보관 수량</th><th>가장 오래된 입고</th><th>만료일</th><th class="r">남은 일수</th><th>식별표</th></tr>'
+      +(rows.length?rows.map(({it,a})=>{ const st=ltSt(a), t=st==='초과'&&ltTagOk(it.pn,a)?LT.tag[it.pn]:null, stale=st==='초과'&&!t&&LT.tag[it.pn];
+        return '<tr class="'+(st==='초과'?'lt-over':'lt-soon')+'"><td><b>'+esc(it.pn)+'</b></td><td>'+esc(it.nm||'')+'</td><td>'+esc(it.cu||'')+'</td><td class="r">'+nf(a.cur)+'</td>'
           +'<td class="r" style="color:#B45309;font-weight:800">'+nf(a.old)+'</td><td>'+esc(a.oldest||'-')+(a.base?' <span style="font-size:10px;color:#6b7885">(기초재고 포함)</span>':'')+'</td>'
-          +'<td class="r">'+a.age+'일</td><td>'+(t?'<span style="color:#0B6B3A;font-weight:800">✔ '+esc(t.at)+' '+esc(t.by||'')+'</span> <button class="btn" style="padding:1px 7px;font-size:10.5px" onclick="ltTag('+esc(JSON.stringify(it.pn))+',1)">취소</button>'
+          +'<td>'+esc(a.exp||'-')+'</td><td class="r" style="font-weight:800;color:'+(st==='초과'?'#B91C1C':'#9A6400')+'">'+(a.left<0?(-a.left)+'일 초과':'D-'+a.left)+'</td>'
+          +'<td>'+(st==='임박'?'<span style="font-size:11px;color:#9A6400">만료 후 식별표 부착</span>':t?'<span style="color:#0B6B3A;font-weight:800">✔ '+esc(t.at)+' '+esc(t.by||'')+'</span> <button class="btn" style="padding:1px 7px;font-size:10.5px" onclick="ltTag('+esc(JSON.stringify(it.pn))+',1)">취소</button>'
             :(stale?'<div style="font-size:10.5px;color:#B45309">'+esc(stale.at)+' 확인 '+nf(stale.qty)+' → 이후 늘어남</div>':'')+'<button class="btn k" style="padding:3px 9px;font-size:11px" onclick="ltTag('+esc(JSON.stringify(it.pn))+')">식별 확인</button>')+'</td></tr>'; }).join('')
-        :'<tr><td colspan="8" style="text-align:center;padding:18px;color:#6b7885">입고 '+LT_DAYS+'일 넘은 재고가 없습니다.</td></tr>');
+        :'<tr><td colspan="9" style="text-align:center;padding:18px;color:#6b7885">만료 임박·초과 재고가 없습니다.</td></tr>');
   }else{
-    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 투입 전 소재 확인 · 생산/품질 100% 전수검사 결과를 기록합니다 — <b>장기보관 초과 원소재 사용 관리대장(TJP-QP0854-F03 Rev.1)</b> 전산 관리. 확인 항목은 재질별 — <b>탄소강: 발청 중심</b> · <b>SUS: 이물·청정도 중심</b>(전이녹·점녹 함께). &nbsp;<button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportLtF03()">📥 관리대장(F03) 엑셀</button>'
+    $('ltHint').innerHTML='MES 실사용 기록으로 찾은 <b>사용연한 또는 입고 '+LT_DAYS+'일을 넘긴 코일로 생산한 제품</b>입니다. 투입 전 소재 확인 · 생산&품질 200% 전수검사(생산 100% + 품질 100%) 결과를 기록합니다 — <b>장기보관 초과 원소재 사용 관리대장(TJP-QP0854-F03 Rev.1)</b> 전산 관리. 확인 항목은 재질별 — <b>탄소강: 발청 중심</b> · <b>SUS: 이물·청정도 중심</b>(전이녹·점녹 함께). &nbsp;<button class="btn" style="padding:2px 9px;font-size:11px" onclick="exportLtF03()">📥 관리대장(F03) 엑셀</button>'
       +'<br><span style="color:#6b7885">※ 사용연한은 설정의 소재 사용연한(전 재질 입고 후 90일, SQ 3개월)을 따릅니다.</span>';
     const P=ltProd();
     $('ltTbl').innerHTML='<tr><th>생산일</th><th>품번</th><th>사용 코일 (입고일 · 경과)</th><th class="r">사용량</th><th>검사 구분</th><th>관리대장(F03)</th></tr>'
@@ -9680,7 +9703,7 @@ function exportLtF03(){
         rec?rec.res:'미검사',rec?rec.by||'':'',rec&&rec.lead?rec.lead.by+' '+String(rec.lead.at).slice(5):''];
       v.forEach((val,i)=>sh.set(r,i,val,i===3||i===9?XS.pn:i===4||i===0?XS.n:XS.c)); r++; });
   });
-  r++; sh.set(r,0,'※ 작성기준 : 1) 보관 3개월(입고일 + '+LT_DAYS+'일) 초과 코일로 생산한 건 2) 투입 전 시작 부분 확인 — 탄소강: 발청·이물 / SUS: 이물·청정도·얼룩·보호필름·전이녹, 이상 시 1~2회전 제거 후 재판정 3) 생산·품질 각 100% 전수검사 4) 불량 시 LOT 격리·전수 선별, 잔량 사용 중지',XS.meta); sh.merge(r,0,r,15);
+  r++; sh.set(r,0,'※ 작성기준 : 1) 보관 3개월(입고일 + '+LT_DAYS+'일) 초과 코일로 생산한 건 2) 투입 전 시작 부분 확인 — 탄소강: 발청·이물 / SUS: 이물·청정도·얼룩·보호필름·전이녹, 이상 시 1~2회전 제거 후 재판정 3) 생산&품질 200% 전수검사(생산 100% + 품질 100%) 4) 불량 시 LOT 격리·전수 선별, 잔량 사용 중지',XS.meta); sh.merge(r,0,r,15);
   sh.freeze=H+2; sh.titles='$'+(H+1)+':$'+(H+2);
   dl(xBook([sh]),'장기보관초과원소재사용관리대장_F03_'+today().replace(/-/g,'')+'.xlsx');
   toast('관리대장(F03) 엑셀을 내려받았습니다');
@@ -9731,7 +9754,7 @@ async function ltInspSave(){
   const re=$('ltiRe').value, num=id=>{const v=$(id).value;return v===''?null:Math.max(0,Math.round(+v)||0)};
   const rot=num('ltiRot')||0, pq=num('ltiPq'), pn=num('ltiPn')||0, qq=num('ltiQq'), qn=num('ltiQn')||0, fin=$('ltiFin').value;
   if(!re){ alert('재판정(사용/선별/반품)을 고르세요'); return; }
-  if(re!=='반품'&&(!pq||!qq)){ alert('생산·품질 100% 검사 수량을 입력하세요'); return; }
+  if(re!=='반품'&&(!pq||!qq)){ alert('생산&품질 200% 전수검사 — 생산·품질 검사 수량을 입력하세요'); return; }
   if((pn>(pq||0))||(qn>(qq||0))){ alert('불량 수량이 검사 수량보다 많습니다'); return; }
   if((ng||re!=='사용'||pn||qn||fin==='불합격')&&!memo){ alert('상태 NG · 선별 · 반품 · 불량 · 불합격이면 검사 내용·조치를 적어 주세요'); return; }
   if(!by){ alert('검사자 이름이 있어야 기록합니다'); return; }
