@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.35 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.36 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8733,7 +8733,9 @@ function parseShipLots(v){
     if(d.length>=6){ out.push(d.slice(0,6)); return; }   /* 260622 그대로 */
     const prev=out[out.length-1];
     if(!prev)return;
-    out.push(prev.slice(0,6-d.length)+d);                /* 0623 → 앞자리는 직전 값에서 */
+    let v=prev.slice(0,6-d.length)+d;                    /* 0623 → 앞자리는 직전 값에서 */
+    if(d.length===4&&v<prev) v=String(+prev.slice(0,2)+1).padStart(2,'0')+d;   /* 261230/0102 → 해가 바뀐 270102 */
+    out.push(v);
   });
   return [...new Set(out)];
 }
@@ -9316,6 +9318,27 @@ function secOne(coils,prod,ships){
     ||(S.lotDate||{})[lot]||(S.lotDate||{})[lotBase(lot)]||'';
   const usedKg=(r,lot)=>(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn&&(x.lot===lot||x.rno===lot))
     .reduce((a,x)=>a+(x.kg||0),0);
+  /* 그 생산에 실제로 들어간 코일 — LOT 이름은 업체가 재사용하므로(같은 이름의 다른 날짜·다른 규격 코일)
+     MES 실사용의 입고번호로 코일을 정한다. 실사용이 없으면 같은 이름 중 규격이 맞고 생산일 이전에 입고된 가장 최근 코일 */
+  const cid=c=>c?String(c.id||c.rno||c.cno||''):'';
+  const byRno=rno=>rno?((coils||[]).find(c=>c&&!c.miss&&c.rno&&String(c.rno)===rno)
+    ||(S.coils||[]).find(c=>c.rno&&String(c.rno)===rno)||(typeof rcvRef==='function'?rcvRef(rno):null)):null;
+  const byName=(l,r)=>{
+    const L=String(l||'').trim().toUpperCase();
+    const pool=(coils||[]).filter(c=>c&&!c.miss).concat(S.coils||[]);
+    const cand=pool.filter(c=>String(c.cno||'').split('#')[0].toUpperCase()===L&&(!c.d||c.d<=r.d));
+    const ok=typeof specOkFor==='function'?cand.filter(c=>specOkFor(c,r.pn)):cand;
+    return (ok.length?ok:cand).sort((x,y)=>String(y.d||'').localeCompare(String(x.d||'')))[0]||null;
+  };
+  const coilsOf=r=>{
+    const ru=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
+    if(ru.length){
+      const g=new Map();
+      ru.forEach(x=>{ const k=x.rno||x.lot; const o=g.get(k)||{lot:x.lot||x.rno,rno:x.rno,kg:0}; o.kg+=x.kg||0; g.set(k,o); });
+      return [...g.values()].map(o=>({lot:o.lot,rno:o.rno,kg:o.kg,c:byRno(o.rno)||byName(o.lot,r)||coilOf(o.lot)}));
+    }
+    return prodLots(r).map(l=>({lot:l,rno:'',kg:usedKg(r,l),c:byName(l,r)||coilOf(l)}));
+  };
   const shipsOf=r=>{
     const l6=ymd6(r.d);
     return (ships||[]).filter(x=>!x.nolot&&x.pn===r.pn&&parseShipLots(x.lot).indexOf(l6)>=0);
@@ -9327,14 +9350,14 @@ function secOne(coils,prod,ships){
     const lots=prodLots(r), sh=shipsOf(r);
     sh.forEach(x=>usedShip[x.id]=1);
     const it=S.items.find(x=>x.pn===r.pn)||{nm:''}, pi=pinfo(r.pn)||{}, mm=matmOf(r.pn)||{};
-    const cH=lots.length?lots.map(l=>{
-      const c=coilOf(l); if(c&&c.cno)usedCoil[String(c.cno).toUpperCase()]=1;
-      const kg=usedKg(r,l);
-      const dd=rcvDate(c,l);
+    const used=coilsOf(r);
+    const cH=used.length?used.map(({lot:l,rno,kg,c})=>{
+      if(c)usedCoil[cid(c)]=1;
+      const dd=rcvDate(c,rno||l);
       const dH=dd?`<span class="rd">입고 ${esc(dd)}</span>`:`<span class="s ng">입고일 미상</span>`;
-      const info=c||(typeof rcvRef==='function'?rcvRef(l):null);
+      const info=c||(typeof rcvRef==='function'?rcvRef(rno||l):null);
       return `<b>${esc(l)}</b>${kg?` <span class="u">${nf(Math.round(kg))}kg</span>`:''}`
-        +`<br>${dH}`
+        +`<br>${dH}`+(rno?`<span class="s"> · 입고번호 ${esc(rno)}</span>`:'')
         +(info?`<span class="s">${info.ms&&info.ms!==l?' · HEAT '+esc(info.ms):''}${info.sup?' · '+esc(info.sup):''}`
             +`${(info.mt||info.t||info.w)?'<br>'+esc([info.mt,(info.t?info.t+'t':''),(info.w?info.w+'W':'')].filter(Boolean).join(' × ')):''}</span>`
           :'<span class="s ng"> · 코일대장 없음</span>');
@@ -9351,7 +9374,7 @@ function secOne(coils,prod,ships){
       +`<td class="l">${sH}</td></tr>`);
   });
 
-  (coils||[]).filter(c=>c&&c.cno&&!usedCoil[String(c.cno).toUpperCase()]&&!c.miss).forEach(c=>{
+  (coils||[]).filter(c=>c&&c.cno&&!usedCoil[cid(c)]&&!c.miss).forEach(c=>{
     rows.push(`<tr class="dim"><td class="l"><b>${esc(c.cno)}</b><br>${c.d?`<span class="rd">입고 ${esc(c.d)}</span>`:'<span class="s ng">입고일 미상</span>'}`
       +`<span class="s">${c.ms&&c.ms!==c.cno?' · HEAT '+esc(c.ms):''}${c.sup?' · '+esc(c.sup):''}</span></td>`
       +`<td class="c s" colspan="4">생산 기록 없음${c.ref?' (기준일 이전 입고 · 참고)':''}</td>`
