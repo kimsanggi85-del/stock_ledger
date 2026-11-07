@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.35 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.37 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -8733,7 +8733,9 @@ function parseShipLots(v){
     if(d.length>=6){ out.push(d.slice(0,6)); return; }   /* 260622 그대로 */
     const prev=out[out.length-1];
     if(!prev)return;
-    out.push(prev.slice(0,6-d.length)+d);                /* 0623 → 앞자리는 직전 값에서 */
+    let v=prev.slice(0,6-d.length)+d;                    /* 0623 → 앞자리는 직전 값에서 */
+    if(d.length===4&&v<prev) v=String(+prev.slice(0,2)+1).padStart(2,'0')+d;   /* 261230/0102 → 해가 바뀐 270102 */
+    out.push(v);
   });
   return [...new Set(out)];
 }
@@ -9145,6 +9147,14 @@ function allShips(){
   return H.concat(rest);
 }
 /* 소재 → 제품 : 이 코일(또는 HEAT)이 어느 제품·어느 출하로 갔나 */
+/* 그 생산일에 그 설비에 물려 있던 같은 LOT 이름의 코일 입고번호 (MES 장착 이력) */
+function mountedRno(l,r){
+  const L=String(l||'').trim(), mc=String(r&&r.p||'').replace(/^0+/,'');
+  if(!L||!mc||!S.rinv)return '';
+  const m=S.rinv.filter(x=>x.lot===L&&x.mc===mc&&x.on<=r.d&&(!x.out||x.out>=r.d))
+    .sort((a,b)=>b.on.localeCompare(a.on));
+  return m.length?m[0].rno:'';
+}
 function traceFwd(key){
   const K=String(key||'').trim().toUpperCase();
   const R=trcRange();
@@ -9154,11 +9164,14 @@ function traceFwd(key){
   });
   let prod;
   const rnos=new Set(coils.map(c=>String(c.rno||'')).filter(Boolean));
-  const ruMine=rnos.size?(S.ru||[]).filter(x=>x.rno&&rnos.has(x.rno)):[];
+  const ruMine=rnos.size?(S.ru||[]).concat(S.ruId||[]).filter(x=>x.rno&&rnos.has(x.rno)):[];
   if(ruMine.length){
     /* MES 실사용이 있으면 입고번호로 정확히 — 같은 LOT 이름의 다른 규격 코일 생산은 섞이지 않는다 */
     const dk=new Set(ruMine.map(x=>x.d+'|'+x.pn));
-    prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&dk.has(r.d+'|'+r.pn));
+    prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&(dk.has(r.d+'|'+r.pn)
+      ||prodLots(r).some(l=>rnos.has(mountedRno(l,r)))));       /* 실사용이 빠진 날은 장착 이력으로 */
+  }else if(rnos.size&&S.rinv&&S.led.some(r=>r.k==='생산입고'&&inRange(r.d,R)&&prodLots(r).some(l=>rnos.has(mountedRno(l,r))))){
+    prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&prodLots(r).some(l=>rnos.has(mountedRno(l,r))));
   }else{
     prod=S.led.filter(r=>r.k==='생산입고'&&inRange(r.d,R)&&
       prodLots(r).some(l=>{const u=l.toUpperCase(); return u===K||lotBase(u)===K||u.startsWith(K);}));
@@ -9232,7 +9245,8 @@ function traceBack(key){
   /* 역추적 소재: MES 실사용(입고번호) 우선 — 같은 LOT 이름이라도 실제 투입된 코일만 */
   const out=[]; const put=c=>{ if(c&&!out.some(x=>x.c&&c&&x.c.id===c.id))out.push({lot:c.cno,c}); };
   prod.forEach(r=>{
-    const ru2=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
+    let ru2=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
+    if(!ru2.length) ru2=(S.ruId||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
     /* 같은 LOT 이름 중에서 규격이 맞고 생산일 이전에 입고된 코일만 — 그중 가장 최근 입고분 */
     const byName=(l,pn,d)=>{
       const cand=S.coils.filter(c=>String(c.cno).split('#')[0]===String(l).trim()&&specOkFor(c,pn)&&(!c.d||c.d<=d))
@@ -9240,7 +9254,7 @@ function traceBack(key){
       return cand[0]||null;
     };
     if(ru2.length){ ru2.forEach(x=>{ put(S.coils.find(c=>c.rno&&String(c.rno)===String(x.rno))||rcvRef(x.rno)||rcvRef(x.lot)||byName(x.lot,r.pn,r.d)); }); }
-    else prodLots(r).forEach(l=>{ const c=byName(l,r.pn,r.d)||rcvRef(l)
+    else prodLots(r).forEach(l=>{ const mr=mountedRno(l,r); const c=(mr&&(S.coils.find(x=>x.rno&&String(x.rno)===mr)||rcvRef(mr)))||byName(l,r.pn,r.d)||rcvRef(l)
         ||S.coils.find(x=>String(x.cno).split('#')[0]===String(l).trim())      /* 규격 미등록이라도 이름이 같은 코일이면 연결 */
         ||S.coils.find(x=>x.rno&&String(x.rno)===String(l).replace(/-\d+$/,''));
       if(c)put(c); else if(!out.some(x=>x.lot===l&&!x.c))out.push({lot:l,c:null}); });
@@ -9312,10 +9326,34 @@ function secOne(coils,prod,ships){
     ||(S.coils||[]).find(x=>x.rno&&String(x.rno)===String(lot||'').replace(/-\d+$/,''))
     ||(typeof rcvRef==='function'?rcvRef(lot):null)||null;
   /* 입고일: 코일대장 → MES 입고 참고기록 → 수입검사 LOT 일자 순으로 찾는다 */
+  const rnoDate=v=>{ const m=String(v||'').match(/^(\d{2})(\d{2})(\d{2})\d{4,}$/);   /* MES 입고번호 앞 6자리 = 입고일 (261104000382 → 2026-11-04) */
+    return m&&+m[2]>=1&&+m[2]<=12&&+m[3]>=1&&+m[3]<=31?'20'+m[1]+'-'+m[2]+'-'+m[3]:''; };
   const rcvDate=(c,lot)=>(c&&c.d)||((typeof rcvRef==='function'&&rcvRef(lot)||{}).d)
-    ||(S.lotDate||{})[lot]||(S.lotDate||{})[lotBase(lot)]||'';
+    ||(S.lotDate||{})[lot]||(S.lotDate||{})[lotBase(lot)]||rnoDate(lot)||'';
   const usedKg=(r,lot)=>(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn&&(x.lot===lot||x.rno===lot))
     .reduce((a,x)=>a+(x.kg||0),0);
+  /* 그 생산에 실제로 들어간 코일 — LOT 이름은 업체가 재사용하므로(같은 이름의 다른 날짜·다른 규격 코일)
+     MES 실사용의 입고번호로 코일을 정한다. 실사용이 없으면 같은 이름 중 규격이 맞고 생산일 이전에 입고된 가장 최근 코일 */
+  const cid=c=>c?String(c.id||c.rno||c.cno||''):'';
+  const byRno=rno=>rno?((coils||[]).find(c=>c&&!c.miss&&c.rno&&String(c.rno)===rno)
+    ||(S.coils||[]).find(c=>c.rno&&String(c.rno)===rno)||(typeof rcvRef==='function'?rcvRef(rno):null)):null;
+  const byName=(l,r)=>{
+    const L=String(l||'').trim().toUpperCase();
+    const pool=(coils||[]).filter(c=>c&&!c.miss).concat(S.coils||[]);
+    const cand=pool.filter(c=>String(c.cno||'').split('#')[0].toUpperCase()===L&&(!c.d||c.d<=r.d));
+    const ok=typeof specOkFor==='function'?cand.filter(c=>specOkFor(c,r.pn)):cand;
+    return (ok.length?ok:cand).sort((x,y)=>String(y.d||'').localeCompare(String(x.d||'')))[0]||null;
+  };
+  const coilsOf=r=>{
+    let ru=(S.ru||[]).filter(x=>x.d===r.d&&x.pn===r.pn);
+    if(!ru.length) ru=(S.ruId||[]).filter(x=>x.d===r.d&&x.pn===r.pn);   /* 사용중량 0 으로만 남은 실사용 */
+    if(ru.length){
+      const g=new Map();
+      ru.forEach(x=>{ const k=x.rno||x.lot; const o=g.get(k)||{lot:x.lot||x.rno,rno:x.rno,kg:0}; o.kg+=x.kg||0; g.set(k,o); });
+      return [...g.values()].map(o=>({lot:o.lot,rno:o.rno,kg:o.kg,c:byRno(o.rno)||byName(o.lot,r)||coilOf(o.lot)}));
+    }
+    return prodLots(r).map(l=>{ const rno=mountedRno(l,r); return {lot:l,rno,kg:usedKg(r,l),c:(rno&&byRno(rno))||byName(l,r)||coilOf(l)}; });
+  };
   const shipsOf=r=>{
     const l6=ymd6(r.d);
     return (ships||[]).filter(x=>!x.nolot&&x.pn===r.pn&&parseShipLots(x.lot).indexOf(l6)>=0);
@@ -9327,14 +9365,14 @@ function secOne(coils,prod,ships){
     const lots=prodLots(r), sh=shipsOf(r);
     sh.forEach(x=>usedShip[x.id]=1);
     const it=S.items.find(x=>x.pn===r.pn)||{nm:''}, pi=pinfo(r.pn)||{}, mm=matmOf(r.pn)||{};
-    const cH=lots.length?lots.map(l=>{
-      const c=coilOf(l); if(c&&c.cno)usedCoil[String(c.cno).toUpperCase()]=1;
-      const kg=usedKg(r,l);
-      const dd=rcvDate(c,l);
+    const used=coilsOf(r);
+    const cH=used.length?used.map(({lot:l,rno,kg,c})=>{
+      if(c)usedCoil[cid(c)]=1;
+      const dd=rcvDate(c,rno||l);
       const dH=dd?`<span class="rd">입고 ${esc(dd)}</span>`:`<span class="s ng">입고일 미상</span>`;
-      const info=c||(typeof rcvRef==='function'?rcvRef(l):null);
+      const info=c||(typeof rcvRef==='function'?rcvRef(rno||l):null);
       return `<b>${esc(l)}</b>${kg?` <span class="u">${nf(Math.round(kg))}kg</span>`:''}`
-        +`<br>${dH}`
+        +`<br>${dH}`+(rno?`<span class="s"> · 입고번호 ${esc(rno)}</span>`:'')
         +(info?`<span class="s">${info.ms&&info.ms!==l?' · HEAT '+esc(info.ms):''}${info.sup?' · '+esc(info.sup):''}`
             +`${(info.mt||info.t||info.w)?'<br>'+esc([info.mt,(info.t?info.t+'t':''),(info.w?info.w+'W':'')].filter(Boolean).join(' × ')):''}</span>`
           :'<span class="s ng"> · 코일대장 없음</span>');
@@ -9351,7 +9389,7 @@ function secOne(coils,prod,ships){
       +`<td class="l">${sH}</td></tr>`);
   });
 
-  (coils||[]).filter(c=>c&&c.cno&&!usedCoil[String(c.cno).toUpperCase()]&&!c.miss).forEach(c=>{
+  (coils||[]).filter(c=>c&&c.cno&&!usedCoil[cid(c)]&&!c.miss).forEach(c=>{
     rows.push(`<tr class="dim"><td class="l"><b>${esc(c.cno)}</b><br>${c.d?`<span class="rd">입고 ${esc(c.d)}</span>`:'<span class="s ng">입고일 미상</span>'}`
       +`<span class="s">${c.ms&&c.ms!==c.cno?' · HEAT '+esc(c.ms):''}${c.sup?' · '+esc(c.sup):''}</span></td>`
       +`<td class="c s" colspan="4">생산 기록 없음${c.ref?' (기준일 이전 입고 · 참고)':''}</td>`
@@ -11917,6 +11955,8 @@ async function syncRawMes(silent){
     { const lastUg={};
       S.ru.forEach(x=>{ if(x.ug>0&&x.kg>0){ lastUg[x.pn]=x.ug; return; }
         if(!(x.kg>0)&&x.sq>0&&lastUg[x.pn]){ x.kg=Math.round(x.sq*lastUg[x.pn]/10)/100; x.est=lastUg[x.pn]; } });
+      /* 사용중량 0 기록도 어느 코일이 물렸는지는 알려 주므로 추적용으로 남긴다 */
+      S.ruId=S.ru.filter(x=>x.rno&&!(x.kg>0)).map(x=>({d:x.d,pn:x.pn,lot:x.lot,rno:x.rno,kg:0}));
       S.ru=S.ru.filter(x=>x.kg>0); }
     const estBy=new Map();                 /* 입고번호별 추정 사용중량 — 장착중 코일 잔량에 쓴다 */
     S.ru.forEach(x=>{ if(x.est&&x.rno) estBy.set(x.rno,(estBy.get(x.rno)||0)+x.kg); });
@@ -11945,6 +11985,9 @@ async function syncRawMes(silent){
     const inv=await fetchAll(SB_URL+'/rest/v1/raw_inventory?select=receipt_no,receipt_seq,heat_no,stock_status,put_on_date,put_out_date,issue_date,unit_weight,use_weight,item_code,machine_code,shot_qty'
       +'&order=put_on_date.asc,receipt_no.asc,receipt_seq.asc',H);
     const IV=new Map();
+    /* 장착 이력 — MES 실사용이 빠진 날(2026-09-03~09-30 등)에도 [설비·LOT·장착~해제일]로 실제 물린 코일을 찾는다 */
+    S.rinv=inv.filter(x=>x.receipt_no&&x.put_on_date).map(x=>({rno:String(x.receipt_no).trim(),lot:String(x.heat_no||'').trim(),
+      mc:String(x.machine_code||'').replace(/^0+/,''),on:String(x.put_on_date).slice(0,10),out:String(x.put_out_date||'').slice(0,10)}));
     inv.forEach(x=>{
       const k=String(x.receipt_no||'').trim()+'|'+Math.round(+x.receipt_seq||1);
       const o=IV.get(k)||{st:'',usew:0,pon:'',pout:'',mc:'',pn:'',sq:0,n:0};
