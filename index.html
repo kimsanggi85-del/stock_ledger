@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.34 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.35 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9634,7 +9634,6 @@ function exportLtVal(){
 }
 /* 식별 확인이 지금도 유효한가 — 확인 뒤 장기보관 수량이 늘었으면(새 재고가 90일을 넘김) 다시 확인 */
 function ltTagOk(pn,a){ const t=LT.tag[pn]; return !!t && (+a.old||0) <= (+t.qty||0)+0.5; }
-function ltWho(){ return S.user || (prompt('확인자 이름을 입력하세요','')||'').trim(); }
 function ltBarPaint(){
   const B=$('ltBar'); if(!B)return;
   if(F!=='old'){ B.innerHTML=''; return; }
@@ -9682,13 +9681,25 @@ function ltRender(){
         :'<tr><td colspan="6" style="text-align:center;padding:18px;color:#6b7885">해당 생산이 없습니다.</td></tr>');
   }
 }
-async function ltTag(pn,undo){
-  const a=ltAge(S.items.find(x=>x.pn===pn)||{pn,bs:0});
-  if(undo){ if(!confirm(pn+' 식별표 확인 기록을 취소할까요?'))return; }
-  else if(!confirm(pn+'\n장기보관 수량 '+nf(a.old)+' (가장 오래된 입고 '+a.oldest+')\n\n실물에 장기보관 식별표를 붙였습니까?'))return;
-  const by=undo?'':ltWho(); if(!undo&&!by){ alert('확인자 이름이 있어야 기록합니다'); return; }
-  try{ await ltSave(v=>{ if(undo)delete v.tag[pn]; else v.tag[pn]={at:today(),by,qty:a.old,oldest:a.oldest}; });
-    ltRender(); try{ltBarPaint();}catch(e){} toast(undo?'취소했습니다':'식별 확인을 기록했습니다'); }catch(e){ alert('저장 실패: '+e.message); }
+/* 제품 장기보관 식별표 확인 — PIN(user_pin) 으로 확인자 기록, 취소는 확인한 본인 PIN 으로만 */
+function ltTag(pn,undo){
+  const a=ltAge(S.items.find(x=>x.pn===pn)||{pn,bs:0}), t=LT.tag[pn];
+  if(undo&&!t){ alert('식별 확인 기록이 없습니다'); return; }
+  LTL={kind:'tag',pn,undo:!!undo,a};
+  $('ltlTtl').firstChild.nodeValue=(undo?'식별표 확인 취소 — ':'식별표 확인 — ')+pn+' ';
+  $('ltlLbl').textContent='확인자 PIN';
+  $('ltlInfo').innerHTML='장기보관 수량 <b>'+nf(a.old)+'</b> · 가장 오래된 입고 '+esc(a.oldest||'-')+' · 만료 '+esc(a.exp||'-')
+    +(undo?'<div style="margin-top:5px;color:#B45309">현재 확인 : '+esc(t.by)+' '+esc(t.at)+' — 확인한 본인 PIN 으로만 취소</div>'
+      :'<div style="margin-top:5px;font-weight:700">실물에 장기보관 식별표를 붙였습니까?</div>');
+  $('ltlPin').value=''; $('ltlErr').textContent='';
+  $('mLtL').classList.add('on'); setTimeout(()=>$('ltlPin').focus(),50);
+}
+async function ltTagOkPin(u){
+  const {pn,undo,a}=LTL, E=$('ltlErr'), t=LT.tag[pn];
+  if(undo&&t&&t.by!==u.name){ E.textContent='확인한 '+t.by+' 님의 PIN 으로만 취소할 수 있습니다'; return; }
+  try{ await ltSave(v=>{ if(undo)delete v.tag[pn]; else v.tag[pn]={at:today(),by:u.name,dept:u.dept||'',emp:String(u.emp_id||u.id||''),via:'PIN',qty:a.old,oldest:a.oldest}; });
+    $('mLtL').classList.remove('on'); ltRender(); try{ltBarPaint();}catch(e){} toast(undo?'식별 확인을 취소했습니다':u.name+' 식별 확인을 기록했습니다'); }
+  catch(e){ E.textContent='저장 실패: '+e.message; }
 }
 /* 장기보관 초과 원소재 사용 관리대장 TJP-QP0854-F03 (Rev.1) 양식으로 내보내기 — 생산(일자·품번) × 사용 코일 1행 */
 function exportLtF03(){
@@ -9738,7 +9749,7 @@ function ltSign(key,role,undo){
   const [d,pn]=key.split('|'), nm=LT_SIGN[role]+(role==='lead'?'(팀장)':'(과장)');
   if(!undo&&role==='lead'&&!r.rev){ alert('검토 후 승인할 수 있습니다'); return; }
   if(undo&&role==='rev'&&r.lead){ alert('승인을 먼저 취소해야 검토를 취소할 수 있습니다'); return; }
-  LTL={key,role,undo:!!undo};
+  LTL={kind:'sign',key,role,undo:!!undo};
   $('ltlTtl').firstChild.nodeValue=nm+(undo?' 취소 — ':' — ')+d+' '+pn+' ';
   $('ltlLbl').textContent=nm+' PIN';
   $('ltlInfo').innerHTML='담당 <b>'+esc(r.by||'-')+'</b>'+(r.rev?' · 검토 <b>'+esc(r.rev.by)+'</b>':'')+' · <b style="color:'+(r.res==='합격'?'#0B6B3A':'#B91C1C')+'">'+esc(r.res)+'</b>'
@@ -9762,6 +9773,7 @@ async function ltLeadOk(){
   E.textContent='확인 중…';
   let u; try{ u=await ltPinUser(pin); }catch(e){ E.textContent='서버 연결 실패: '+e.message; return; }
   if(!u){ E.textContent='등록되지 않은 PIN 입니다'; $('ltlPin').value=''; return; }
+  if(LTL.kind==='tag') return ltTagOkPin(u);
   const {key,role,undo}=LTL, r=LT.insp[key], nm=LT_SIGN[role];
   if(undo){ if(r[role]&&r[role].by!==u.name){ E.textContent=nm+'한 '+r[role].by+' 님의 PIN 으로만 취소할 수 있습니다'; return; } }
   else{
