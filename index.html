@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.33 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.34 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -6366,7 +6366,7 @@ body.qp-on{overflow:hidden}
       <div class="fld" style="flex:1"><label>품질 불량</label><input id="ltiQn" type="number" min="0" inputmode="numeric" style="width:100%"></div></div>
     <div class="fld" style="margin-top:6px"><label>최종 판정</label><select id="ltiFin" style="width:100%" onchange="ltiPaint(1)"><option>합격</option><option>불합격</option></select></div>
     <div class="fld" style="margin-top:9px"><label>검사 내용 · 조치 (NG·선별·반품·불량·불합격이면 필수)</label><input id="ltiMemo" style="width:100%" placeholder="예: 200개 전수 · 이물 3개 선별"></div>
-    <div class="fld" style="margin-top:6px"><label>담당 PIN (기록하는 담당자)</label><input id="ltiPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="width:100%;font-size:18px;letter-spacing:5px;text-align:center"></div>
+    <div class="fld" style="margin-top:6px"><label>담당 PIN (과장)</label><input id="ltiPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="width:100%;font-size:18px;letter-spacing:5px;text-align:center"></div>
     <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
       <span id="ltiRes" style="margin-right:auto;font-weight:800;align-self:center"></span>
       <button class="btn" onclick="$('mLtI').classList.remove('on')">닫기</button>
@@ -9722,7 +9722,7 @@ function exportLtF03(){
   toast('관리대장(F03) 엑셀을 내려받았습니다');
 }
 /* 관리대장 F03 결재 — 담당(검사 기록 시 담당자 PIN) → 검토(담당자 PIN) → 승인(팀장 PIN)
-   담당·검토는 같은 사람 가능 · 검토 = 직책 과장 (2026-11 : 김상기 과장) · 승인 = PIN 목록(user_pin) 직책이 팀장 또는 부장인 사람만 (강병주)
+   담당·검토 = 직책 과장, 같은 사람 가능 (2026-11 : 김상기 과장) · 승인 = PIN 목록(user_pin) 직책이 팀장 또는 부장인 사람만 (강병주)
    승인자는 담당·검토자와 달라야 함 · 검토 후 승인 · 취소는 서명한 본인 PIN 으로만 (승인이 있으면 검토 취소 불가) */
 const LT_SIGN={rev:'검토',lead:'승인'}, LT_APPROVER=['팀장','부장'], LT_REVIEWER=['과장'];
 let LTL=null;
@@ -9813,6 +9813,7 @@ async function ltInspSave(){
   if(!/^\d{3,8}$/.test(pin)){ alert('담당 PIN 을 입력하세요'); return; }
   let u; try{ u=await ltPinUser(pin); }catch(e){ alert('PIN 확인 실패(서버): '+e.message); return; }
   if(!u){ alert('등록되지 않은 PIN 입니다'); $('ltiPin').value=''; return; }
+  if(!LT_REVIEWER.includes(String(u.position||'').trim())){ alert(u.name+' 님은 담당 권한(과장)이 없습니다'); $('ltiPin').value=''; return; }
   const by=u.name;
   const rec={at:today(),by,byInfo:{dept:u.dept||'',emp:String(u.emp_id||u.id||''),via:'PIN'},res:fin,memo,kind:LTI.kind,chk:Object.assign({},LTI.chk),rot,re,pq,pn,qq,qn}, key=LTI.key;
   try{ await ltSave(v=>{ v.insp[key]=rec; });
