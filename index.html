@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.32 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.33 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9722,9 +9722,9 @@ function exportLtF03(){
   toast('관리대장(F03) 엑셀을 내려받았습니다');
 }
 /* 관리대장 F03 결재 — 담당(검사 기록 시 담당자 PIN) → 검토(담당자 PIN) → 승인(팀장 PIN)
-   담당·검토는 같은 사람 가능 (2026-11 : 김상기) · 승인 = PIN 목록(user_pin) 직책이 팀장 또는 부장인 사람만 (강병주)
+   담당·검토는 같은 사람 가능 · 검토 = 직책 과장 (2026-11 : 김상기 과장) · 승인 = PIN 목록(user_pin) 직책이 팀장 또는 부장인 사람만 (강병주)
    승인자는 담당·검토자와 달라야 함 · 검토 후 승인 · 취소는 서명한 본인 PIN 으로만 (승인이 있으면 검토 취소 불가) */
-const LT_SIGN={rev:'검토',lead:'승인'}, LT_APPROVER=['팀장','부장'];
+const LT_SIGN={rev:'검토',lead:'승인'}, LT_APPROVER=['팀장','부장'], LT_REVIEWER=['과장'];
 let LTL=null;
 function ltSignHtml(key,r){
   const k=esc(JSON.stringify(key)), cell=(role)=>{ const x=r[role], nm=LT_SIGN[role];
@@ -9735,7 +9735,7 @@ function ltSignHtml(key,r){
 }
 function ltSign(key,role,undo){
   const r=LT.insp[key]; if(!r){ alert('검사 기록이 없습니다'); return; }
-  const [d,pn]=key.split('|'), nm=LT_SIGN[role]+(role==='lead'?'(팀장)':'(담당자)');
+  const [d,pn]=key.split('|'), nm=LT_SIGN[role]+(role==='lead'?'(팀장)':'(과장)');
   if(!undo&&role==='lead'&&!r.rev){ alert('검토 후 승인할 수 있습니다'); return; }
   if(undo&&role==='rev'&&r.lead){ alert('승인을 먼저 취소해야 검토를 취소할 수 있습니다'); return; }
   LTL={key,role,undo:!!undo};
@@ -9765,6 +9765,7 @@ async function ltLeadOk(){
   const {key,role,undo}=LTL, r=LT.insp[key], nm=LT_SIGN[role];
   if(undo){ if(r[role]&&r[role].by!==u.name){ E.textContent=nm+'한 '+r[role].by+' 님의 PIN 으로만 취소할 수 있습니다'; return; } }
   else{
+    if(role==='rev'&&!LT_REVIEWER.includes(String(u.position||'').trim())){ E.textContent=u.name+' 님은 검토 권한(과장)이 없습니다'; return; }
     if(role==='lead'&&(u.name===r.by||(r.rev&&u.name===r.rev.by))){ E.textContent='담당·검토자('+u.name+') 본인은 승인할 수 없습니다'; return; }
     if(role==='lead'&&!LT_APPROVER.includes(String(u.position||'').trim())){ E.textContent=u.name+' 님은 승인 권한(팀장·부장)이 없습니다'; return; }
   }
