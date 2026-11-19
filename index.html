@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.37 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.38 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -9203,9 +9203,10 @@ function traceBack(key){
   const K=String(key||'').trim().toUpperCase();
   const R=trcRange();
   const isDate=/^\d{4}-\d{2}-\d{2}$/.test(K), is6=/^\d{6}$/.test(K);
+  /* 조회 기간은 생산일 기준이다 — 출하일자로 찾을 때만 출하일에 건다.
+     (11/09~11/10 생산분이 11/19 에 나갔으면 기간 밖이어도 그 출하가 붙어야 한다) */
   let ships=allShips().filter(r=>{
     if(r.k!=='출하')return false;
-    if(!inRange(r.d,R))return false;
     if(isDate)return r.d===K;
     if(is6)return parseShipLots(r.lot).includes(K);
     const pu=String(r.pn||'').toUpperCase();
@@ -9220,6 +9221,7 @@ function traceBack(key){
       const d=d6to10(l6); if(!d)return;
       S.led.forEach(r=>{
         if(r.k!=='생산입고'||r.pn!==x.pn||r.d!==d)return;
+        if(!isDate&&!inRange(r.d,R))return;                 /* 기간 = 생산일 */
         const k2=r.id; if(seen.has(k2))return; seen.add(k2);
         prod.push(Object.assign({},r,{ship:x.d,shipLot:l6}));
       });
@@ -9227,7 +9229,7 @@ function traceBack(key){
   });
   /* 제품LOT(생산일자 6자리)을 물었는데 아직 출하가 없으면 — 생산 전표에서 바로 찾는다.
      (출하 전 단계에서 "이 날 생산분 소재가 무엇인가" 를 확인할 수 있어야 한다) */
-  if(!prod.length&&is6){
+  if(is6){
     const d=d6to10(K);
     if(d) S.led.forEach(r=>{
       if(r.k!=='생산입고'||r.d!==d||!inRange(r.d,R))return;
@@ -9236,11 +9238,17 @@ function traceBack(key){
     });
   }
   /* 제품LOT 없이 품번만 물었을 때는 생산 전표에서 바로 */
-  if(!prod.length&&!isDate&&!is6){
-    S.led.forEach(r=>{ if(r.k!=='생산입고'||!inRange(r.d,R))return;
+  if(!isDate&&!is6){
+    S.led.forEach(r=>{ if(r.k!=='생산입고'||!inRange(r.d,R)||seen.has(r.id))return;
       const pu=String(r.pn||'').toUpperCase(), pi=pinfo(r.pn);
       if(pu.includes(K)||(pi&&(String(pi.mold||'').toUpperCase()===K
-        ||String(pi.model||'').toUpperCase().includes(K))))prod.push(r); });
+        ||String(pi.model||'').toUpperCase().includes(K)))){ seen.add(r.id); prod.push(r); } });
+  }
+  /* 출하는 기간 안 생산분과 LOT 으로 이어진 것만 남긴다 (LOT 이 안 적힌 출하는 출하일이 기간 안일 때만 참고로) */
+  if(!isDate){
+    const pk=new Set(prod.map(r=>r.pn+'|'+ymd6(r.d)));
+    ships=ships.filter(x=>{ const ls=parseShipLots(x.lot);
+      return ls.length?ls.some(l=>pk.has(x.pn+'|'+l)):inRange(x.d,R); });
   }
   /* 역추적 소재: MES 실사용(입고번호) 우선 — 같은 LOT 이름이라도 실제 투입된 코일만 */
   const out=[]; const put=c=>{ if(c&&!out.some(x=>x.c&&c&&x.c.id===c.id))out.push({lot:c.cno,c}); };
