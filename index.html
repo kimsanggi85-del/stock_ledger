@@ -7345,7 +7345,7 @@ function rSum(){
     +(scu==='SBC'&&SBC_LIST?' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=0;rSum()" style="color:#7C3AED;font-weight:800">공정별(전공정이동표) 보기 ▸</a>':'')
     +cuNote;
   let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0,xp=0,xh=0,xs=0;
-  $('tSum').classList.remove('sbcT'); $('gt-sum').parentElement.classList.remove('gtTall');
+  $('tSum').classList.remove('sbcT'); $('gt-sum').parentElement.classList.toggle('gtTall',!!cuNote);   /* 안내 문구가 있으면 제목 줄 높이를 내용만큼 */
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
     const k=SORT_KEYS[h];
     if(!k)return '<th>'+h+'</th>';
