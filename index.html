@@ -7327,18 +7327,23 @@ function rSum(){
     try{ sbcShipBox().innerHTML=sbcShipPanel(); }catch(e){ console.warn('SBC 출하현황:',e.message); }
     return;
   }
+  /* 고객사별 안내 코멘트 — 부강스프링: 45631-26010 B/C 공용 작업지시 입고 기준 */
+  const cuNote=scu==='부강스프링'
+    ?'<div style="font-size:11.5px;color:#475569;margin-top:4px;line-height:1.5">· <b>45631-26010</b> : MES 「45631-26010 B/C」 생산분은 <b>45631-26010B</b>(중간품)로 입고 · '
+      +'최종 완성품 <b>C</b>는 생산일보 C 수량으로 <b>45631-26010</b>에 입고</div>':'';
   if(isMob()&&CARD){
     $('tSum').outerHTML='<div id="tSum"></div>';
-    $('tSum').innerHTML=R.length
+    $('tSum').innerHTML=(cuNote?'<div style="padding:6px 10px">'+cuNote+'</div>':'')+(R.length
       ?'<div class="mx"><div class="mx-h">'+mxHead()+'</div>'
         +R.map(({it,v})=>mcSum(it,v)).join('')+'</div>'
-      :'<div class="empty">해당 품목이 없습니다.</div>';
+      :'<div class="empty">해당 품목이 없습니다.</div>');
     return;
   }
   if($('tSum').tagName!=='TABLE'){$('tSum').outerHTML='<table class="t" id="tSum"></table>';}
   $('gt-sum').innerHTML='재고 현황 · 총 <b>'+R.length+'</b>품목 · 기준월 '+ym
     +(scu?' · <span style="color:#946200">'+esc(scu)+' — 전 재고구분(현장·출하대기·2층) 표시</span>':'')
-    +(scu==='SBC'&&SBC_LIST?' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=0;rSum()" style="color:#7C3AED;font-weight:800">공정별(전공정이동표) 보기 ▸</a>':'');
+    +(scu==='SBC'&&SBC_LIST?' &nbsp;<a href="javascript:void 0" onclick="SBC_LIST=0;rSum()" style="color:#7C3AED;font-weight:800">공정별(전공정이동표) 보기 ▸</a>':'')
+    +cuNote;
   let s=0,e=0,f=0,f2=0,g=0,amt=0,amtN=0,xo=0,xn=0,xl=0,xp=0,xh=0,xs=0;
   $('tSum').classList.remove('sbcT'); $('gt-sum').parentElement.classList.remove('gtTall');
   $('tSum').innerHTML=`<thead><tr>${SHV.map(h=>{
