@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.40 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.41 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -1303,6 +1303,7 @@ body.qp-on{overflow:hidden}
     <button class="btn pc-only" onclick="printMonthReport()" title="마감월 말일 재고 · 금액 · 생산/납품 분석 — 월초에는 전월 기준 (생산팀 양식)" style="background:#0B6B3A;color:#fff;border-color:#0B6B3A;font-weight:800">📄 월말 재고조사서</button>
     <button class="btn pc-only" onclick="xlsxMonthReport()" title="월말 재고조사서를 인쇄 양식 그대로 엑셀(.xlsx)로 내려받습니다 — 업체별 시트 + 업체별 분석 시트" style="background:#fff;color:#0B6B3A;border-color:#0B6B3A;font-weight:800">📗 재고조사서 엑셀</button>
     <button class="btn pc-only" onclick="extOpen()" title="공유 폴더의 전공정이동표에서 SBC 외주가공재고(열처리·표면처리)를 불러옵니다" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800">🏭 SBC 외주재고</button>
+    <button class="btn" onclick="bkOpen()" title="부강스프링 월별 납품현황 — 발주 수량만 넣으면 납품일별 수량·총 납품·과부족·납입율이 출하 전표로 자동 계산됩니다" style="background:#fff;color:#0B4F9E;border-color:#0B4F9E;font-weight:800">📦 부강 납품현황</button>
     <button class="btn pc-only" onclick="sbcOpen()" title="SBC 공정별 재고 — PRESS · 열처리(한성) · 표면처리(동진) · 검사대기 · 검사완료" style="background:#7C3AED;color:#fff;border-color:#7C3AED;font-weight:800">🏭 SBC 공정재고</button>
     <button class="btn pc-only" onclick="fcOpen()" title="영업 확정출하 List(3.예상수량) — 차수별 출하계획 대비 실출하·재고 과부족" style="background:#fff;color:#1D4ED8;border-color:#1D4ED8;font-weight:800">📅 SBC 출하계획</button>
     <button class="btn pc-only" id="sbcAutoBtn" onclick="sbcAutoNow()" title="SBC 공유 폴더 자료 지금 다시 읽기" style="background:#fff;color:#7C3AED;border-color:#7C3AED;font-weight:800;padding:4px 8px">🔄</button>
@@ -6249,6 +6250,21 @@ body.qp-on{overflow:hidden}
 </div></div>
 
 <!-- SBC 공정재고 — 물류 흐름이 달라 따로 관리 -->
+<div class="mask" id="mBk"><div class="modal" style="max-width:1100px">
+  <h3>부강스프링 납품현황<span onclick="closeAll()">✕</span></h3>
+  <div class="mb">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <label style="font-size:12px;font-weight:700;color:#5C6B7A">기준월</label>
+      <input type="month" id="bkYm" onchange="bkPaint()" style="padding:5px 8px;border:1px solid #C9D3DE;border-radius:5px">
+      <span id="bkInfo" style="font-size:12px;color:#41556a"></span>
+      <span style="flex:1"></span>
+      <button class="btn" onclick="bkPrint()">🖨 인쇄</button>
+    </div>
+    <div class="hint" style="margin-bottom:8px">· <b>발주</b>(노란 칸)만 입력하세요 — 나머지는 앱의 <b>출하 전표</b>로 자동 계산됩니다. 발주는 서버에 저장되어 다른 기기에서도 같게 보입니다.<br>
+      · 과부족 = 총 납품 − 발주 · 납입율 = 총 납품 ÷ 발주 · 납품금액 = 총 납품 × 품목대장 단가</div>
+    <div class="gw"><div class="scroll" style="max-height:62vh"><table class="t" id="bkTbl"></table></div></div>
+  </div>
+</div></div>
 <div class="mask" id="mSbc"><div class="modal" style="max-width:1100px">
   <h3>SBC 공정재고<span onclick="closeAll()">✕</span></h3>
   <div class="mb">
@@ -15166,6 +15182,101 @@ function sbcStage(it){
   if(ac){ o.wait=ac.wait; o.done=ac.done; o.atc=1; }
   o.tot=o.press+o.heat+o.surf+o.wait+o.done+o.etc;
   return o;
+}
+/* ═══════ 부강스프링 납품현황 ═══════
+   발주 수량(월·품번)만 입력 → 납품일별 출하·총 납품·과부족·납입율·금액은 출하 전표(S.led 출하)로 계산.
+   발주는 kv_store tj_bk_po_v1 에 {months:{'2026-11':{품번:수량}}} 로 공유한다. */
+const BK_KEY='tj_bk_po_v1';
+const BK_ROWS=[['48338-2H010','48338-2H010'],['45631-26010','45631-26010'],
+  ['45624-2F010 UPPER','45624-2F010-U'],['45624-2F010 LOWER','45624-2F010-L'],['45524-26210','45524-26210'],
+  ['45464-4G650L','45464-4G650L'],['45424-4G100L','45424-4G100L'],['46464-4G100L','46464-4G100L']];
+const BK_DEF={'2026-11':{'48338-2H010':20000,'45631-26010':10000,'45624-2F010-U':20000,'45624-2F010-L':20000,'45524-26210':20000}};
+function bkAll(){ if(!S.bkpo||typeof S.bkpo!=='object') S.bkpo=JSON.parse(JSON.stringify(BK_DEF)); return S.bkpo; }
+async function bkPull(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?key=eq.'+BK_KEY+'&select=value',{headers:itHeaders()});
+    if(!r.ok) return false;
+    const j=await r.json(), v=j&&j[0]&&j[0].value;
+    if(v&&v.months&&typeof v.months==='object'){ S.bkpo=v.months; save(); }
+    return true;
+  }catch(e){ return false; }
+}
+async function bkPush(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/kv_store?on_conflict=key',
+      {method:'POST',headers:itHeaders('return=minimal,resolution=merge-duplicates'),
+       body:JSON.stringify([{key:BK_KEY,value:{months:bkAll(),ua:nowIso()},updated_at:nowIso()}])});
+    return r.ok;
+  }catch(e){ return false; }
+}
+function bkOpen(){
+  $('bkYm').value=ym||today().slice(0,7);
+  $('mBk').classList.add('on'); bkPaint();
+  bkPull().then(ok=>{ if(ok) bkPaint(); });
+}
+async function bkSet(pn,v){
+  const y=$('bkYm').value||ym;
+  await bkPull();                                   /* 다른 기기에서 넣은 값 먼저 받기 */
+  const A=bkAll(); A[y]=A[y]||{};
+  const n=Math.round(+String(v).replace(/[^0-9.-]/g,'')||0);
+  if(n>0) A[y][pn]=n; else delete A[y][pn];
+  save(); bkPaint();
+  toast((await bkPush())?'발주 '+pn+' '+(n?nf(n):'삭제')+' 저장':'발주 저장 실패 — 이 기기에만 저장됨');
+}
+function bkData(y){
+  const a=y+'-01', [Y,M]=y.split('-').map(Number), b=y+'-'+p2(new Date(Y,M,0).getDate());
+  const PO=(bkAll()[y])||{};
+  const rows=BK_ROWS.map(([lb,pn])=>({lb,pn}));
+  /* 표에 없는 부강스프링 품목도 이달 출하나 발주가 있으면 아래에 붙인다 */
+  S.items.filter(it=>!it.hide&&!it.base&&(it.cu||'').trim()==='부강스프링'&&!rows.some(r=>r.pn===it.pn))
+    .forEach(it=>{ if(PO[it.pn]||S.led.some(r=>r.k==='출하'&&r.pn===it.pn&&r.d>=a&&r.d<=b)) rows.push({lb:it.pn,pn:it.pn}); });
+  const days=new Set();
+  rows.forEach(o=>{
+    o.po=+PO[o.pn]||0; o.by={};
+    S.led.forEach(r=>{ if(r.k!=='출하'||r.pn!==o.pn||r.d<a||r.d>b) return; o.by[r.d]=(o.by[r.d]||0)+(+r.q||0); days.add(r.d); });
+    o.tot=Object.values(o.by).reduce((x,q)=>x+q,0);
+    const it=S.items.find(i=>i.pn===o.pn); o.pr=it?(+it.price||0):0; o.nm=it?(it.nm||''):''; o.reg=!!it;
+  });
+  return {rows,days:[...days].sort()};
+}
+function bkTable(y,edit){
+  const {rows,days}=bkData(y), dash='<span class="dim">-</span>';
+  const T={po:0,tot:0,amt:0,d:{}};
+  const body=rows.map(o=>{
+    T.po+=o.po; T.tot+=o.tot; T.amt+=o.tot*o.pr; days.forEach(d=>T.d[d]=(T.d[d]||0)+(o.by[d]||0));
+    const gap=o.tot-o.po, rate=o.po?o.tot/o.po*100:null;
+    return `<tr><td class="l" style="font-weight:700">${esc(o.lb)}${o.reg?'':' <span style="color:#C2410C;font-size:10px">품목대장 없음</span>'}</td>
+      <td style="padding:0;background:#FFF9C4">${edit?`<input type="text" inputmode="numeric" value="${o.po?nf(o.po):''}" placeholder="-" onchange="bkSet('${esc(o.pn)}',this.value)" style="width:100%;border:0;background:transparent;text-align:right;padding:6px 8px;font-weight:700">`:(o.po?nf(o.po):'-')}</td>
+      ${days.map(d=>`<td>${o.by[d]?nf(o.by[d]):dash}</td>`).join('')}
+      <td style="font-weight:800;background:#EEF4FF">${o.tot?nf(o.tot):dash}</td>
+      <td style="font-weight:700;color:${o.po?(gap<0?'#B3261E':'#0B6B3A'):'#93A0AB'}">${o.po?(gap>0?'+':'')+nf(gap):dash}</td>
+      <td style="font-weight:700;color:${rate==null?'#93A0AB':(rate<100?'#B3261E':'#0B6B3A')}">${rate==null?dash:Math.round(rate)+'%'}</td>
+      <td>${o.pr?nf(o.pr):dash}</td><td>${o.tot&&o.pr?nf(o.tot*o.pr):dash}</td></tr>`;
+  }).join('');
+  const tg=T.tot-T.po, tr=T.po?Math.round(T.tot/T.po*100)+'%':'-';
+  return `<thead><tr><th>도번</th><th style="background:#FFF3A0">발주</th>
+      ${days.map(d=>`<th style="background:#FFF3A0">${+d.slice(5,7)}월 ${+d.slice(8)}일</th>`).join('')}
+      <th>총 납품</th><th>과부족</th><th>납입율</th><th>단가</th><th>납품금액</th></tr></thead><tbody>${body}</tbody>
+    <tfoot><tr><td class="c">합　계</td><td>${nf(T.po)}</td>${days.map(d=>`<td>${nf(T.d[d])}</td>`).join('')}
+      <td>${nf(T.tot)}</td><td style="color:${tg<0?'#B3261E':'inherit'}">${T.po?(tg>0?'+':'')+nf(tg):'-'}</td><td>${tr}</td><td></td><td>${nf(T.amt)}</td></tr></tfoot>`;
+}
+function bkPaint(){
+  const y=($('bkYm')&&$('bkYm').value)||ym; if(!$('bkTbl')) return;
+  const {days}=bkData(y);
+  $('bkInfo').textContent=y.replace('-','년 ')+'월 · 납품일 '+days.length+'일';
+  $('bkTbl').innerHTML=bkTable(y,true);
+}
+function bkPrint(){
+  const y=$('bkYm').value||ym;
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>부강스프링 납품현황 '+y+'</title><style>'
+    +'body{font-family:"Malgun Gothic",sans-serif;padding:14px}h2{font-size:17px;margin:0 0 8px}'
+    +'table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #555;padding:5px 7px;text-align:right}'
+    +'th{background:#F6C9A6}td.l{text-align:left}td.c{text-align:center}tfoot td{background:#FFF3A0;font-weight:800}.dim{color:#999}'
+    +'*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>'
+    +'<h2>부강스프링 '+(+y.slice(5))+'월 납품현황 <span style="font-size:12px;font-weight:400">('+y+' · 출력 '+today()+')</span></h2>'
+    +'<table>'+bkTable(y,false)+'</table>'+RPT_BAR+'</body></html>';
+  const w=window.open('','_blank'); if(!w){ toast('팝업이 차단되었습니다'); return; }
+  w.document.write(html); w.document.close();
 }
 function sbcOpen(){ $('mSbc').classList.add('on'); sbcPaint(); if(!EXT) extPull().then(sbcPaint); }
 /* 날짜 D 까지의 장부 재고(현장) + 외주 전표 잔량 — 미반영 생산분 계산용 */
