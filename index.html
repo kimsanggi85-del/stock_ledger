@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.38 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.39 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7855,6 +7855,35 @@ const DEF_BX={
 '1GE0-0009-01':50,
 'C657-127 (도금제품)':160
 };
+/* ═══ 부강스프링 단가 (거래명세서 2026-11-17 기준, 원/EA) ═══
+   [2F] 계정이 있으면 같은 단가를 넣는다. 품목대장에 없는 품번은 건너뛰고 콘솔에 남긴다. */
+const PRV='20261117-BK';
+const DEF_PRICE={
+'48338-2H010':59,
+'45631-26010':167,                       /* A·B·C 세 품목에는 넣지 않는다 (사용자 지시) */
+'45624-2F010-U':63,
+'45624-2F010-L':58,
+'45524-26210':66,
+'45464-4G650L':99,
+'45424-4G100L':146,
+'46464-4G100L':148
+};
+async function applyPricePatch(){
+  if(S.prv===PRV)return;
+  let ch=0; const miss=[];
+  for(const [raw,pr] of Object.entries(DEF_PRICE)){
+    const pn=raw;                                /* 별칭으로 다른 품번(예: 45631-26010A)에 붙지 않게 정확히 일치만 */
+    const hit=S.items.filter(i=>i.pn===pn||i.pn===pn+' [2F]');
+    if(!hit.length){miss.push(raw);continue;}
+    hit.forEach(it=>{ if(Math.round(+it.price||0)!==pr){ it.price=pr; touchItem(it); ch++; } });
+  }
+  if(ch){
+    try{ await pushItems(true); }catch(e){ return; }   /* 실패 시 다음 새로고침에 재시도 */
+    toast('부강스프링 단가 '+ch+'품목 반영 (거래명세서 11/17 기준)');
+  }
+  S.prv=PRV; save();
+  if(miss.length)console.warn('단가 반영 — 품목대장에 없는 품번:',miss.join(', '));
+}
 async function applyBxPatch(){
   if(S.bxv===BXV)return;
   let ch=0; const miss=[];
@@ -13664,6 +13693,7 @@ async function syncMes(silent){
     await pullCfg(true);                       /* 실패 시 아래 catch → 빨간 배너 (완료 표시 없음) */
     await pullItems(true,true);
     await applyBxPatch();                      /* 박스단위 엑셀 기준 교정 → 서버 전파 */
+    await applyPricePatch();                   /* 부강스프링 단가 (거래명세서 기준) → 서버 전파 */
   }catch(e){
     syncBar();
     syncBanner('서버 동기화 실패 — '+e.message);
