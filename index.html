@@ -1221,7 +1221,7 @@ body.qp-on{overflow:hidden}
 
 <div class="tb">
   <button class="ham" onclick="tglDrawer()" aria-label="메뉴"><i></i><i></i><i></i></button>
-  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.39 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
+  <div class="ttl">재고 입출고 현황<small>TAEJIN DITECH · STOCK · <b style="color:#8FD4A8">v18.40 · 원소재 v11.54</b><span id="tbNow"> · 전체 · 2026-09</span></small></div>
   <span id="tbPage" style="margin-left:auto">🔗 LOT 추적</span>
   <div id="tbTools">
     <div id="dHd"><div>재고 입출고 현황<small>TAEJIN DITECH · MENU</small></div><span onclick="tglDrawer(0)">✕</span></div>
@@ -7857,7 +7857,13 @@ const DEF_BX={
 };
 /* ═══ 부강스프링 단가 (거래명세서 2026-11-17 기준, 원/EA) ═══
    [2F] 계정이 있으면 같은 단가를 넣는다. 품목대장에 없는 품번은 건너뛰고 콘솔에 남긴다. */
-const PRV='20261117-BK';
+const PRV='20261124-BK8AT';
+/* 거래명세서에만 있고 품목대장에 없던 8AT 3품목 — 없으면 신규 등록 (현장재고 · 기초재고 0) */
+const DEF_NEW_ITEMS=[
+  {pn:'45464-4G650L',nm:'8AT',cu:'부강스프링'},
+  {pn:'45424-4G100L',nm:'8AT',cu:'부강스프링'},
+  {pn:'46464-4G100L',nm:'8AT',cu:'부강스프링'}
+];
 const DEF_PRICE={
 '48338-2H010':59,
 '45631-26010':167,                       /* A·B·C 세 품목에는 넣지 않는다 (사용자 지시) */
@@ -7871,6 +7877,15 @@ const DEF_PRICE={
 async function applyPricePatch(){
   if(S.prv===PRV)return;
   let ch=0; const miss=[];
+  let addN=0;
+  DEF_NEW_ITEMS.forEach(x=>{
+    if(S.items.some(i=>String(i.pn).trim()===x.pn)) return;
+    if(DEL_PNS.has(x.pn)){ DEL_PNS.delete(x.pn); itPushDel().catch(()=>{}); }
+    const it={no:0,pn:x.pn,nm:x.nm,sp:'',un:'EA',bx:0,sf:0,bs:0,bd:dayBefore(),cu:x.cu,lc:'',wh:'현장',al:'',
+      setx:null,setp:null,hide:false,base:null,pair:null,price:null,cnt:null,pend:1};
+    S.items.push(it); touchItem(it); addN++;
+  });
+  if(addN){ S.items.sort((a,b)=>a.pn.localeCompare(b.pn,'en',{numeric:true})); ch+=addN; console.log('부강스프링 8AT 신규 등록 '+addN+'품목'); }
   for(const [raw,pr] of Object.entries(DEF_PRICE)){
     const pn=raw;                                /* 별칭으로 다른 품번(예: 45631-26010A)에 붙지 않게 정확히 일치만 */
     const hit=S.items.filter(i=>i.pn===pn||i.pn===pn+' [2F]');
@@ -7879,7 +7894,7 @@ async function applyPricePatch(){
   }
   if(ch){
     try{ await pushItems(true); }catch(e){ return; }   /* 실패 시 다음 새로고침에 재시도 */
-    toast('부강스프링 단가 '+ch+'품목 반영 (거래명세서 11/17 기준)');
+    toast((addN?'부강스프링 8AT '+addN+'품목 등록 · ':'')+'부강스프링 단가 반영 (거래명세서 11/17 기준)');
   }
   S.prv=PRV; save();
   if(miss.length)console.warn('단가 반영 — 품목대장에 없는 품번:',miss.join(', '));
